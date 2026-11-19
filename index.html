@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raktári Átadó Lap Generátor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter & Serif betűtípusok -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        /* Alap UI stílusok */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+
+        /* Egyedi görgetősáv */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* =========================================================
+           A4-ES HIVATALOS DOKUMENTUM SABLON STÍLUSOK
+           ========================================================= */
+        .a4-page {
+            width: 210mm;
+            height: 297mm;
+            background: #ffffff;
+            box-sizing: border-box;
+            padding: 12mm 16mm 14mm 16mm;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.2), 0 4px 10px -2px rgba(15, 23, 42, 0.1);
+            margin: 0 auto 24px auto;
+            color: #000000;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .doc-serif {
+            font-family: 'Noto Serif', 'Cambria', 'Times New Roman', Georgia, serif;
+        }
+
+        .doc-sans {
+            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
+        }
+
+        /* Fejléc */
+        .doc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5mm;
+            min-height: 14mm;
+        }
+
+        .doc-header-title-right {
+            font-family: 'Noto Serif', 'Cambria', Georgia, serif;
+            font-size: 9pt;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            color: #000000;
+            padding-top: 3mm;
+            text-transform: uppercase;
+        }
+
+        /* Főcím */
+        .doc-main-title {
+            font-family: 'Noto Serif', 'Cambria', Georgia, serif;
+            font-size: 18pt;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.5px;
+            margin-top: 1mm;
+            margin-bottom: 5mm;
+            color: #000000;
+        }
+
+        /* Átvevő / Átadó dobozok */
+        .party-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 14mm;
+            margin-bottom: 6mm;
+        }
+
+        .party-table {
+            width: 48%;
+            border-collapse: collapse;
+            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
+            font-size: 9.5pt;
+        }
+
+        .party-table th {
+            background-color: #C55A11;
+            color: #ffffff;
+            font-weight: 700;
+            text-align: center;
+            padding: 3px 6px;
+            border: 1px solid #000000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 9.5pt;
+        }
+
+        .party-table td {
+            border: 1px solid #000000;
+            padding: 3px 6px;
+            vertical-align: middle;
+        }
+
+        .party-table tr.row-code td {
+            background-color: #F2F2F2;
+        }
+
+        .party-table td.party-label {
+            width: 44%;
+            font-weight: 400;
+        }
+
+        .party-table td.party-val {
+            width: 56%;
+            font-weight: 400;
+        }
+
+        /* Eszközök táblázata */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
+            font-size: 9pt;
+            table-layout: fixed;
+        }
+
+        .items-table thead th {
+            background-color: #F8CBAD;
+            color: #000000;
+            font-weight: 700;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #000000;
+            padding: 4px 4px;
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            line-height: 1.2;
+        }
+
+        .items-table tbody td {
+            border: 1px solid #000000;
+            padding: 3.5px 5px;
+            vertical-align: middle;
+            line-height: 1.25;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .col-tetel { width: 8%; text-align: center; }
+        .col-nytsz { width: 17%; text-align: right; padding-right: 6px !important; }
+        .col-megn { width: 35%; text-align: left; }
+        .col-db { width: 8%; text-align: center; }
+        .col-spec { width: 32%; text-align: left; }
+
+        /* Záró blokk */
+        .closing-block {
+            margin-top: 5mm;
+            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
+            color: #000000;
+        }
+
+        .closing-ownership {
+            font-size: 8.5pt;
+            font-weight: 700;
+            margin-bottom: 2px;
+            line-height: 1.3;
+        }
+
+        .closing-summary {
+            font-size: 8.5pt;
+            font-weight: 400;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+
+        .closing-declaration {
+            font-family: 'Noto Serif', 'Cambria', Georgia, serif;
+            font-size: 8.5pt;
+            text-align: justify;
+            line-height: 1.35;
+            margin-bottom: 5mm;
+        }
+
+        /* Megjegyzés doboz */
+        .notes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 7mm;
+            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
+        }
+
+        .notes-table th {
+            background-color: #C55A11;
+            color: #ffffff;
+            font-weight: 700;
+            text-align: center;
+            padding: 3px 6px;
+            border: 1px solid #000000;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .notes-table td {
+            border: 1px solid #000000;
+            min-height: 65px;
+            height: 68px;
+            vertical-align: top;
+            padding: 6px 8px;
+            font-size: 9pt;
+            white-space: pre-wrap;
+            background-color: #ffffff;
+        }
+
+        /* Dátum és aláírások */
+        .signature-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            font-family: 'Noto Serif', 'Cambria', Georgia, serif;
+            font-size: 10pt;
+            margin-top: 2mm;
+        }
+
+        .sig-date {
+            width: 38%;
+            padding-top: 2px;
+        }
+
+        .sig-boxes {
+            width: 58%;
+            display: flex;
+            justify-content: space-between;
+            gap: 8mm;
+        }
+
+        .sig-box {
+            flex: 1;
+            text-align: center;
+        }
+
+        .sig-role {
+            font-size: 10pt;
+            text-transform: uppercase;
+            margin-bottom: 11mm;
+        }
+
+        .sig-line {
+            border-top: 1px solid #4b5563;
+            padding-top: 3px;
+            font-size: 10pt;
+        }
+
+        /* Lábléc minden oldal alján */
+        .doc-footer {
+            margin-top: auto;
+            padding-top: 4mm;
+            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
+            font-size: 8.5pt;
+            color: #1f2937;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .doc-footer-page-num {
+            font-size: 11pt;
+            font-weight: 500;
+            margin-right: 2px;
+        }
+
+        /* =========================================================
+           NYOMTATÁSI STÍLUSOK (@media print)
+           ========================================================= */
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        @media print {
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                width: 210mm !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            #app-layout {
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
+            #preview-panel {
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: #ffffff !important;
+            }
+
+            #preview-scroll-area {
+                display: block !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+
+            #pages-container {
+                transform: none !important;
+                width: 210mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+
+            .a4-page {
+                width: 210mm !important;
+                height: 297mm !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                overflow: hidden !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            .a4-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col">
+
+    <!-- Értesítési sáv (Toast) - alert() helyett -->
+    <div id="toast-container" class="no-print fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Fő elrendezés: Bal vezérlőpanel + Jobb A4 előnézet -->
+    <div id="app-layout" class="flex-1 flex flex-col lg:flex-row h-full overflow-hidden">
+
+        <!-- =========================================================
+             BAL OLDALI VEZÉRLŐPANEL
+             ========================================================= -->
+        <aside class="no-print w-full lg:w-[440px] xl:w-[470px] bg-white border-r border-slate-200 flex flex-col h-[48vh] lg:h-full shadow-lg z-20 shrink-0">
+            <!-- Panel fejléc -->
+            <div class="px-5 py-3.5 bg-gradient-to-r from-[#F26F21] to-[#C55A11] text-white flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-base leading-tight tracking-tight">Raktári Átadó Lap Generátor</h1>
+                        <p class="text-[11px] text-orange-100">Google Sheets / CSV → Többoldalas A4 PDF</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigációs fülek -->
+            <div class="flex border-b border-slate-200 bg-slate-50 px-2 pt-2 gap-1 shrink-0">
+                <button id="tab-btn-import" onclick="switchTab('import')" class="tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-[#F26F21] text-[#C55A11] bg-white transition-all flex items-center justify-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    Import & Dátumok
+                </button>
+                <button id="tab-btn-details" onclick="switchTab('details')" class="tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    Lap adatai
+                </button>
+                <button id="tab-btn-items" onclick="switchTab('items')" class="tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    Tételek (<span id="tab-items-count">0</span>)
+                </button>
+            </div>
+
+            <!-- Görgethető fül-tartalom -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-5">
+
+                <!-- 1. FÜL: ADATIMPORT & DÁTUMOK -->
+                <div id="tab-content-import" class="space-y-4">
+                    <!-- Mintaadatok gyors gomb -->
+                    <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                        <div class="text-xs text-orange-900">
+                            <span class="font-semibold block">Kipróbálás azonnal</span>
+                            <span class="text-orange-700">Több dátumos, párhuzamos blokkos Google Sheets minta</span>
+                        </div>
+                        <button onclick="loadSampleData()" class="shrink-0 bg-[#F26F21] hover:bg-[#C55A11] text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition-colors cursor-pointer">
+                            Mintaadatok betöltése
+                        </button>
+                    </div>
+
+                    <!-- CSV / TSV Drag & Drop zóna -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">1. CSV / TSV fájl feltöltése (Google Sheets export)</label>
+                        <div id="drop-zone" class="border-2 border-dashed border-slate-300 hover:border-[#F26F21] rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50 hover:bg-orange-50/40">
+                            <input type="file" id="csv-file-input" accept=".csv,.tsv,.txt" class="hidden">
+                            <svg class="w-8 h-8 text-slate-400 mx-auto mb-1.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+                            </svg>
+                            <p class="text-xs font-medium text-slate-700">Húzd ide a CSV/TSV fájlt, vagy <span class="text-[#F26F21] underline">kattints a tallózáshoz</span></p>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Automatikusan kezeli a több egymás melletti táblázatblokkot és az ékezeteket</p>
+                        </div>
+                    </div>
+
+                    <!-- Közvetlen Google Sheets másolás-beillesztés -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label for="paste-area" class="text-xs font-semibold text-slate-700">2. Másolás-beillesztés Google Sheets-ből (Ctrl+C / Ctrl+V)</label>
+                            <button onclick="document.getElementById('paste-area').value=''" class="text-[11px] text-slate-400 hover:text-slate-600 cursor-pointer">Törlés</button>
+                        </div>
+                        <textarea id="paste-area" rows="4" placeholder="Illeszd be ide a Google Sheets-ből kimásolt cellákat (akár több egymás melletti blokkot is)..." class="w-full rounded-xl border border-slate-300 p-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#F26F21] focus:border-transparent bg-slate-50"></textarea>
+                        <button onclick="parsePastedText()" class="mt-2 w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                            Beillesztett táblázat feldolgozása
+                        </button>
+                    </div>
+
+                    <!-- Import statisztika doboz -->
+                    <div id="import-stats-box" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900">
+                        <div class="font-semibold flex items-center gap-1.5 mb-1">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+                            Sikeres feldolgozás
+                        </div>
+                        <p id="import-stats-text" class="text-[11px] text-emerald-800"></p>
+                    </div>
+
+                    <!-- Talált dátumok választó (Chipek) -->
+                    <div id="dates-section" class="hidden pt-2 border-t border-slate-200">
+                        <label class="block text-xs font-semibold text-slate-700 mb-2">Átadás dátumának kiválasztása:</label>
+                        <div id="date-chips-container" class="flex flex-wrap gap-2">
+                            <!-- Dinamikus dátum gombok -->
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-2">
+                            A kiválasztott dátum automatikusan frissíti a táblázatot, a <strong>Debrecen, ...</strong> dátumot és a <strong>lábléc</strong> ragozott szövegét is.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 2. FÜL: LAP ADATAI ÉS TÖRDELÉS -->
+                <div id="tab-content-details" class="hidden space-y-4">
+                    <!-- Átvevő és Átadó adatok -->
+                    <div class="grid grid-cols-1 gap-3">
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                            <h3 class="text-xs font-bold text-[#C55A11] uppercase tracking-wider">Átvevő egység</h3>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-0.5">Egység kódja</label>
+                                    <input type="text" id="input-receiver-code" value="5120" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#F26F21] focus:outline-none">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-[11px] text-slate-600 mb-0.5">Egység neve</label>
+                                    <input type="text" id="input-receiver-name" value="Raktár" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#F26F21] focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                            <h3 class="text-xs font-bold text-[#C55A11] uppercase tracking-wider">Átadó egység (láblécben is megjelenik)</h3>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[11px] text-slate-600 mb-0.5">Egység kódja</label>
+                                    <input type="text" id="input-sender-code" value="3101" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#F26F21] focus:outline-none">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="block text-[11px] text-slate-600 mb-0.5">Egység neve</label>
+                                    <input type="text" id="input-sender-name" value="Központi raktár" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#F26F21] focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dátum és Aláírók -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
+                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Dátum és aláírók</h3>
+                        <div>
+                            <label class="block text-[11px] text-slate-600 mb-0.5">Átadás dátuma (ÉÉÉÉ.HH.NN.)</label>
+                            <div class="flex gap-2">
+                                <input type="date" id="input-doc-date-picker" onchange="onDatePickerChange()" class="w-1/2 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#F26F21] focus:outline-none">
+                                <input type="text" id="input-doc-date-text" value="2025.04.08." placeholder="2025.04.08." oninput="onDateTextChange()" class="w-1/2 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#F26F21] focus:outline-none">
+                            </div>
+                            <p id="date-preview-hint" class="text-[11px] text-slate-500 mt-1"></p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] text-slate-600 mb-0.5">Átadó neve</label>
+                                <input type="text" id="input-sender-person" value="(név)" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#F26F21] focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-slate-600 mb-0.5">Átvevő neve</label>
+                                <input type="text" id="input-receiver-person" value="Kovács László" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#F26F21] focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Megjegyzés -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                        <label for="input-notes" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Megjegyzés doboz tartalma</label>
+                        <textarea id="input-notes" rows="3" oninput="updateMetadata()" placeholder="Opcionális megjegyzés a lap alján lévő MEGJEGYZÉS dobozba..." class="w-full rounded-lg border border-slate-300 p-2 text-xs focus:ring-2 focus:ring-[#F26F21] focus:outline-none bg-white"></textarea>
+                    </div>
+
+                    <!-- Többoldalas tördelés beállításai -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Többoldalas tördelés</h3>
+                            <span id="max-rows-badge" class="text-xs font-bold text-[#C55A11] bg-orange-100 px-2 py-0.5 rounded-md">18 sor / oldal</span>
+                        </div>
+                        <input type="range" id="input-max-rows" min="6" max="32" value="18" oninput="updatePaginationSetting()" class="w-full accent-[#F26F21] cursor-pointer">
+                        <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>6 sor</span>
+                            <span>18 sor (ajánlott)</span>
+                            <span>32 sor</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500">
+                            Az 1. oldalon a főcím és egységadatok miatt automatikusan kevesebb sor jelenik meg, az utolsó oldalon pedig a záró blokk (nyilatkozat, megjegyzés, aláírás) automatikusan új oldalra ugrik, ha nem férne el.
+                        </p>
+                    </div>
+
+                    <!-- Egyedi logó feltöltése -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Fejléc logó</h3>
+                        <div class="flex items-center gap-2">
+                            <label class="flex-1 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium py-1.5 px-3 rounded-lg text-center cursor-pointer transition-colors">
+                                Saját logó feltöltése (PNG/JPG/SVG)
+                                <input type="file" id="logo-file-input" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
+                            </label>
+                            <button id="btn-reset-logo" onclick="resetLogo()" class="hidden bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-medium py-1.5 px-2.5 rounded-lg cursor-pointer">
+                                Alapértelmezett
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. FÜL: TÉTELEK SZERKESZTÉSE -->
+                <div id="tab-content-items" class="hidden space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <button onclick="addNewItem()" class="flex-1 bg-[#F26F21] hover:bg-[#C55A11] text-white text-xs font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
+                            + Új tétel hozzáadása
+                        </button>
+                        <button onclick="clearCurrentItems()" class="bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 border border-slate-200 text-xs font-medium py-2 px-3 rounded-lg transition-colors cursor-pointer" title="Összes tétel törlése">
+                            Ürítés
+                        </button>
+                    </div>
+
+                    <div id="items-editor-list" class="space-y-2.5">
+                        <!-- Dinamikusan generált tételszerkesztő kártyák -->
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- =========================================================
+             JOBB OLDALI ÉLŐ A4-ES ELŐNÉZETI PANEL
+             ========================================================= -->
+        <main id="preview-panel" class="flex-1 flex flex-col bg-slate-200/80 h-[52vh] lg:h-full overflow-hidden">
+            <!-- Felső eszköztár -->
+            <div class="no-print bg-white border-b border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-sm shrink-0 z-10">
+                <!-- Statisztika jelvények -->
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-lg border border-slate-200">
+                        Oldalak: <span id="stat-pages" class="text-[#C55A11]">1</span>
+                    </span>
+                    <span class="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-lg border border-slate-200">
+                        Tételek: <span id="stat-items" class="text-slate-900">0</span>
+                    </span>
+                    <span class="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-lg border border-slate-200 hidden sm:inline-block">
+                        Összesen: <span id="stat-qty" class="text-slate-900">0</span> db
+                    </span>
+                </div>
+
+                <!-- Nagyítás + Nyomtatás gomb -->
+                <div class="flex items-center gap-2.5">
+                    <div class="hidden sm:flex items-center bg-slate-100 rounded-lg border border-slate-200 p-0.5">
+                        <button onclick="changeZoom(-0.1)" class="px-2 py-1 text-xs font-bold text-slate-600 hover:bg-white rounded-md cursor-pointer" title="Kicsinyítés">−</button>
+                        <span id="zoom-label" class="px-2 text-xs font-semibold text-slate-700 min-w-[46px] text-center">80%</span>
+                        <button onclick="changeZoom(0.1)" class="px-2 py-1 text-xs font-bold text-slate-600 hover:bg-white rounded-md cursor-pointer" title="Nagyítás">+</button>
+                        <button onclick="autoFitZoom()" class="px-2 py-1 text-[11px] font-medium text-slate-500 hover:text-slate-800 hover:bg-white rounded-md cursor-pointer border-l border-slate-200 ml-0.5">Illesztés</button>
+                    </div>
+
+                    <button onclick="window.print()" class="bg-[#F26F21] hover:bg-[#C55A11] active:scale-[0.98] text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-2">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                        </svg>
+                        Nyomtatás / Mentés PDF-ként
+                    </button>
+                </div>
+            </div>
+
+            <!-- Görgethető előnézeti tér -->
+            <div id="preview-scroll-area" class="flex-1 overflow-auto p-4 sm:p-8 flex justify-center items-start">
+                <div id="pages-container" style="transform-origin: top center; transition: transform 0.15s ease;">
+                    <!-- Ide renderelődnek az .a4-page elemek -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        /* =========================================================
+           ALKALMAZÁS ÁLLAPOTA (STATE)
+           ========================================================= */
+        const state = {
+            // Az importált teljes nyers adatkészlet (minden dátummal)
+            allImportedItems: [],
+            // Aktuálisan kiválasztott dátumszűrő ('ALL' vagy pl. '2025.04.08.')
+            selectedDateKey: 'ALL',
+            // Aktuálisan megjelenített és szerkeszthető tételek
+            activeItems: [
+                { nytsz: '140041', megnevezes: 'Bankett asztal 20 db', db: 1, spec: '' },
+                { nytsz: '500015', megnevezes: 'KOCSI ÜLÉS', db: 1, spec: '' },
+                { nytsz: '300294', megnevezes: 'Fotel', db: 1, spec: '' },
+                { nytsz: '300098', megnevezes: 'Kemence', db: 1, spec: '' },
+                { nytsz: '140069', megnevezes: 'Kanapé 4 db', db: 1, spec: '' },
+                { nytsz: '300148', megnevezes: 'Kiszolgáló mobilpult', db: 4, spec: '' }
+            ],
+            // Dokumentum metaadatai
+            meta: {
+                receiverCode: '5120',
+                receiverName: 'Raktár',
+                senderCode: '3101',
+                senderName: 'Központi raktár',
+                senderPerson: '(név)',
+                receiverPerson: 'Kovács László',
+                docDateRaw: '2025.04.08.',
+                notes: ''
+            },
+            // Tördelési beállítások
+            maxRowsPerPage: 18,
+            // Egyedi logó (DataURL), null esetén az alapértelmezett Campus SVG jelenik meg
+            customLogoUrl: null,
+            // Előnézet nagyítás
+            zoom: 0.8
+        };
+
+        /* =========================================================
+           ALAPÉRTELMEZETT CAMPUS SVG LOGÓ
+           ========================================================= */
+        const DEFAULT_CAMPUS_LOGO_SVG = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 56" width="185" height="37" style="display:block;">
+                <!-- Narancssárga négyzet stilizált fehér szimbólummal -->
+                <rect x="0" y="3" width="48" height="48" rx="4" fill="#F26F21"/>
+                <!-- Stilizált fehér ívek (Campus embléma) -->
+                <circle cx="24" cy="13" r="5" fill="#FFFFFF"/>
+                <path d="M 5 11 C 18 14, 21 24, 21 27 C 21 30, 18 40, 5 43 L 5 35 C 12 33, 14 29, 14 27 C 14 25, 12 21, 5 19 Z" fill="#FFFFFF"/>
+                <path d="M 43 11 C 30 14, 27 24, 27 27 C 27 30, 30 40, 43 43 L 43 35 C 36 33, 34 29, 34 27 C 34 25, 36 21, 43 19 Z" fill="#FFFFFF"/>
+                <!-- "campus" felirat -->
+                <text x="58" y="42" font-family="'Inter', 'Arial', sans-serif" font-weight="700" font-size="42" letter-spacing="-1.2" fill="#F26F21">campus</text>
+            </svg>
+        `;
+
+        /* =========================================================
+           MAGYAR DÁTUMFORMÁZÁS ÉS PONTOS RAGOZÁS
+           ========================================================= */
+        /**
+         * Normalizál egy dátumot YYYY.MM.DD. formátumra és kinyeri az év, hónap, nap számokat.
+         */
+        function parseDateParts(dateStr) {
+            if (!dateStr) return null;
+            const cleaned = String(dateStr).trim();
+            // Keresünk YYYY, MM, DD számcsoportokat bármilyen elválasztóval (. - / szóköz)
+            const match = cleaned.match(/(\d{4})[\.\-\/\s]+(\d{1,2})[\.\-\/\s]+(\d{1,2})/);
+            if (!match) return null;
+            const y = match[1];
+            const m = match[2].padStart(2, '0');
+            const d = match[3].padStart(2, '0');
+            return {
+                year: parseInt(y, 10),
+                month: parseInt(m, 10),
+                day: parseInt(d, 10),
+                compact: `${y}.${m}.${d}`,        // 2025.04.08
+                withDot: `${y}.${m}.${d}.`,       // 2025.04.08.
+                spaced: `${y}. ${m}. ${d}.`,      // 2025. 04. 08.
+                iso: `${y}-${m}-${d}`             // 2025-04-08
+            };
+        }
+
+        /**
+         * Pontos magyar dátumragozás a nap száma alapján:
+         * 1 -> -jén
+         * 2, 3, 6, 8, 13, 16, 18, 20, 23, 26, 28, 30 -> -án
+         * Minden más (4, 5, 7, 9, 10, 11, 12, 14, 15, 17, 19, 21, 22, 24, 25, 27, 29, 31) -> -én
+         */
+        function getHungarianDateSuffix(dayNum) {
+            const d = parseInt(dayNum, 10);
+            if (isNaN(d) || d < 1 || d > 31) return '-án';
+            if (d === 1) return '-jén';
+            const anDays = [2, 3, 6, 8, 13, 16, 18, 20, 23, 26, 28, 30];
+            if (anDays.includes(d)) return '-án';
+            return '-én';
+        }
+
+        function formatFooterDate(dateStr) {
+            const parts = parseDateParts(dateStr);
+            if (!parts) return `${dateStr || '____.__.__'}-án`;
+            return `${parts.compact}${getHungarianDateSuffix(parts.day)}`;
+        }
+
+        function formatSignatureDate(dateStr) {
+            const parts = parseDateParts(dateStr);
+            if (!parts) return dateStr || '____. __. __.';
+            return parts.spaced;
+        }
+
+        /* =========================================================
+           ÉRTESÍTÉS (TOAST) - alert() helyett
+           ========================================================= */
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-red-600 text-white',
+                info: 'bg-slate-800 text-white',
+                warning: 'bg-amber-600 text-white'
+            };
+            toast.className = `${colors[type] || colors.info} px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto max-w-sm`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        /* =========================================================
+           KRITIKUS TÖBBBLOKKOS CSV / TSV PARSER
+           ========================================================= */
+        /**
+         * Ékezetmentes kisbetűs normalizálás fejléc-felismeréshez
+         */
+        function normalizeHeader(text) {
+            return String(text || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]/g, '');
+        }
+
+        /**
+         * Automatikus elválasztójel felismerés (tabulátor, pontosvessző, vessző)
+         */
+        function detectDelimiter(text) {
+            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0).slice(0, 5);
+            const counts = { '\t': 0, ';': 0, ',': 0 };
+            lines.forEach(line => {
+                counts['\t'] += (line.match(/\t/g) || []).length;
+                counts[';'] += (line.match(/;/g) || []).length;
+                counts[','] += (line.match(/,/g) || []).length;
+            });
+            if (counts['\t'] >= counts[';'] && counts['\t'] >= counts[','] && counts['\t'] > 0) return '\t';
+            if (counts[';'] >= counts[','] && counts[';'] > 0) return ';';
+            return ',';
+        }
+
+        /**
+         * RFC-kompatibilis CSV/TSV sor- és cellabontó (kezeli az idézőjeleket és a cellán belüli sortörést)
+         */
+        function parseDelimitedTextToGrid(text, delimiter) {
+            const rows = [];
+            let currentRow = [];
+            let currentCell = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (inQuotes) {
+                    if (char === '"' && nextChar === '"') {
+                        currentCell += '"';
+                        i++;
+                    } else if (char === '"') {
+                        inQuotes = false;
+                    } else {
+                        currentCell += char;
+                    }
+                } else {
+                    if (char === '"' && currentCell.length === 0) {
+                        inQuotes = true;
+                    } else if (char === delimiter) {
+                        currentRow.push(currentCell.trim());
+                        currentCell = '';
+                    } else if (char === '\r' && nextChar === '\n') {
+                        currentRow.push(currentCell.trim());
+                        rows.push(currentRow);
+                        currentRow = [];
+                        currentCell = '';
+                        i++;
+                    } else if (char === '\n' || char === '\r') {
+                        currentRow.push(currentCell.trim());
+                        rows.push(currentRow);
+                        currentRow = [];
+                        currentCell = '';
+                    } else {
+                        currentCell += char;
+                    }
+                }
+            }
+            if (currentCell.length > 0 || currentRow.length > 0) {
+                currentRow.push(currentCell.trim());
+                rows.push(currentRow);
+            }
+            return rows;
+        }
+
+        /**
+         * Oszlop szerepkörének azonosítása rugalmas kulcsszavak alapján
+         */
+        function classifyHeaderCell(cellText) {
+            const norm = normalizeHeader(cellText);
+            if (!norm) return null;
+            if (norm.includes('sorszam') || norm === 'tetel' || norm === 'nr' || norm === 'sorsz') return 'sorszam';
+            if (norm.includes('nytsz') || norm.includes('nyilvantart') || norm.includes('leltar') || norm.includes('kod')) return 'nytsz';
+            if (norm.includes('megnevezes') || norm.includes('eszkoz') || norm.includes('nev') || norm.includes('targy') || norm.includes('termek')) return 'megnevezes';
+            if (norm.includes('mennyiseg') || norm === 'db' || norm.includes('darab') || norm.includes('menny')) return 'mennyiseg';
+            if (norm.includes('datum') || norm.includes('atadas') || norm.includes('idopont')) return 'datum';
+            if (norm.includes('megjegyzes') || norm.includes('specifikacio') || norm.includes('tipus') || norm.includes('gyariszam') || norm.includes('leiras')) return 'spec';
+            return null;
+        }
+
+        /**
+         * Fő importáló függvény: megkeresi az összes vízszintesen egymás melletti táblázatblokkot,
+         * kinyeri a tételeket, kiszűri az üres és összesítő sorokat.
+         */
+        function processRawData(rawText) {
+            if (!rawText || !rawText.trim()) {
+                showToast('Nincs feldolgozható adat!', 'warning');
+                return;
+            }
+
+            // BOM eltávolítása
+            const cleanText = rawText.replace(/^\uFEFF/, '');
+            const delimiter = detectDelimiter(cleanText);
+            const grid = parseDelimitedTextToGrid(cleanText, delimiter);
+
+            if (grid.length < 2) {
+                showToast('A táblázat túl kevés sort tartalmaz.', 'error');
+                return;
+            }
+
+            // 1. Fejlécsor megkeresése (az első sor, amiben legalább 2 felismert fejlécoszlop van)
+            let headerRowIndex = -1;
+            for (let r = 0; r < Math.min(grid.length, 10); r++) {
+                let recognizedCount = 0;
+                for (let c = 0; c < grid[r].length; c++) {
+                    if (classifyHeaderCell(grid[r][c])) recognizedCount++;
+                }
+                if (recognizedCount >= 2) {
+                    headerRowIndex = r;
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1) {
+                showToast('Nem sikerült felismerni a táblázat fejlécét (pl. NYTSZ, Megnevezés, Mennyiség, Dátum).', 'error');
+                return;
+            }
+
+            // 2. Vízszintes táblázatblokkok felismerése a fejlécsorban
+            const headerRow = grid[headerRowIndex];
+            const blocks = [];
+            let currentBlock = null;
+
+            for (let c = 0; c < headerRow.length; c++) {
+                const role = classifyHeaderCell(headerRow[c]);
+                if (!role) {
+                    // Üres vagy ismeretlen oszlop: ha volt aktív érvényes blokk, lezárjuk
+                    if (currentBlock && (currentBlock.megnevezes !== undefined || currentBlock.nytsz !== undefined)) {
+                        blocks.push(currentBlock);
+                        currentBlock = null;
+                    }
+                    continue;
+                }
+
+                // Ha ez a szerepkör már szerepel az aktuális blokkban, új blokk kezdődik
+                if (currentBlock && currentBlock[role] !== undefined) {
+                    if (currentBlock.megnevezes !== undefined || currentBlock.nytsz !== undefined) {
+                        blocks.push(currentBlock);
+                    }
+                    currentBlock = {};
+                }
+
+                if (!currentBlock) {
+                    currentBlock = {};
+                }
+                currentBlock[role] = c;
+            }
+            if (currentBlock && (currentBlock.megnevezes !== undefined || currentBlock.nytsz !== undefined)) {
+                blocks.push(currentBlock);
+            }
+
+            if (blocks.length === 0) {
+                showToast('Nem található érvényes oszlopcsoport (Megnevezés / NYTSZ).', 'error');
+                return;
+            }
+
+            // 3. Tételek kigyűjtése az összes blokkból
+            const extractedItems = [];
+            let skippedSummaryOrEmpty = 0;
+
+            blocks.forEach((block, blockIdx) => {
+                // Először megnézzük, van-e jellemző dátum ebben a blokkban (fallbacknek, ha egy sorból kimaradt volna)
+                let blockFallbackDate = '';
+                if (block.datum !== undefined) {
+                    for (let r = headerRowIndex + 1; r < grid.length; r++) {
+                        const dVal = (grid[r][block.datum] || '').trim();
+                        const parsed = parseDateParts(dVal);
+                        if (parsed) {
+                            blockFallbackDate = parsed.withDot;
+                            break;
+                        }
+                    }
+                }
+
+                for (let r = headerRowIndex + 1; r < grid.length; r++) {
+                    const row = grid[r];
+                    if (!row) continue;
+
+                    const nytsz = block.nytsz !== undefined ? (row[block.nytsz] || '').trim() : '';
+                    const megnevezes = block.megnevezes !== undefined ? (row[block.megnevezes] || '').trim() : '';
+                    const rawQty = block.mennyiseg !== undefined ? (row[block.mennyiseg] || '').trim() : '';
+                    const rawDate = block.datum !== undefined ? (row[block.datum] || '').trim() : '';
+                    const spec = block.spec !== undefined ? (row[block.spec] || '').trim() : '';
+
+                    // Teljesen üres sor ebben a blokkban
+                    if (!nytsz && !megnevezes && !rawQty && !rawDate) {
+                        continue;
+                    }
+
+                    // Összesítő sorok szűrése: nincs Megnevezés és nincs NYTSZ (pl. csak egy "20" a mennyiségben)
+                    const normMegn = normalizeHeader(megnevezes);
+                    if ((!megnevezes && !nytsz) || normMegn === 'osszesen' || normMegn === 'sum' || normMegn === 'total') {
+                        skippedSummaryOrEmpty++;
+                        continue;
+                    }
+
+                    // Ha csak NYTSZ vagy Megnevezés van, de mindkettő üres lenne, már kiszűrtük.
+                    // Mennyiség feldolgozása
+                    let qty = 1;
+                    if (rawQty !== '') {
+                        const parsedQty = parseFloat(rawQty.replace(',', '.').replace(/[^\d.]/g, ''));
+                        if (!isNaN(parsedQty) && parsedQty > 0) {
+                            qty = Math.round(parsedQty);
+                        }
+                    }
+
+                    // Dátum normalizálása
+                    let dateKey = 'Dátum nélkül';
+                    const parsedDate = parseDateParts(rawDate);
+                    if (parsedDate) {
+                        dateKey = parsedDate.withDot;
+                    } else if (blockFallbackDate) {
+                        dateKey = blockFallbackDate;
+                    }
+
+                    extractedItems.push({
+                        nytsz,
+                        megnevezes,
+                        db: qty,
+                        spec,
+                        dateKey,
+                        blockIndex: blockIdx + 1
+                    });
+                }
+            });
+
+            if (extractedItems.length === 0) {
+                showToast('Nem sikerült érvényes tételt kinyerni a táblázatból.', 'error');
+                return;
+            }
+
+            state.allImportedItems = extractedItems;
+
+            // Statisztika frissítése
+            const statsBox = document.getElementById('import-stats-box');
+            const statsText = document.getElementById('import-stats-text');
+            statsBox.classList.remove('hidden');
+            statsText.textContent = `${blocks.length} táblázatblokk felismerve • ${extractedItems.length} érvényes tétel betöltve` +
+                (skippedSummaryOrEmpty > 0 ? ` • ${skippedSummaryOrEmpty} összesítő/üres sor kiszűrve.` : '.');
+
+            // Egyedi dátumok kigyűjtése és chipek megjelenítése
+            renderDateChips();
+
+            // Automatikusan válasszuk ki az első valós dátumot (vagy az összest)
+            const uniqueDates = getUniqueDateGroups();
+            if (uniqueDates.length > 0) {
+                selectDateFilter(uniqueDates[0].dateKey);
+            } else {
+                selectDateFilter('ALL');
+            }
+
+            showToast(`${extractedItems.length} tétel sikeresen importálva (${blocks.length} blokkból)!`, 'success');
+        }
+
+        /**
+         * Egyedi dátumcsoportok összeszámolása
+         */
+        function getUniqueDateGroups() {
+            const map = new Map();
+            state.allImportedItems.forEach(item => {
+                const key = item.dateKey || 'Dátum nélkül';
+                map.set(key, (map.get(key) || 0) + 1);
+            });
+            return Array.from(map.entries())
+                .map(([dateKey, count]) => ({ dateKey, count }))
+                .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+        }
+
+        /**
+         * Dátumválasztó chipek kirajzolása
+         */
+        function renderDateChips() {
+            const section = document.getElementById('dates-section');
+            const container = document.getElementById('date-chips-container');
+            const groups = getUniqueDateGroups();
+
+            if (state.allImportedItems.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+
+            section.classList.remove('hidden');
+            container.innerHTML = '';
+
+            // Dátum chipek
+            groups.forEach(g => {
+                const isActive = state.selectedDateKey === g.dateKey;
+                const btn = document.createElement('button');
+                btn.onclick = () => selectDateFilter(g.dateKey);
+                btn.className = isActive
+                    ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-[#F26F21] text-white shadow-sm cursor-pointer transition-all'
+                    : 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 hover:bg-orange-100 text-slate-700 hover:text-[#C55A11] border border-slate-200 cursor-pointer transition-all';
+                btn.textContent = `${g.dateKey} (${g.count} tétel)`;
+                container.appendChild(btn);
+            });
+
+            // "Összes tétel egyben" opció
+            const allActive = state.selectedDateKey === 'ALL';
+            const allBtn = document.createElement('button');
+            allBtn.onclick = () => selectDateFilter('ALL');
+            allBtn.className = allActive
+                ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-white shadow-sm cursor-pointer transition-all'
+                : 'px-3 py-1.5 rounded-lg text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 cursor-pointer transition-all';
+            allBtn.textContent = `Összes tétel egyben (${state.allImportedItems.length} tétel)`;
+            container.appendChild(allBtn);
+        }
+
+        /**
+         * Dátumszűrő aktiválása: frissíti az aktív tételeket és a dokumentum dátumát
+         */
+        function selectDateFilter(dateKey) {
+            state.selectedDateKey = dateKey;
+            if (dateKey === 'ALL') {
+                state.activeItems = state.allImportedItems.map(i => ({
+                    nytsz: i.nytsz,
+                    megnevezes: i.megnevezes,
+                    db: i.db,
+                    spec: i.spec
+                }));
+            } else {
+                state.activeItems = state.allImportedItems
+                    .filter(i => i.dateKey === dateKey)
+                    .map(i => ({
+                        nytsz: i.nytsz,
+                        megnevezes: i.megnevezes,
+                        db: i.db,
+                        spec: i.spec
+                    }));
+
+                // Dátum automatikus beállítása a dokumentumban
+                const parsed = parseDateParts(dateKey);
+                if (parsed) {
+                    setDocumentDate(parsed.withDot);
+                }
+            }
+
+            renderDateChips();
+            renderItemsEditor();
+            renderPreview();
+        }
+
+        /* =========================================================
+           MINTAADATOK (PÁRHUZAMOS BLOKKOS GOOGLE SHEETS ELRENDEZÉS)
+           ========================================================= */
+        function loadSampleData() {
+            // Pontosan a mellékelt Google Sheets elrendezés:
+            // A-E: 2025.02.23. (15 tétel), F: üres, G-K: 2025.04.08. (9 tétel + 11. sorban J=20 összesítő), L: üres, M-Q: 2025.05.12. (11 tétel)
+            const sampleTSV = [
+                "Sorszám\tNYTSZ\tMegnevezés\tMennyiség\tÁtadás dátuma\t\tSorszám\tNYTSZ\tMegnevezés\tMennyiség\tÁtadás dátuma\t\tSorszám\tNYTSZ\tMegnevezés\tMennyiség\tÁtadás dátuma",
+                "1\t300260\tNotebook szoftverrel\t1\t2025.02.23.\t\t1\t310007\tHúsdaráló\t1\t2025.04.08.\t\t1\t300277\tFotelek szett\t2\t2025.05.12.",
+                "2\t300289\tTintasugaras nyomtató\t1\t2025.02.23.\t\t2\t300370\tFali pizzatartó\t1\t2025.04.08.\t\t2\t300278\tKanapé\t1\t2025.05.12.",
+                "3\t300306\tElektromos tésztafőző\t1\t2025.02.23.\t\t3\t300315\tMozarella reszelő\t1\t2025.04.08.\t\t3\t300280\tTároló polc\t3\t2025.05.12.",
+                "4\t300335\tSzgép konfiguráció\t1\t2025.02.23.\t\t4\t300331\tSütisvitrin\t1\t2025.04.08.\t\t4\t300341\tSzék\t6\t2025.05.12.",
+                "5\t300318\tElektromos rostlap\t1\t2025.02.23.\t\t5\t300313\tSzállító és kiadó kocsi\t1\t2025.04.08.\t\t5\t300340\tAsztal\t2\t2025.05.12.",
+                "6\t300321\tElektromos főzőzsámoly\t1\t2025.02.23.\t\t6\t300369\tTeraszlámpa\t8\t2025.04.08.\t\t6\t300308\tMozarella szeletelő\t1\t2025.05.12.",
+                "7\t310367\tHDD BELSŐ\t1\t2025.02.23.\t\t7\t300345\tKártyaolvasó\t1\t2025.04.08.\t\t7\t300309\tPizzakemence\t1\t2025.05.12.",
+                "8\t310333\tKávéfőző\t1\t2025.02.23.\t\t8\t300269\tSzék\t1\t2025.04.08.\t\t8\t300333\tPizza hűtőpult\t1\t2025.05.12.",
+                "9\t310232\tTurmix\t1\t2025.02.23.\t\t9\t300270\tSzék\t5\t2025.04.08.\t\t9\t300320\tSzekrény\t2\t2025.05.12.",
+                "10\t310161\tRÚDMIXER\t1\t2025.02.23.\t\t\t\t\t\t\t\t10\t300319\tSzeletelőgép\t1\t2025.05.12.",
+                "11\t310128\tTURMIX\t1\t2025.02.23.\t\t\t\t\t20\t\t\t11\t320005\tTV KONZOL\t2\t2025.05.12.",
+                "12\t310057\tTurmix\t1\t2025.02.23.\t\t\t\t\t\t\t\t\t\t\t\t",
+                "13\t140038\tBotmixer\t1\t2025.02.23.\t\t\t\t\t\t\t\t\t\t\t\t",
+                "14\t140033\tTablet Samsung\t1\t2025.02.23.\t\t\t\t\t\t\t\t\t\t\t\t",
+                "15\t310013\tGRILL\t1\t2025.02.23.\t\t\t\t\t\t\t\t\t\t\t\t"
+            ].join('\n');
+
+            document.getElementById('paste-area').value = sampleTSV;
+            processRawData(sampleTSV);
+        }
+
+        function parsePastedText() {
+            const text = document.getElementById('paste-area').value;
+            processRawData(text);
+        }
+
+        /* =========================================================
+           TÉTELEK SZERKESZTŐJE (BAL PANEL 3. FÜL)
+           ========================================================= */
+        function renderItemsEditor() {
+            const container = document.getElementById('items-editor-list');
+            document.getElementById('tab-items-count').textContent = state.activeItems.length;
+
+            if (state.activeItems.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500 text-xs">
+                        Még nincs tétel a listában. Importálj táblázatot, vagy kattints a "+ Új tétel hozzáadása" gombra.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = state.activeItems.map((item, idx) => `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-2 hover:border-orange-300 transition-colors">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[11px] font-bold text-[#C55A11] bg-orange-100 px-2 py-0.5 rounded-md">#${idx + 1} tétel</span>
+                        <button onclick="deleteItem(${idx})" class="text-slate-400 hover:text-red-600 p-1 rounded transition-colors cursor-pointer" title="Tétel törlése">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-12 gap-1.5">
+                        <div class="col-span-4">
+                            <label class="block text-[10px] text-slate-500">NYTSZ</label>
+                            <input type="text" value="${escapeHtml(item.nytsz)}" oninput="updateItemField(${idx}, 'nytsz', this.value)" class="w-full rounded-md border border-slate-300 px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-[#F26F21] focus:outline-none">
+                        </div>
+                        <div class="col-span-6">
+                            <label class="block text-[10px] text-slate-500">Megnevezés</label>
+                            <input type="text" value="${escapeHtml(item.megnevezes)}" oninput="updateItemField(${idx}, 'megnevezes', this.value)" class="w-full rounded-md border border-slate-300 px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-[#F26F21] focus:outline-none">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] text-slate-500">DB</label>
+                            <input type="number" min="1" value="${item.db}" oninput="updateItemField(${idx}, 'db', this.value)" class="w-full rounded-md border border-slate-300 px-1.5 py-1 text-xs text-center bg-white focus:ring-1 focus:ring-[#F26F21] focus:outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500">Típus, gyári szám, specifikáció, megjegyzés</label>
+                        <input type="text" value="${escapeHtml(item.spec)}" placeholder="Opcionális részletek..." oninput="updateItemField(${idx}, 'spec', this.value)" class="w-full rounded-md border border-slate-300 px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-[#F26F21] focus:outline-none">
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateItemField(index, field, value) {
+            if (!state.activeItems[index]) return;
+            if (field === 'db') {
+                const n = parseInt(value, 10);
+                state.activeItems[index].db = isNaN(n) || n < 0 ? 0 : n;
+            } else {
+                state.activeItems[index][field] = value;
+            }
+            renderPreview();
+        }
+
+        function addNewItem() {
+            state.activeItems.push({ nytsz: '', megnevezes: '', db: 1, spec: '' });
+            renderItemsEditor();
+            renderPreview();
+            // Görgessünk az új tételhez a szerkesztőben
+            const list = document.getElementById('items-editor-list');
+            if (list.lastElementChild) {
+                list.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function deleteItem(index) {
+            state.activeItems.splice(index, 1);
+            renderItemsEditor();
+            renderPreview();
+        }
+
+        function clearCurrentItems() {
+            state.activeItems = [];
+            renderItemsEditor();
+            renderPreview();
+            showToast('A tétellista kiürítve.', 'info');
+        }
+
+        /* =========================================================
+           METAADATOK, DÁTUM ÉS LOGÓ KEZELÉSE
+           ========================================================= */
+        function updateMetadata() {
+            state.meta.receiverCode = document.getElementById('input-receiver-code').value;
+            state.meta.receiverName = document.getElementById('input-receiver-name').value;
+            state.meta.senderCode = document.getElementById('input-sender-code').value;
+            state.meta.senderName = document.getElementById('input-sender-name').value;
+            state.meta.senderPerson = document.getElementById('input-sender-person').value;
+            state.meta.receiverPerson = document.getElementById('input-receiver-person').value;
+            state.meta.notes = document.getElementById('input-notes').value;
+            renderPreview();
+        }
+
+        function setDocumentDate(dateStr) {
+            state.meta.docDateRaw = dateStr;
+            const textInput = document.getElementById('input-doc-date-text');
+            const pickerInput = document.getElementById('input-doc-date-picker');
+            const hint = document.getElementById('date-preview-hint');
+
+            textInput.value = dateStr;
+            const parsed = parseDateParts(dateStr);
+            if (parsed) {
+                pickerInput.value = parsed.iso;
+                hint.textContent = `Lábléc ragozás: ${formatFooterDate(dateStr)} | Aláírás: Debrecen, ${formatSignatureDate(dateStr)}`;
+            } else {
+                hint.textContent = '';
+            }
+        }
+
+        function onDatePickerChange() {
+            const iso = document.getElementById('input-doc-date-picker').value;
+            const parsed = parseDateParts(iso);
+            if (parsed) {
+                setDocumentDate(parsed.withDot);
+                renderPreview();
+            }
+        }
+
+        function onDateTextChange() {
+            const val = document.getElementById('input-doc-date-text').value;
+            state.meta.docDateRaw = val;
+            const parsed = parseDateParts(val);
+            const pickerInput = document.getElementById('input-doc-date-picker');
+            const hint = document.getElementById('date-preview-hint');
+            if (parsed) {
+                pickerInput.value = parsed.iso;
+                hint.textContent = `Lábléc ragozás: ${formatFooterDate(val)} | Aláírás: Debrecen, ${formatSignatureDate(val)}`;
+            } else {
+                hint.textContent = 'Formátum: ÉÉÉÉ.HH.NN.';
+            }
+            renderPreview();
+        }
+
+        function updatePaginationSetting() {
+            const val = parseInt(document.getElementById('input-max-rows').value, 10);
+            state.maxRowsPerPage = val;
+            document.getElementById('max-rows-badge').textContent = `${val} sor / oldal`;
+            renderPreview();
+        }
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                state.customLogoUrl = e.target.result;
+                document.getElementById('btn-reset-logo').classList.remove('hidden');
+                renderPreview();
+                showToast('Egyedi logó sikeresen beállítva!', 'success');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetLogo() {
+            state.customLogoUrl = null;
+            document.getElementById('logo-file-input').value = '';
+            document.getElementById('btn-reset-logo').classList.add('hidden');
+            renderPreview();
+            showToast('Alapértelmezett Campus logó visszaállítva.', 'info');
+        }
+
+        /* =========================================================
+           TÖBBOLDALAS TÖRDELÉS ÉS A4 RENDERELÉS
+           ========================================================= */
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        /**
+         * Intelligens oldalakra tördelés:
+         * - Az 1. oldalon a főcím és az Átvevő/Átadó dobozok kb. 4 sornyi helyet foglalnak.
+         * - Az utolsó oldalon a záró blokk (tulajdonjog, összesítő, nyilatkozat, megjegyzés doboz, aláírások)
+         *   kb. 10 sornyi helyet foglal. Ha az utolsó oldalra eső tételek + záró blokk meghaladná a kapacitást,
+         *   a záró blokk automatikusan egy új A4-es oldalra kerül.
+         */
+        function paginateItems(items, maxPerPage) {
+            const firstPageCap = Math.max(4, maxPerPage - 4);
+            const otherPageCap = Math.max(6, maxPerPage);
+            const closingBlockCost = 10; // kb. 10 táblázatsornyi magasság
+
+            const pages = [];
+
+            if (items.length === 0) {
+                pages.push({ items: [], startIndex: 0, showClosing: true });
+                return pages;
+            }
+
+            let cursor = 0;
+            while (cursor < items.length) {
+                const isFirst = pages.length === 0;
+                const cap = isFirst ? firstPageCap : otherPageCap;
+                const chunk = items.slice(cursor, cursor + cap);
+                pages.push({
+                    items: chunk,
+                    startIndex: cursor,
+                    showClosing: false
+                });
+                cursor += chunk.length;
+            }
+
+            // Ellenőrizzük, elfér-e a záró blokk az utolsó oldalon
+            const lastPage = pages[pages.length - 1];
+            const lastPageCap = pages.length === 1 ? firstPageCap : otherPageCap;
+            // Hosszabb sorok becsült extra súlya
+            const usedUnits = lastPage.items.reduce((sum, it) => {
+                const extra = (it.megnevezes.length > 36 || it.spec.length > 36) ? 0.6 : 0;
+                return sum + 1 + extra;
+            }, 0);
+
+            if (usedUnits + closingBlockCost <= lastPageCap + 2) {
+                lastPage.showClosing = true;
+            } else {
+                // Új oldal a záró blokknak
+                pages.push({
+                    items: [],
+                    startIndex: items.length,
+                    showClosing: true,
+                    closingOnly: true
+                });
+            }
+
+            return pages;
+        }
+
+        function renderHeaderHTML() {
+            const logoHtml = state.customLogoUrl
+                ? `<img src="${state.customLogoUrl}" alt="Logó" style="max-height: 42px; max-width: 210px; object-fit: contain; display: block;">`
+                : DEFAULT_CAMPUS_LOGO_SVG;
+
+            return `
+                <div class="doc-header">
+                    <div>${logoHtml}</div>
+                    <div class="doc-header-title-right">RAKTÁRI ÁTADÓ LAP</div>
+                </div>
+            `;
+        }
+
+        function renderFirstPageIntroHTML() {
+            return `
+                <div class="doc-main-title">RAKTÁRI ÁTADÓ LAP</div>
+                <div class="party-grid">
+                    <table class="party-table">
+                        <thead>
+                            <tr><th colspan="2">ÁTVEVŐ</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr class="row-code">
+                                <td class="party-label">Egység kódja</td>
+                                <td class="party-val">${escapeHtml(state.meta.receiverCode)}</td>
+                            </tr>
+                            <tr>
+                                <td class="party-label">Egység neve</td>
+                                <td class="party-val">${escapeHtml(state.meta.receiverName)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="party-table">
+                        <thead>
+                            <tr><th colspan="2">ÁTADÓ</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr class="row-code">
+                                <td class="party-label">Egység kódja</td>
+                                <td class="party-val">${escapeHtml(state.meta.senderCode)}</td>
+                            </tr>
+                            <tr>
+                                <td class="party-label">Egység neve</td>
+                                <td class="party-val">${escapeHtml(state.meta.senderName)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function renderItemsTableHTML(pageItems, startIndex) {
+            const rowsHtml = pageItems.length > 0
+                ? pageItems.map((item, idx) => `
+                    <tr>
+                        <td class="col-tetel">${startIndex + idx + 1}</td>
+                        <td class="col-nytsz">${escapeHtml(item.nytsz)}</td>
+                        <td class="col-megn">${escapeHtml(item.megnevezes)}</td>
+                        <td class="col-db">${item.db}</td>
+                        <td class="col-spec">${escapeHtml(item.spec)}</td>
+                    </tr>
+                `).join('')
+                : `
+                    <tr>
+                        <td class="col-tetel">1</td>
+                        <td class="col-nytsz"></td>
+                        <td class="col-megn" style="color:#94a3b8; font-style:italic;">(Nincs megadott eszköz)</td>
+                        <td class="col-db">0</td>
+                        <td class="col-spec"></td>
+                    </tr>
+                `;
+
+            return `
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th class="col-tetel">TÉTEL</th>
+                            <th class="col-nytsz">NYILVÁNTARTÁSI SZÁM</th>
+                            <th class="col-megn">MEGNEVEZÉS</th>
+                            <th class="col-db">DB</th>
+                            <th class="col-spec">TÍPUS, GYÁRI SZÁM, SPECIFIKÁCIÓ (SZÍN, MÉRET), MEGJEGYZÉS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderClosingBlockHTML(totalItemsCount, totalQty) {
+            const sigDate = formatSignatureDate(state.meta.docDateRaw);
+            return `
+                <div class="closing-block">
+                    <div class="closing-ownership">
+                        A fenti táblázatban szereplő eszközök a Debreceni Campus Nonprofit Közhasznú Kft. tulajdonát képezik.
+                    </div>
+                    <div class="closing-summary">
+                        A táblázat összesen ${totalItemsCount} tételben ${totalQty} db. eszközt tartalmaz.
+                    </div>
+                    <div class="closing-declaration">
+                        Az átvevő az Átadó lap aláírásával igazolja az eszközök tételes átvételét, valamint vállalja azok elkülönített, azonosítható módon történő nyilvántartását, biztonságos raktári elhelyezését és állapottól, használhatóságtól függően szükség esetén kezdeményezi azok selejtezését, értékesítését, vagy egyéb hasznosítását a hatályos belső szabályzatoknak megfelelően.
+                    </div>
+
+                    <table class="notes-table">
+                        <thead>
+                            <tr><th>MEGJEGYZÉS</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>${escapeHtml(state.meta.notes)}</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="signature-row">
+                        <div class="sig-date">Debrecen, ${escapeHtml(sigDate)}</div>
+                        <div class="sig-boxes">
+                            <div class="sig-box">
+                                <div class="sig-role">ÁTADÓ</div>
+                                <div class="sig-line">${escapeHtml(state.meta.senderPerson || '(név)')}</div>
+                            </div>
+                            <div class="sig-box">
+                                <div class="sig-role">ÁTVEVŐ</div>
+                                <div class="sig-line">${escapeHtml(state.meta.receiverPerson || '(név)')}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFooterHTML(pageNumber) {
+            const formattedDate = formatFooterDate(state.meta.docDateRaw);
+            const senderInfo = `${state.meta.senderCode} - ${state.meta.senderName}`.trim();
+            return `
+                <div class="doc-footer">
+                    <span class="doc-footer-page-num">${pageNumber}</span>. oldal a ${escapeHtml(formattedDate)} átadott ${escapeHtml(senderInfo)} eszközlistához
+                </div>
+            `;
+        }
+
+        function renderPreview() {
+            const container = document.getElementById('pages-container');
+            const totalItemsCount = state.activeItems.length;
+            const totalQty = state.activeItems.reduce((sum, i) => sum + (parseInt(i.db, 10) || 0), 0);
+
+            const pages = paginateItems(state.activeItems, state.maxRowsPerPage);
+
+            // Felső statisztika frissítése
+            document.getElementById('stat-pages').textContent = pages.length;
+            document.getElementById('stat-items').textContent = totalItemsCount;
+            document.getElementById('stat-qty').textContent = totalQty;
+            document.getElementById('tab-items-count').textContent = totalItemsCount;
+
+            // Oldalak HTML generálása
+            container.innerHTML = pages.map((page, pageIdx) => {
+                const isFirst = pageIdx === 0;
+                const showTable = !page.closingOnly;
+                return `
+                    <div class="a4-page">
+                        ${renderHeaderHTML()}
+                        ${isFirst ? renderFirstPageIntroHTML() : ''}
+                        ${showTable ? renderItemsTableHTML(page.items, page.startIndex) : ''}
+                        ${page.showClosing ? renderClosingBlockHTML(totalItemsCount, totalQty) : ''}
+                        ${renderFooterHTML(pageIdx + 1)}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /* =========================================================
+           FÜLEK, NAGYÍTÁS ÉS DRAG-AND-DROP KEZELÉS
+           ========================================================= */
+        function switchTab(tabName) {
+            const tabs = ['import', 'details', 'items'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-btn-${t}`);
+                const content = document.getElementById(`tab-content-${t}`);
+                if (t === tabName) {
+                    btn.className = 'tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-[#F26F21] text-[#C55A11] bg-white transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = 'tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function applyZoom() {
+            const container = document.getElementById('pages-container');
+            container.style.transform = `scale(${state.zoom})`;
+            const label = document.getElementById('zoom-label');
+            if (label) label.textContent = `${Math.round(state.zoom * 100)}%`;
+        }
+
+        function changeZoom(delta) {
+            state.zoom = Math.min(1.25, Math.max(0.4, Math.round((state.zoom + delta) * 10) / 10));
+            applyZoom();
+        }
+
+        function autoFitZoom() {
+            const scrollArea = document.getElementById('preview-scroll-area');
+            if (!scrollArea) return;
+            const availableWidth = scrollArea.clientWidth - 48;
+            // 210mm kb. 794px 96 DPI-n
+            const a4WidthPx = 794;
+            const optimal = Math.min(1.0, Math.max(0.42, availableWidth / a4WidthPx));
+            state.zoom = Math.round(optimal * 20) / 20;
+            applyZoom();
+        }
+
+        function setupFileUpload() {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('csv-file-input');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) readUploadedFile(file);
+                fileInput.value = '';
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-[#F26F21]', 'bg-orange-50');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-[#F26F21]', 'bg-orange-50');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-[#F26F21]', 'bg-orange-50');
+                const file = e.dataTransfer.files[0];
+                if (file) readUploadedFile(file);
+            });
+        }
+
+        function readUploadedFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                document.getElementById('paste-area').value = text;
+                processRawData(text);
+            };
+            reader.onerror = () => {
+                showToast('Hiba történt a fájl beolvasása közben.', 'error');
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        /* =========================================================
+           INICIALIZÁLÁS
+           ========================================================= */
+        window.addEventListener('DOMContentLoaded', () => {
+            setupFileUpload();
+            setDocumentDate(state.meta.docDateRaw);
+            renderItemsEditor();
+            renderPreview();
+            autoFitZoom();
+            window.addEventListener('resize', autoFitZoom);
+        });
+    </script>
+</body>
+</html>
