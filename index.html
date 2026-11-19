@@ -1,2148 +1,1600 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Dokumentum Generátor Rendszer</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter & Noto Serif betűtípusok -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <style>
-        /* Alap UI stílusok */
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: #f1f5f9;
-            color: #1e293b;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Dokumentum Generátor & Admin</title>
+  <style>
+    :root {
+      --orange: #e86c1f;
+      --orange-dark: #c95812;
+      --orange-light: #fff3eb;
+      --peach: #f8cba6;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #cbd5e1;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
 
-        /* Egyedi görgetősáv */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #e2e8f0;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-        }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-        /* =========================================================
-           A4-ES HIVATALOS DOKUMENTUM SABLON STÍLUSOK
-           ========================================================= */
-        .a4-page {
-            width: 210mm;
-            height: 297mm;
-            background: #ffffff;
-            box-sizing: border-box;
-            padding: 12mm 16mm 14mm 16mm;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.2), 0 4px 10px -2px rgba(15, 23, 42, 0.1);
-            margin: 0 auto 24px auto;
-            color: #000000;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
+    .hidden { display: none !important; }
 
-        .doc-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 5mm;
-            min-height: 14mm;
-        }
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 18px;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.25s ease;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { background: var(--success); }
+    #toast.error { background: var(--danger); }
+    #toast.info { background: #2563eb; }
 
-        .doc-header-title-right {
-            font-family: 'Noto Serif', 'Cambria', Georgia, serif;
-            font-size: 9pt;
-            font-weight: 700;
-            letter-spacing: 0.4px;
-            color: #000000;
-            padding-top: 3mm;
-            text-transform: uppercase;
-        }
+    /* ===== LOGIN SCREEN ===== */
+    #loginView {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    }
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+    }
+    .login-header {
+      background: var(--orange-dark);
+      color: #fff;
+      padding: 28px 24px 24px;
+      text-align: center;
+    }
+    .login-logo-box {
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border-radius: 12px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .login-logo-box img { height: 36px; display: block; }
+    .login-header h1 { margin: 0 0 6px; font-size: 20px; }
+    .login-header p { margin: 0; font-size: 13px; opacity: 0.9; }
+    .login-body { padding: 24px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: #fff;
+    }
+    .form-control:focus { border-color: var(--orange); }
+    .password-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .password-wrap input { padding-right: 42px; }
+    .toggle-pwd-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+    }
+    .toggle-pwd-btn:hover { color: var(--text); }
 
-        .doc-main-title {
-            font-family: 'Noto Serif', 'Cambria', Georgia, serif;
-            font-size: 18pt;
-            font-weight: 700;
-            text-align: center;
-            letter-spacing: 0.5px;
-            margin-top: 1mm;
-            margin-bottom: 5mm;
-            color: #000000;
-        }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-primary { background: var(--orange); color: #fff; }
+    .btn-primary:hover { background: var(--orange-dark); }
+    .btn-secondary { background: #e2e8f0; color: #1e293b; }
+    .btn-secondary:hover { background: #cbd5e1; }
+    .btn-outline { background: #fff; border: 1.5px solid var(--border); color: #334155; }
+    .btn-outline:hover { background: #f8fafc; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #15803d; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; }
+    .btn-block { width: 100%; }
 
-        .party-grid {
-            display: flex;
-            justify-content: space-between;
-            gap: 14mm;
-            margin-bottom: 6mm;
-        }
+    .alert-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .demo-banner {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-top: 16px;
+      text-align: center;
+    }
 
-        .party-table {
-            width: 48%;
-            border-collapse: collapse;
-            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
-            font-size: 9.5pt;
-        }
+    /* ===== TOP NAVBAR ===== */
+    .navbar {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 20px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .nav-left { display: flex; align-items: center; gap: 20px; }
+    .nav-brand img { height: 28px; display: block; }
+    .nav-tabs { display: flex; gap: 6px; }
+    .nav-tab {
+      background: none;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .nav-tab:hover { background: #f1f5f9; color: var(--text); }
+    .nav-tab.active { background: var(--orange-light); color: var(--orange-dark); }
+    .nav-right { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+    .user-badge {
+      background: #f1f5f9;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      color: #334155;
+    }
 
-        .party-table th {
-            background-color: #C55A11;
-            color: #ffffff;
-            font-weight: 700;
-            text-align: center;
-            padding: 3px 6px;
-            border: 1px solid #000000;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 9.5pt;
-        }
+    /* ===== MAIN LAYOUTS ===== */
+    .app-container { max-width: 1440px; margin: 0 auto; padding: 20px; }
 
-        .party-table td {
-            border: 1px solid #000000;
-            padding: 3px 6px;
-            vertical-align: middle;
-        }
+    /* ===== GENERATOR SPLIT LAYOUT ===== */
+    .gen-grid {
+      display: grid;
+      grid-template-columns: 430px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .gen-grid { grid-template-columns: 1fr; }
+    }
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+      margin-bottom: 16px;
+    }
+    .panel h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-left: 4px solid var(--orange);
+      padding-left: 10px;
+    }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        .party-table tr.row-code td {
-            background-color: #F2F2F2;
-        }
+    .dropzone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      background: #f8fafc;
+      transition: all 0.2s;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--orange);
+      background: var(--orange-light);
+      color: var(--orange-dark);
+    }
+    textarea.paste-box {
+      width: 100%;
+      height: 76px;
+      margin-top: 10px;
+      padding: 8px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: monospace;
+      resize: vertical;
+    }
 
-        .party-table td.party-label {
-            width: 44%;
-            font-weight: 400;
-        }
+    .date-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .date-chip {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .date-chip.active {
+      background: var(--orange);
+      border-color: var(--orange);
+      color: #fff;
+    }
 
-        .party-table td.party-val {
-            width: 56%;
-            font-weight: 400;
-        }
+    .mini-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    .mini-table th, .mini-table td { border: 1px solid #e2e8f0; padding: 4px; text-align: left; }
+    .mini-table th { background: #f8fafc; font-weight: 600; }
+    .mini-table input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-size: 12px;
+      padding: 2px 4px;
+      outline: none;
+    }
+    .mini-table input:focus { background: #fff7ed; }
 
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
-            font-size: 9pt;
-            table-layout: fixed;
-        }
+    /* ===== A4 PREVIEW & PRINT ===== */
+    .preview-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      background: #fff;
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+    }
+    .pages-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .a4-page {
+      width: 210mm;
+      min-height: 297mm;
+      background: #fff;
+      padding: 14mm 15mm 14mm 15mm;
+      box-shadow: 0 8px 28px rgba(15,23,42,0.14);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      color: #000;
+      font-family: "Times New Roman", Times, serif;
+    }
+    .doc-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8mm;
+    }
+    .doc-top-bar img { height: 11mm; display: block; }
+    .doc-top-title {
+      font-family: Arial, sans-serif;
+      font-weight: 700;
+      font-size: 10pt;
+      letter-spacing: 0.4px;
+    }
+    .doc-main-title {
+      text-align: center;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 18pt;
+      font-weight: 700;
+      margin: 2mm 0 7mm;
+      letter-spacing: 0.5px;
+    }
+    .parties-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14mm;
+      margin-bottom: 7mm;
+    }
+    .party-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: Arial, sans-serif;
+      font-size: 9.5pt;
+    }
+    .party-table th {
+      background: #c95812;
+      color: #fff;
+      text-align: center;
+      padding: 4px 6px;
+      border: 1px solid #000;
+      font-weight: 700;
+    }
+    .party-table td {
+      border: 1px solid #000;
+      padding: 4px 7px;
+      background: #f2f2f2;
+    }
+    .party-table td:first-child { width: 42%; font-weight: 600; }
 
-        .items-table thead th {
-            background-color: #F8CBAD;
-            color: #000000;
-            font-weight: 700;
-            text-align: center;
-            vertical-align: middle;
-            border: 1px solid #000000;
-            padding: 4px 4px;
-            font-size: 7.5pt;
-            text-transform: uppercase;
-            line-height: 1.2;
-        }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: Arial, sans-serif;
+      font-size: 8.5pt;
+      margin-bottom: 5mm;
+    }
+    .items-table th {
+      background: var(--peach);
+      border: 1px solid #000;
+      padding: 5px 4px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+    }
+    .items-table td {
+      border: 1px solid #000;
+      padding: 4px 6px;
+      vertical-align: middle;
+    }
+    .items-table td.c-center { text-align: center; }
+    .items-table td.c-right { text-align: right; }
 
-        .items-table tbody td {
-            border: 1px solid #000000;
-            padding: 3.5px 5px;
-            vertical-align: middle;
-            line-height: 1.25;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
+    .doc-legal {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 9pt;
+      line-height: 1.35;
+      margin-bottom: 5mm;
+    }
+    .doc-legal .bold-line { font-family: Arial, sans-serif; font-size: 8pt; font-weight: 700; margin-bottom: 2px; }
+    .doc-legal .sum-line { font-family: Arial, sans-serif; font-size: 8pt; margin-bottom: 4px; }
 
-        .col-tetel { width: 8%; text-align: center; }
-        .col-nytsz { width: 17%; text-align: right; padding-right: 6px !important; }
-        .col-megn { width: 35%; text-align: left; }
-        .col-db { width: 8%; text-align: center; }
-        .col-spec { width: 32%; text-align: left; }
+    .note-box {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10mm;
+      font-family: Arial, sans-serif;
+    }
+    .note-box th {
+      background: #c95812;
+      color: #fff;
+      border: 1px solid #000;
+      padding: 3px;
+      font-size: 9pt;
+    }
+    .note-box td {
+      border: 1px solid #000;
+      height: 22mm;
+      padding: 6px 8px;
+      vertical-align: top;
+      font-size: 9pt;
+      white-space: pre-wrap;
+    }
 
-        .closing-block {
-            margin-top: 5mm;
-            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
-            color: #000000;
-        }
+    .sign-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10mm;
+      align-items: end;
+      margin-top: 4mm;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 11pt;
+    }
+    .sign-col { text-align: center; }
+    .sign-label { margin-bottom: 12mm; font-size: 10.5pt; }
+    .sign-line { border-top: 1px solid #555; padding-top: 3px; font-size: 10.5pt; }
 
-        .closing-ownership {
-            font-size: 8.5pt;
-            font-weight: 700;
-            margin-bottom: 2px;
-            line-height: 1.3;
-        }
+    .doc-footer {
+      margin-top: auto;
+      padding-top: 6mm;
+      font-family: Arial, sans-serif;
+      font-size: 8.5pt;
+      color: #333;
+    }
 
-        .closing-summary {
-            font-size: 8.5pt;
-            font-weight: 400;
-            margin-bottom: 4px;
-            line-height: 1.3;
-        }
+    /* ===== ADMIN PANEL ===== */
+    .sub-tabs { display: flex; gap: 16px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
+    .sub-tab {
+      background: none;
+      border: none;
+      padding: 10px 4px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+    .sub-tab.active { color: var(--orange-dark); border-bottom-color: var(--orange); }
 
-        .closing-declaration {
-            font-family: 'Noto Serif', 'Cambria', Georgia, serif;
-            font-size: 8.5pt;
-            text-align: justify;
-            line-height: 1.35;
-            margin-bottom: 5mm;
-        }
+    .admin-form-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.4fr 1.5fr 1fr;
+      gap: 12px;
+      align-items: end;
+    }
+    @media (max-width: 960px) { .admin-form-grid { grid-template-columns: 1fr 1fr; } }
+    .input-inline { display: flex; gap: 6px; }
+    .perm-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid #f1f5f9;
+    }
+    .perm-checks { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px; }
+    .perm-checks label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 
-        .notes-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 7mm;
-            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
-        }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th, .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .data-table th { font-size: 11px; text-transform: uppercase; color: var(--muted); background: #f8fafc; }
 
-        .notes-table th {
-            background-color: #C55A11;
-            color: #ffffff;
-            font-weight: 700;
-            text-align: center;
-            padding: 3px 6px;
-            border: 1px solid #000000;
-            font-size: 9pt;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+    .coming-soon {
+      background: #fff;
+      border-radius: 14px;
+      padding: 60px 20px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
 
-        .notes-table td {
-            border: 1px solid #000000;
-            min-height: 65px;
-            height: 68px;
-            vertical-align: top;
-            padding: 6px 8px;
-            font-size: 9pt;
-            white-space: pre-wrap;
-            background-color: #ffffff;
-        }
-
-        .signature-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            font-family: 'Noto Serif', 'Cambria', Georgia, serif;
-            font-size: 10pt;
-            margin-top: 2mm;
-        }
-
-        .sig-date {
-            width: 38%;
-            padding-top: 2px;
-        }
-
-        .sig-boxes {
-            width: 58%;
-            display: flex;
-            justify-content: space-between;
-            gap: 8mm;
-        }
-
-        .sig-box {
-            flex: 1;
-            text-align: center;
-        }
-
-        .sig-role {
-            font-size: 10pt;
-            text-transform: uppercase;
-            margin-bottom: 11mm;
-        }
-
-        .sig-line {
-            border-top: 1px solid #4b5563;
-            padding-top: 3px;
-            font-size: 10pt;
-        }
-
-        .doc-footer {
-            margin-top: auto;
-            padding-top: 4mm;
-            font-family: 'Calibri', 'Arial', 'Inter', sans-serif;
-            font-size: 8.5pt;
-            color: #1f2937;
-            display: flex;
-            align-items: baseline;
-        }
-
-        .doc-footer-page-num {
-            font-size: 11pt;
-            font-weight: 500;
-            margin-right: 2px;
-        }
-
-        /* =========================================================
-           NYOMTATÁSI STÍLUSOK (@media print)
-           ========================================================= */
-        @page {
-            size: A4 portrait;
-            margin: 0;
-        }
-
-        @media print {
-            html, body {
-                margin: 0 !important;
-                padding: 0 !important;
-                background: #ffffff !important;
-                width: 210mm !important;
-                height: auto !important;
-                overflow: visible !important;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-
-            #app-shell, #view-raktari_atadolap, #raktari-layout {
-                display: block !important;
-                height: auto !important;
-                overflow: visible !important;
-            }
-
-            #preview-panel {
-                display: block !important;
-                width: 100% !important;
-                height: auto !important;
-                overflow: visible !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                background: #ffffff !important;
-            }
-
-            #preview-scroll-area {
-                display: block !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                overflow: visible !important;
-                height: auto !important;
-            }
-
-            #pages-container {
-                transform: none !important;
-                width: 210mm !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                display: block !important;
-            }
-
-            .a4-page {
-                width: 210mm !important;
-                height: 297mm !important;
-                margin: 0 !important;
-                box-shadow: none !important;
-                border: none !important;
-                page-break-after: always !important;
-                break-after: page !important;
-                overflow: hidden !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-
-            .a4-page:last-child {
-                page-break-after: auto !important;
-                break-after: auto !important;
-            }
-
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-        }
-    </style>
+    /* ===== PRINT RULES ===== */
+    @page { size: A4 portrait; margin: 0; }
+    @media print {
+      body { background: #fff; }
+      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #adminView, #comingSoonView, #toast {
+        display: none !important;
+      }
+      .app-container { padding: 0; max-width: none; }
+      .gen-grid { display: block; }
+      .pages-wrapper { gap: 0; }
+      .a4-page {
+        box-shadow: none;
+        margin: 0;
+        width: 210mm;
+        height: 297mm;
+        page-break-after: always;
+        break-after: page;
+      }
+      .a4-page:last-child { page-break-after: auto; break-after: auto; }
+    }
+  </style>
 </head>
-<body class="h-screen overflow-hidden flex flex-col bg-slate-100">
+<body>
 
-    <!-- Értesítési sáv (Toast) -->
-    <div id="toast-container" class="no-print fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+<div id="toast"></div>
 
-    <!-- Egyedi Megerősítő Modál (confirm() helyett) -->
-    <div id="confirm-modal" class="no-print hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-200">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                </div>
-                <div>
-                    <h3 id="confirm-modal-title" class="text-base font-bold text-slate-900">Megerősítés</h3>
-                    <p id="confirm-modal-desc" class="text-xs text-slate-600 mt-0.5">Biztosan végrehajtod ezt a műveletet?</p>
-                </div>
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeConfirmModal(false)" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer">Mégse</button>
-                <button onclick="closeConfirmModal(true)" class="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors cursor-pointer">Törlés</button>
-            </div>
-        </div>
+<!-- ==================== LOGIN VIEW ==================== -->
+<div id="loginView">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo-box">
+        <img src="campuslog.png" alt="Campus" onerror="this.src=FALLBACK_LOGO" />
+      </div>
+      <h1>Dokumentum Generátor & Admin</h1>
+      <p>Jelentkezz be a céges fiókoddal a folytatáshoz</p>
     </div>
-
-    <!-- =========================================================
-         1. BEJELENTKEZŐ KÉPERNYŐ
-         ========================================================= -->
-    <section id="login-screen" class="no-print flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-slate-100 via-orange-50/40 to-slate-200 overflow-y-auto">
-        <div class="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-            <!-- Fejléc sáv -->
-            <div class="bg-gradient-to-r from-[#e87320] to-[#c55a11] p-6 text-white text-center">
-                <div class="inline-flex items-center justify-center bg-white rounded-xl px-4 py-2 shadow-md mb-3">
-                    <div id="login-logo-holder"></div>
-                </div>
-                <h1 class="text-lg font-bold tracking-tight">Dokumentum Generátor & Admin</h1>
-                <p class="text-xs text-orange-100 mt-1">Jelentkezz be a céges fiókoddal a folytatáshoz</p>
-            </div>
-
-            <!-- Demó / API figyelmeztető sáv (ha az API_URL nincs kitöltve) -->
-            <div id="demo-warning-banner" class="hidden bg-amber-50 border-b border-amber-200 px-5 py-3 text-xs text-amber-900">
-                <div class="flex items-start gap-2">
-                    <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <div>
-                        <span class="font-bold block">Helyi Demó Mód aktív</span>
-                        <span>Az <code class="bg-amber-100 px-1 rounded">API_URL</code> még nincs beállítva a kódban. A rendszer jelenleg a böngésző helyi memóriáját (localStorage) használja.</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bejelentkező űrlap -->
-            <form id="login-form" onsubmit="handleLogin(event)" class="p-6 space-y-4">
-                <div id="login-error-box" class="hidden bg-red-50 border border-red-200 text-red-700 text-xs font-medium px-3.5 py-2.5 rounded-xl flex items-center gap-2">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span id="login-error-text">Hibás felhasználónév vagy jelszó.</span>
-                </div>
-
-                <div>
-                    <label for="login-username" class="block text-xs font-semibold text-slate-700 mb-1">Felhasználónév</label>
-                    <input type="text" id="login-username" required autocomplete="username" placeholder="pl. kovacs.laszlo" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#e87320] focus:border-transparent transition-all">
-                </div>
-
-                <div>
-                    <label for="login-password" class="block text-xs font-semibold text-slate-700 mb-1">Jelszó</label>
-                    <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#e87320] focus:border-transparent transition-all">
-                </div>
-
-                <button type="submit" id="login-submit-btn" class="w-full bg-[#e87320] hover:bg-[#c55a11] active:scale-[0.99] text-white font-bold text-sm py-2.5 px-4 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2">
-                    <span id="login-btn-text">Bejelentkezés</span>
-                    <svg id="login-spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                </button>
-
-                <!-- Gyors Teszt / Demó belépés gomb (csak ha nincs API_URL) -->
-                <div id="demo-login-wrapper" class="hidden pt-2 border-t border-slate-100">
-                    <button type="button" onclick="quickDemoLogin()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs py-2.5 px-4 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4 text-[#e87320]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        Teszt / Demó belépés (admin / admin)
-                    </button>
-                </div>
-            </form>
+    <div class="login-body">
+      <div id="loginError" class="alert-error hidden"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="loginUsername">Felhasználónév</label>
+          <input type="text" id="loginUsername" class="form-control" autocomplete="username" required />
         </div>
+        <div class="form-group">
+          <label for="loginPassword">Jelszó</label>
+          <div class="password-wrap">
+            <input type="password" id="loginPassword" class="form-control" autocomplete="current-password" required />
+            <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility(this)" title="Jelszó mutatása / elrejtése">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+          </div>
+        </div>
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block">Bejelentkezés</button>
+      </form>
+
+      <div id="demoBanner" class="demo-banner hidden">
+        <strong>Demó mód aktív</strong> (nincs beállítva Google Sheets <code>API_URL</code>).<br />
+        <button type="button" class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="demoLogin()">Teszt / Demó belépés (admin / admin)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MAIN APP ==================== -->
+<div id="appView" class="hidden">
+  <header class="navbar no-print">
+    <div class="nav-left">
+      <div class="nav-brand">
+        <img src="campuslog.png" alt="Campus" onerror="this.src=FALLBACK_LOGO" />
+      </div>
+      <nav class="nav-tabs" id="mainNavTabs"></nav>
+    </div>
+    <div class="nav-right">
+      <span class="user-badge" id="navUserBadge"></span>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Kijelentkezés</button>
+    </div>
+  </header>
+
+  <main class="app-container">
+
+    <!-- ===== RAKTÁRI ÁTADÓLAP GENERATOR ===== -->
+    <section id="docRaktariView" class="hidden">
+      <div class="gen-grid">
+        <!-- Bal oldali vezérlőpanel -->
+        <div class="left-controls no-print">
+          <div class="panel">
+            <h3>1. Adatok betöltése (Google Sheets / CSV)</h3>
+            <div class="dropzone" id="dropzone" onclick="document.getElementById('csvFileInput').click()">
+              Húzd ide a <strong>.csv / .tsv</strong> fájlt, vagy kattints a tallózáshoz
+              <input type="file" id="csvFileInput" accept=".csv,.tsv,.txt" class="hidden" />
+            </div>
+            <textarea id="pasteInput" class="paste-box" placeholder="Vagy másold ki a Google Táblázat sorait (Ctrl+C) és illeszd be ide (Ctrl+V)..."></textarea>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <button class="btn btn-primary btn-sm" onclick="parsePastedData()">Adatok beolvasása</button>
+              <button class="btn btn-outline btn-sm" onclick="loadSampleData()">Mintaadatok</button>
+            </div>
+            <div id="dateFilterSection" class="hidden" style="margin-top:12px;">
+              <div style="font-size:12px; font-weight:600; color:#475569;">Talált átadási dátumok (kattints a szűréshez):</div>
+              <div class="date-chips" id="dateChips"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>2. Átadó, Átvevő és Dátum</h3>
+            <div class="row-2">
+              <div class="form-group">
+                <label>Átvevő egység kódja</label>
+                <input id="recCode" class="form-control" value="5120" oninput="renderDocument()" />
+              </div>
+              <div class="form-group">
+                <label>Átvevő egység neve</label>
+                <input id="recName" class="form-control" value="Raktár" oninput="renderDocument()" />
+              </div>
+            </div>
+            <div class="row-2">
+              <div class="form-group">
+                <label>Átadó egység kódja</label>
+                <input id="sndCode" class="form-control" value="3101" oninput="renderDocument()" />
+              </div>
+              <div class="form-group">
+                <label>Átadó egység neve</label>
+                <input id="sndName" class="form-control" value="Központi raktár" oninput="renderDocument()" />
+              </div>
+            </div>
+            <div class="row-2">
+              <div class="form-group">
+                <label>Átadó aláíró</label>
+                <input id="sndSign" class="form-control" value="(név)" oninput="renderDocument()" />
+              </div>
+              <div class="form-group">
+                <label>Átvevő aláíró</label>
+                <input id="recSign" class="form-control" value="Kovács László" oninput="renderDocument()" />
+              </div>
+            </div>
+            <div class="row-2">
+              <div class="form-group">
+                <label>Átadás dátuma</label>
+                <input id="docDate" class="form-control" value="2025.04.08." oninput="renderDocument()" />
+              </div>
+              <div class="form-group">
+                <label>Egyedi logó (opcionális)</label>
+                <input type="file" id="logoUpload" accept="image/*" class="form-control" style="padding:6px;" />
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Megjegyzés</label>
+              <textarea id="docNote" class="form-control" rows="2" oninput="renderDocument()"></textarea>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>3. Tételek szerkesztése (<span id="itemCountBadge">0</span> tétel)</h3>
+            <div style="max-height:260px; overflow:auto;">
+              <table class="mini-table">
+                <thead>
+                  <tr>
+                    <th style="width:22%;">NYTSZ</th>
+                    <th style="width:38%;">Megnevezés</th>
+                    <th style="width:12%;">Db</th>
+                    <th style="width:20%;">Megj.</th>
+                    <th style="width:8%;"></th>
+                  </tr>
+                </thead>
+                <tbody id="editItemsBody"></tbody>
+              </table>
+            </div>
+            <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="addEmptyItem()">+ Új tétel hozzáadása</button>
+          </div>
+        </div>
+
+        <!-- Jobb oldali A4 előnézet -->
+        <div>
+          <div class="preview-toolbar no-print">
+            <div>
+              <strong>Élő A4 nyomtatási kép</strong>
+              <span id="pageCountInfo" style="color:var(--muted); font-size:13px; margin-left:8px;"></span>
+            </div>
+            <button class="btn btn-primary" onclick="printAndLog()">🖨️ Nyomtatás / Mentés PDF-ként</button>
+          </div>
+          <div class="pages-wrapper" id="pagesContainer"></div>
+        </div>
+      </div>
     </section>
 
-    <!-- =========================================================
-         2. ALKALMAZÁS FŐ KERET (BEJELENTKEZÉS UTÁN)
-         ========================================================= -->
-    <div id="app-shell" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+    <!-- ===== COMING SOON PLACEHOLDER ===== -->
+    <section id="comingSoonView" class="hidden">
+      <div class="coming-soon">
+        <h2 id="comingSoonTitle" style="margin-top:0;">Fejlesztés alatt</h2>
+        <p style="color:var(--muted); max-width:480px; margin:0 auto;">Ez a dokumentumtípus már elő van készítve a jogosultságkezelőben, a sablonja a következő frissítésben kerül be.</p>
+      </div>
+    </section>
 
-        <!-- FELSŐ NAVIGÁCIÓS SÁV -->
-        <header class="no-print bg-slate-900 text-white px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-md z-30 shrink-0">
-            <!-- Bal oldal: Márka + Modul fülek -->
-            <div class="flex items-center gap-4 flex-wrap">
-                <div class="flex items-center gap-2.5 pr-3 border-r border-slate-700">
-                    <div id="nav-logo-holder" class="bg-white rounded-lg px-2.5 py-1 shadow-sm flex items-center justify-center"></div>
-                </div>
+    <!-- ===== ADMIN PANEL ===== -->
+    <section id="adminView" class="hidden">
+      <div class="sub-tabs">
+        <button class="sub-tab active" id="tabUsersBtn" onclick="switchAdminTab('users')">Felhasználók kezelése</button>
+        <button class="sub-tab" id="tabLogsBtn" onclick="switchAdminTab('logs')">Dokumentum Napló</button>
+      </div>
 
-                <nav id="main-nav-tabs" class="flex items-center gap-1 flex-wrap">
-                    <!-- Dinamikusan generált fülek a jogosultságok alapján -->
-                </nav>
+      <!-- Felhasználók kezelése -->
+      <div id="adminUsersPane">
+        <div class="panel">
+          <h3>Új felhasználó létrehozása</h3>
+          <div class="admin-form-grid">
+            <div class="form-group" style="margin:0;">
+              <label>Teljes név</label>
+              <input id="newFullName" class="form-control" placeholder="pl. Kovács László" />
             </div>
-
-            <!-- Jobb oldal: Felhasználó + Kijelentkezés -->
-            <div class="flex items-center gap-3 ml-auto">
-                <span id="mode-pill" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"></span>
-                <div class="text-right leading-tight">
-                    <div id="nav-user-fullname" class="text-xs font-semibold text-white"></div>
-                    <div id="nav-user-role" class="text-[10px] text-orange-300 font-medium uppercase"></div>
-                </div>
-                <button onclick="handleLogout()" class="bg-slate-800 hover:bg-red-600 text-slate-200 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 hover:border-red-500 transition-colors cursor-pointer flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                    <span class="hidden sm:inline">Kilépés</span>
-                </button>
+            <div class="form-group" style="margin:0;">
+              <label>Felhasználónév</label>
+              <div class="input-inline">
+                <input id="newUsername" class="form-control" placeholder="kovacs.laszlo" />
+                <button type="button" class="btn btn-outline btn-sm" onclick="generateUsername()">Generál</button>
+              </div>
             </div>
-        </header>
-
-        <!-- =========================================================
-             NÉZET A: RAKTÁRI ÁTADÓ LAP GENERÁTOR
-             ========================================================= -->
-        <div id="view-raktari_atadolap" class="app-view hidden flex-1 flex flex-col lg:flex-row h-full overflow-hidden">
-            <div id="raktari-layout" class="flex-1 flex flex-col lg:flex-row h-full overflow-hidden">
-                <!-- BAL OLDALI VEZÉRLŐPANEL -->
-                <aside class="no-print w-full lg:w-[430px] xl:w-[460px] bg-white border-r border-slate-200 flex flex-col h-[46vh] lg:h-full shadow-lg z-20 shrink-0">
-                    <!-- Belső fülek -->
-                    <div class="flex border-b border-slate-200 bg-slate-50 px-2 pt-2 gap-1 shrink-0">
-                        <button id="tab-btn-import" onclick="switchSubTab('import')" class="tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-[#e87320] text-[#c55a11] bg-white transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                            Import & Dátumok
-                        </button>
-                        <button id="tab-btn-details" onclick="switchSubTab('details')" class="tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                            Lap adatai
-                        </button>
-                        <button id="tab-btn-items" onclick="switchSubTab('items')" class="tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                            Tételek (<span id="tab-items-count">0</span>)
-                        </button>
-                    </div>
-
-                    <!-- Görgethető tartalom -->
-                    <div class="flex-1 overflow-y-auto p-4 space-y-5">
-                        <!-- 1. FÜL: IMPORT & DÁTUMOK -->
-                        <div id="tab-content-import" class="space-y-4">
-                            <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-center justify-between gap-3">
-                                <div class="text-xs text-orange-900">
-                                    <span class="font-semibold block">Kipróbálás azonnal</span>
-                                    <span class="text-orange-700">Többblokkos Google Sheets mintaadat</span>
-                                </div>
-                                <button onclick="loadSampleData()" class="shrink-0 bg-[#e87320] hover:bg-[#c55a11] text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition-colors cursor-pointer">
-                                    Minta betöltése
-                                </button>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">1. CSV / TSV fájl feltöltése</label>
-                                <div id="drop-zone" class="border-2 border-dashed border-slate-300 hover:border-[#e87320] rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50 hover:bg-orange-50/40">
-                                    <input type="file" id="csv-file-input" accept=".csv,.tsv,.txt" class="hidden">
-                                    <p class="text-xs font-medium text-slate-700">Húzd ide a CSV/TSV fájlt, vagy <span class="text-[#e87320] underline">tallózz</span></p>
-                                    <p class="text-[11px] text-slate-500 mt-0.5">Kezeli a több egymás melletti blokkot (A-E, G-K, M-Q)</p>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="flex items-center justify-between mb-1.5">
-                                    <label for="paste-area" class="text-xs font-semibold text-slate-700">2. Google Sheets másolás-beillesztés</label>
-                                    <button onclick="document.getElementById('paste-area').value=''" class="text-[11px] text-slate-400 hover:text-slate-600 cursor-pointer">Törlés</button>
-                                </div>
-                                <textarea id="paste-area" rows="4" placeholder="Illeszd be ide a Google Sheets-ből kimásolt cellákat (Ctrl+V)..." class="w-full rounded-xl border border-slate-300 p-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#e87320] bg-slate-50"></textarea>
-                                <button onclick="parsePastedText()" class="mt-2 w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-colors cursor-pointer">
-                                    Beillesztett táblázat feldolgozása
-                                </button>
-                            </div>
-
-                            <div id="import-stats-box" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-900">
-                                <div class="font-semibold mb-0.5">Sikeres feldolgozás</div>
-                                <p id="import-stats-text" class="text-[11px] text-emerald-800"></p>
-                            </div>
-
-                            <div id="dates-section" class="hidden pt-2 border-t border-slate-200">
-                                <label class="block text-xs font-semibold text-slate-700 mb-2">Átadás dátumának kiválasztása:</label>
-                                <div id="date-chips-container" class="flex flex-wrap gap-2"></div>
-                            </div>
-                        </div>
-
-                        <!-- 2. FÜL: LAP ADATAI -->
-                        <div id="tab-content-details" class="hidden space-y-4">
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                                <h3 class="text-xs font-bold text-[#c55a11] uppercase tracking-wider">Átvevő egység</h3>
-                                <div class="grid grid-cols-3 gap-2">
-                                    <div>
-                                        <label class="block text-[11px] text-slate-600 mb-0.5">Egység kódja</label>
-                                        <input type="text" id="input-receiver-code" value="5120" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                    </div>
-                                    <div class="col-span-2">
-                                        <label class="block text-[11px] text-slate-600 mb-0.5">Egység neve</label>
-                                        <input type="text" id="input-receiver-name" value="Raktár" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                                <h3 class="text-xs font-bold text-[#c55a11] uppercase tracking-wider">Átadó egység (láblécben is)</h3>
-                                <div class="grid grid-cols-3 gap-2">
-                                    <div>
-                                        <label class="block text-[11px] text-slate-600 mb-0.5">Egység kódja</label>
-                                        <input type="text" id="input-sender-code" value="3101" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                    </div>
-                                    <div class="col-span-2">
-                                        <label class="block text-[11px] text-slate-600 mb-0.5">Egység neve</label>
-                                        <input type="text" id="input-sender-name" value="Központi raktár" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
-                                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Dátum és aláírók</h3>
-                                <div>
-                                    <label class="block text-[11px] text-slate-600 mb-0.5">Átadás dátuma (ÉÉÉÉ.HH.NN.)</label>
-                                    <div class="flex gap-2">
-                                        <input type="date" id="input-doc-date-picker" onchange="onDatePickerChange()" class="w-1/2 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                        <input type="text" id="input-doc-date-text" value="2025.04.08." oninput="onDateTextChange()" class="w-1/2 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                    </div>
-                                    <p id="date-preview-hint" class="text-[11px] text-slate-500 mt-1"></p>
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block text-[11px] text-slate-600 mb-0.5">Átadó neve</label>
-                                        <input type="text" id="input-sender-person" value="(név)" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[11px] text-slate-600 mb-0.5">Átvevő neve</label>
-                                        <input type="text" id="input-receiver-person" value="Kovács László" oninput="updateMetadata()" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                                <label for="input-notes" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Megjegyzés</label>
-                                <textarea id="input-notes" rows="3" oninput="updateMetadata()" placeholder="Opcionális megjegyzés..." class="w-full rounded-lg border border-slate-300 p-2 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none bg-white"></textarea>
-                            </div>
-
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Többoldalas tördelés</h3>
-                                    <span id="max-rows-badge" class="text-xs font-bold text-[#c55a11] bg-orange-100 px-2 py-0.5 rounded-md">18 sor / oldal</span>
-                                </div>
-                                <input type="range" id="input-max-rows" min="6" max="32" value="18" oninput="updatePaginationSetting()" class="w-full accent-[#e87320] cursor-pointer">
-                            </div>
-
-                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Fejléc logó</h3>
-                                <div class="flex items-center gap-2">
-                                    <label class="flex-1 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 text-xs font-medium py-1.5 px-3 rounded-lg text-center cursor-pointer transition-colors">
-                                        Saját logó feltöltése
-                                        <input type="file" id="logo-file-input" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
-                                    </label>
-                                    <button id="btn-reset-logo" onclick="resetLogo()" class="hidden bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-medium py-1.5 px-2.5 rounded-lg cursor-pointer">
-                                        Alapértelmezett
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 3. FÜL: TÉTELEK SZERKESZTÉSE -->
-                        <div id="tab-content-items" class="hidden space-y-3">
-                            <div class="flex items-center justify-between gap-2">
-                                <button onclick="addNewItem()" class="flex-1 bg-[#e87320] hover:bg-[#c55a11] text-white text-xs font-semibold py-2 px-3 rounded-lg shadow-sm transition-colors cursor-pointer">
-                                    + Új tétel hozzáadása
-                                </button>
-                                <button onclick="clearCurrentItems()" class="bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 border border-slate-200 text-xs font-medium py-2 px-3 rounded-lg transition-colors cursor-pointer">
-                                    Ürítés
-                                </button>
-                            </div>
-                            <div id="items-editor-list" class="space-y-2.5"></div>
-                        </div>
-                    </div>
-                </aside>
-
-                <!-- JOBB OLDALI ÉLŐ A4 ELŐNÉZET -->
-                <main id="preview-panel" class="flex-1 flex flex-col bg-slate-200/80 h-[54vh] lg:h-full overflow-hidden">
-                    <div class="no-print bg-white border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-sm shrink-0 z-10">
-                        <div class="flex items-center gap-2 text-xs">
-                            <span class="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-lg border border-slate-200">
-                                Oldalak: <span id="stat-pages" class="text-[#c55a11]">1</span>
-                            </span>
-                            <span class="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-lg border border-slate-200">
-                                Tételek: <span id="stat-items" class="text-slate-900">0</span>
-                            </span>
-                            <span class="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-lg border border-slate-200 hidden sm:inline-block">
-                                Összesen: <span id="stat-qty" class="text-slate-900">0</span> db
-                            </span>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                            <div class="hidden sm:flex items-center bg-slate-100 rounded-lg border border-slate-200 p-0.5">
-                                <button onclick="changeZoom(-0.1)" class="px-2 py-1 text-xs font-bold text-slate-600 hover:bg-white rounded-md cursor-pointer">−</button>
-                                <span id="zoom-label" class="px-2 text-xs font-semibold text-slate-700 min-w-[44px] text-center">80%</span>
-                                <button onclick="changeZoom(0.1)" class="px-2 py-1 text-xs font-bold text-slate-600 hover:bg-white rounded-md cursor-pointer">+</button>
-                                <button onclick="autoFitZoom()" class="px-2 py-1 text-[11px] font-medium text-slate-500 hover:text-slate-800 hover:bg-white rounded-md cursor-pointer border-l border-slate-200 ml-0.5">Illesztés</button>
-                            </div>
-
-                            <button onclick="handlePrintAndLog()" class="bg-[#e87320] hover:bg-[#c55a11] active:scale-[0.98] text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                                Nyomtatás / Mentés PDF-ként
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="preview-scroll-area" class="flex-1 overflow-auto p-4 sm:p-8 flex justify-center items-start">
-                        <div id="pages-container" style="transform-origin: top center; transition: transform 0.15s ease;"></div>
-                    </div>
-                </main>
+            <div class="form-group" style="margin:0;">
+              <label>Jelszó</label>
+              <div class="input-inline">
+                <input id="newPassword" class="form-control" placeholder="Jelszó" />
+                <button type="button" class="btn btn-outline btn-sm" style="color:var(--orange-dark); border-color:var(--peach);" onclick="generatePassword()">Generál</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copyNewPassword()">Másol</button>
+              </div>
             </div>
+            <div class="form-group" style="margin:0;">
+              <label>Szerepkör</label>
+              <select id="newRole" class="form-control">
+                <option value="user">Felhasználó</option>
+                <option value="admin">Adminisztrátor</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="perm-row">
+            <div class="perm-checks">
+              <strong>Dokumentum jogosultságok:</strong>
+              <label><input type="checkbox" class="new-perm" value="raktari_atadolap" checked /> Raktári átadólap</label>
+              <label><input type="checkbox" class="new-perm" value="egysegek_kozotti" /> Egységek közötti átadás</label>
+              <label><input type="checkbox" class="new-perm" value="selejtezes" /> Selejtezési jegyzőkönyv</label>
+            </div>
+            <button class="btn btn-primary" onclick="createUser()">+ Felhasználó létrehozása</button>
+          </div>
         </div>
 
-        <!-- =========================================================
-             NÉZET B: EGYSÉGEK KÖZÖTTI ÁTADÁS (HAMAROSAN)
-             ========================================================= -->
-        <div id="view-egysegek_kozotti" class="app-view no-print hidden flex-1 flex items-center justify-center p-6 overflow-y-auto">
-            <div class="max-w-lg w-full bg-white rounded-2xl shadow-lg border border-slate-200 p-8 text-center space-y-4">
-                <div class="w-16 h-16 rounded-2xl bg-orange-100 text-[#e87320] flex items-center justify-center mx-auto">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                </div>
-                <span class="inline-block bg-orange-100 text-[#c55a11] text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">Fejlesztés alatt</span>
-                <h2 class="text-xl font-bold text-slate-900">Egységek közötti átadás</h2>
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    Ez a dokumentumtípus hamarosan elérhető lesz. A jogosultságod már aktív hozzá, így amint elkészül a sablon, azonnal használhatod ezen a fülön.
-                </p>
-            </div>
-        </div>
-
-        <!-- =========================================================
-             NÉZET C: SELEJTEZÉSI JEGYZŐKÖNYV (HAMAROSAN)
-             ========================================================= -->
-        <div id="view-selejtezes" class="app-view no-print hidden flex-1 flex items-center justify-center p-6 overflow-y-auto">
-            <div class="max-w-lg w-full bg-white rounded-2xl shadow-lg border border-slate-200 p-8 text-center space-y-4">
-                <div class="w-16 h-16 rounded-2xl bg-orange-100 text-[#e87320] flex items-center justify-center mx-auto">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </div>
-                <span class="inline-block bg-orange-100 text-[#c55a11] text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">Fejlesztés alatt</span>
-                <h2 class="text-xl font-bold text-slate-900">Selejtezési jegyzőkönyv</h2>
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    A selejtezési jegyzőkönyv generátor hamarosan elérhető lesz ezen a felületen. A jogosultságkezelés és a központi naplózás már elő van készítve hozzá.
-                </p>
-            </div>
-        </div>
-
-        <!-- =========================================================
-             NÉZET D: ADMIN PANEL (CSAK ADMIN)
-             ========================================================= -->
-        <div id="view-admin" class="app-view no-print hidden flex-1 flex flex-col overflow-hidden bg-slate-100">
-            <!-- Admin al-fülek -->
-            <div class="bg-white border-b border-slate-200 px-6 pt-3 flex items-center gap-2 shrink-0">
-                <button id="admin-tab-users" onclick="switchAdminTab('users')" class="px-4 py-2.5 text-xs font-bold border-b-2 border-[#e87320] text-[#c55a11] cursor-pointer transition-colors">
-                    Felhasználók kezelése
-                </button>
-                <button id="admin-tab-logs" onclick="switchAdminTab('logs')" class="px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 cursor-pointer transition-colors">
-                    Dokumentum Napló
-                </button>
-            </div>
-
-            <!-- Admin görgethető tartalom -->
-            <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-                <div class="max-w-6xl mx-auto space-y-6">
-
-                    <!-- ADMIN 1. FÜL: FELHASZNÁLÓK KEZELÉSE -->
-                    <div id="admin-content-users" class="space-y-6">
-                        <!-- Új felhasználó létrehozása kártya -->
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-                            <h2 class="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                <span class="w-2 h-5 rounded-full bg-[#e87320]"></span>
-                                Új felhasználó létrehozása
-                            </h2>
-                            <form id="add-user-form" onsubmit="handleAddUser(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Teljes név</label>
-                                    <input type="text" id="new-user-fullname" required placeholder="pl. Kovács László" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Felhasználónév</label>
-                                    <div class="flex gap-1.5">
-                                        <input type="text" id="new-user-username" required placeholder="kovacs.laszlo" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                        <button type="button" onclick="generateUsernameFromFullname()" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold px-2.5 rounded-xl border border-slate-300 cursor-pointer" title="Generálás a teljes névből">Generál</button>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Jelszó</label>
-                                    <div class="flex gap-1.5">
-                                        <input type="text" id="new-user-password" required placeholder="Erős jelszó" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs font-mono focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                        <button type="button" onclick="generateStrongPassword()" class="shrink-0 bg-orange-50 hover:bg-orange-100 text-[#c55a11] text-[11px] font-semibold px-2.5 rounded-xl border border-orange-200 cursor-pointer" title="Erős jelszó generálása">Generál</button>
-                                        <button type="button" onclick="copyNewPassword()" class="shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-semibold px-2.5 rounded-xl border border-slate-300 cursor-pointer" title="Másolás vágólapra">Másol</button>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Szerepkör</label>
-                                    <select id="new-user-role" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs bg-white focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                        <option value="user">Felhasználó</option>
-                                        <option value="admin">Adminisztrátor</option>
-                                    </select>
-                                </div>
-
-                                <div class="md:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-4 pt-1">
-                                    <span class="text-xs font-semibold text-slate-700">Dokumentum jogosultságok:</span>
-                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                                        <input type="checkbox" id="new-perm-raktari_atadolap" checked class="rounded accent-[#e87320] w-4 h-4">
-                                        Raktári átadólap
-                                    </label>
-                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                                        <input type="checkbox" id="new-perm-egysegek_kozotti" class="rounded accent-[#e87320] w-4 h-4">
-                                        Egységek közötti átadás
-                                    </label>
-                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                                        <input type="checkbox" id="new-perm-selejtezes" class="rounded accent-[#e87320] w-4 h-4">
-                                        Selejtezési jegyzőkönyv
-                                    </label>
-                                </div>
-
-                                <div class="flex items-end justify-end">
-                                    <button type="submit" id="btn-add-user" class="w-full bg-[#e87320] hover:bg-[#c55a11] text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow-sm transition-colors cursor-pointer">
-                                        + Felhasználó létrehozása
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <!-- Meglévő felhasználók táblázata -->
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-                                <h2 class="text-sm font-bold text-slate-900">Regisztrált felhasználók</h2>
-                                <button onclick="loadUsersList()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
-                                    Frissítés
-                                </button>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                                            <th class="py-3 px-4">Teljes név</th>
-                                            <th class="py-3 px-4">Felhasználónév</th>
-                                            <th class="py-3 px-4">Szerepkör</th>
-                                            <th class="py-3 px-4">Jogosultságok</th>
-                                            <th class="py-3 px-4 text-right">Műveletek</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="admin-users-tbody" class="divide-y divide-slate-100 text-xs">
-                                        <!-- Dinamikusan töltődik -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ADMIN 2. FÜL: DOKUMENTUM NAPLÓ -->
-                    <div id="admin-content-logs" class="hidden space-y-4">
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                                <h2 class="text-sm font-bold text-slate-900">Elkészített dokumentumok naplója</h2>
-                                <div class="flex items-center gap-2 w-full sm:w-auto">
-                                    <input type="text" id="logs-search-input" oninput="renderLogsTable()" placeholder="Keresés név, dátum, egység alapján..." class="flex-1 sm:w-64 rounded-xl border border-slate-300 px-3 py-1.5 text-xs focus:ring-2 focus:ring-[#e87320] focus:outline-none">
-                                    <button onclick="loadLogsList()" class="bg-[#e87320] hover:bg-[#c55a11] text-white text-xs font-semibold px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer shrink-0">
-                                        Frissítés
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                                            <th class="py-3 px-4">Időpont</th>
-                                            <th class="py-3 px-4">Felhasználó</th>
-                                            <th class="py-3 px-4">Dokumentum típusa</th>
-                                            <th class="py-3 px-4">Részletek</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="admin-logs-tbody" class="divide-y divide-slate-100 text-xs">
-                                        <!-- Dinamikusan töltődik -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
-        <!-- Nincs jogosultság üzenet (ha egy felhasználónak egyik modulhoz sincs joga) -->
-        <div id="view-no-access" class="app-view no-print hidden flex-1 flex items-center justify-center p-6">
-            <div class="max-w-md bg-white rounded-2xl shadow-md border border-slate-200 p-8 text-center space-y-3">
-                <h2 class="text-lg font-bold text-slate-900">Nincs aktív dokumentum jogosultság</h2>
-                <p class="text-xs text-slate-600">Kérd meg a rendszeradminisztrátort, hogy engedélyezzen legalább egy dokumentumtípust a fiókodhoz.</p>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        /* =========================================================
-           GOOGLE APPS SCRIPT WEB APP URL BEÁLLÍTÁSA
-           ========================================================= */
-        const API_URL = "https://script.google.com/macros/s/AKfycbxg1CE40fEftdrzepOQB4jN4dzXj_boAmFdXa-7hwH0HZSFV0t_1hRlTh1aBCbTAS_Rxw/exec";
-
-        function isDemoMode() {
-            return !API_URL || API_URL === "IDE_ILLESZD_BE_A_GOOGLE_APPS_SCRIPT_URL_T" || !API_URL.startsWith("http");
-        }
-
-        /* =========================================================
-           KONSTANSOK ÉS ALKALMAZÁS ÁLLAPOT
-           ========================================================= */
-        const DOC_MODULES = [
-            { key: 'raktari_atadolap', label: 'Raktári átadólap' },
-            { key: 'egysegek_kozotti', label: 'Egységek közötti átadás' },
-            { key: 'selejtezes', label: 'Selejtezési jegyzőkönyv' }
-        ];
-
-        const STORAGE_USERS_KEY = 'campus_demo_users_v1';
-        const STORAGE_LOGS_KEY = 'campus_demo_logs_v1';
-
-        const appState = {
-            currentUser: null,       // { username, fullName, role, permissions: [] }
-            currentPassword: null,   // API kérések hitelesítéséhez
-            activeView: null,        // 'raktari_atadolap' | 'egysegek_kozotti' | 'selejtezes' | 'admin'
-            adminUsers: [],
-            adminLogs: [],
-            confirmCallback: null
-        };
-
-        // Raktári átadólap állapot
-        const docState = {
-            allImportedItems: [],
-            selectedDateKey: 'ALL',
-            activeItems: [
-                { nytsz: '140041', megnevezes: 'Bankett asztal 20 db', db: 1, spec: '' },
-                { nytsz: '500015', megnevezes: 'KOCSI ÜLÉS', db: 1, spec: '' },
-                { nytsz: '300294', megnevezes: 'Fotel', db: 1, spec: '' },
-                { nytsz: '300098', megnevezes: 'Kemence', db: 1, spec: '' },
-                { nytsz: '140069', megnevezes: 'Kanapé 4 db', db: 1, spec: '' },
-                { nytsz: '300148', megnevezes: 'Kiszolgáló mobilpult', db: 4, spec: '' }
-            ],
-            meta: {
-                receiverCode: '5120',
-                receiverName: 'Raktár',
-                senderCode: '3101',
-                senderName: 'Központi raktár',
-                senderPerson: '(név)',
-                receiverPerson: 'Kovács László',
-                docDateRaw: '2025.04.08.',
-                notes: ''
-            },
-            maxRowsPerPage: 18,
-            customLogoUrl: null,
-            zoom: 0.8
-        };
-
-        const DEFAULT_CAMPUS_LOGO_SVG = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 56" width="175" height="35" style="display:block;">
-                <rect x="0" y="3" width="48" height="48" rx="4" fill="#e87320"/>
-                <circle cx="24" cy="13" r="5" fill="#FFFFFF"/>
-                <path d="M 5 11 C 18 14, 21 24, 21 27 C 21 30, 18 40, 5 43 L 5 35 C 12 33, 14 29, 14 27 C 14 25, 12 21, 5 19 Z" fill="#FFFFFF"/>
-                <path d="M 43 11 C 30 14, 27 24, 27 27 C 27 30, 30 40, 43 43 L 43 35 C 36 33, 34 29, 34 27 C 34 25, 36 21, 43 19 Z" fill="#FFFFFF"/>
-                <text x="58" y="42" font-family="'Inter', 'Arial', sans-serif" font-weight="700" font-size="42" letter-spacing="-1.2" fill="#e87320">campus</text>
-            </svg>
-        `;
-
-        function getCampusLogoHtml(heightPx) {
-            const fallbackSvg = DEFAULT_CAMPUS_LOGO_SVG.replace(
-                'width="175" height="35"',
-                `style="height: ${heightPx}px; width: auto; display: block;"`
-            );
-            return `
-                <span style="display: inline-flex; align-items: center;">
-                    <img src="campuslog.png" alt="Campus Logo" style="height: ${heightPx}px; width: auto; object-fit: contain; display: block;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <span style="display: none;">${fallbackSvg}</span>
-                </span>
-            `;
-        }
-
-        /* =========================================================
-           HELYI DEMÓ ADATBÁZIS (localStorage) & KÖZPONTI API RÉTEG
-           ========================================================= */
-        function initDemoStorage() {
-            if (!localStorage.getItem(STORAGE_USERS_KEY)) {
-                const defaultUsers = [
-                    {
-                        username: 'admin',
-                        password: 'admin',
-                        fullName: 'Rendszeradminisztrátor',
-                        role: 'admin',
-                        permissions: ['raktari_atadolap', 'egysegek_kozotti', 'selejtezes']
-                    },
-                    {
-                        username: 'kovacs.laszlo',
-                        password: 'User2025!',
-                        fullName: 'Kovács László',
-                        role: 'user',
-                        permissions: ['raktari_atadolap']
-                    }
-                ];
-                localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(defaultUsers));
-            }
-            if (!localStorage.getItem(STORAGE_LOGS_KEY)) {
-                const defaultLogs = [
-                    {
-                        timestamp: '2025. 04. 08. 10:15',
-                        username: 'admin',
-                        fullName: 'Rendszeradminisztrátor',
-                        docType: 'Raktári átadólap',
-                        details: 'Dátum: 2025.04.08., Átadó: 3101 - Központi raktár, Átvevő: 5120 - Raktár, Tételek: 6 tétel / 9 db'
-                    }
-                ];
-                localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(defaultLogs));
-            }
-        }
-
-        async function apiCall(payload) {
-            if (isDemoMode()) {
-                return handleDemoApi(payload);
-            }
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                const text = await response.text();
-                return JSON.parse(text);
-            } catch (err) {
-                console.error('API hiba:', err);
-                return { ok: false, error: 'Nem sikerült csatlakozni a Google Sheets szerverhez. Ellenőrizd az API_URL beállítást!' };
-            }
-        }
-
-        function handleDemoApi(payload) {
-            initDemoStorage();
-            const users = JSON.parse(localStorage.getItem(STORAGE_USERS_KEY) || '[]');
-            const logs = JSON.parse(localStorage.getItem(STORAGE_LOGS_KEY) || '[]');
-
-            const verifyAdmin = () => users.find(u => u.username === payload.adminUser && u.password === payload.adminPass && u.role === 'admin');
-
-            switch (payload.action) {
-                case 'login': {
-                    const found = users.find(u => u.username === payload.username && u.password === payload.password);
-                    if (!found) return { ok: false, error: 'Hibás felhasználónév vagy jelszó.' };
-                    return {
-                        ok: true,
-                        user: {
-                            username: found.username,
-                            fullName: found.fullName,
-                            role: found.role,
-                            permissions: Array.isArray(found.permissions) ? found.permissions : []
-                        }
-                    };
-                }
-                case 'getUsers': {
-                    if (!verifyAdmin()) return { ok: false, error: 'Nincs admin jogosultság.' };
-                    return {
-                        ok: true,
-                        users: users.map(u => ({
-                            username: u.username,
-                            fullName: u.fullName,
-                            role: u.role,
-                            permissions: Array.isArray(u.permissions) ? u.permissions : []
-                        }))
-                    };
-                }
-                case 'addUser': {
-                    if (!verifyAdmin()) return { ok: false, error: 'Nincs admin jogosultság.' };
-                    const nu = payload.newUser;
-                    if (users.some(u => u.username.toLowerCase() === nu.username.toLowerCase())) {
-                        return { ok: false, error: 'Ez a felhasználónév már létezik!' };
-                    }
-                    users.push({
-                        username: nu.username,
-                        password: nu.password,
-                        fullName: nu.fullName,
-                        role: nu.role || 'user',
-                        permissions: nu.permissions || []
-                    });
-                    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
-                    return { ok: true };
-                }
-                case 'updateUserPermissions': {
-                    if (!verifyAdmin()) return { ok: false, error: 'Nincs admin jogosultság.' };
-                    const idx = users.findIndex(u => u.username === payload.targetUsername);
-                    if (idx === -1) return { ok: false, error: 'Felhasználó nem található.' };
-                    users[idx].permissions = payload.permissions || [];
-                    if (payload.role) users[idx].role = payload.role;
-                    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
-                    return { ok: true };
-                }
-                case 'deleteUser': {
-                    if (!verifyAdmin()) return { ok: false, error: 'Nincs admin jogosultság.' };
-                    if (payload.targetUsername === payload.adminUser) {
-                        return { ok: false, error: 'A saját fiókodat nem törölheted.' };
-                    }
-                    const filtered = users.filter(u => u.username !== payload.targetUsername);
-                    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(filtered));
-                    return { ok: true };
-                }
-                case 'logDocument': {
-                    const found = users.find(u => u.username === payload.username && u.password === payload.password);
-                    if (!found) return { ok: false, error: 'Érvénytelen hitelesítés.' };
-                    const now = new Date();
-                    const ts = now.toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
-                    logs.unshift({
-                        timestamp: ts,
-                        username: found.username,
-                        fullName: found.fullName,
-                        docType: payload.docType,
-                        details: payload.details
-                    });
-                    localStorage.setItem(STORAGE_LOGS_KEY, JSON.stringify(logs));
-                    return { ok: true };
-                }
-                case 'getLogs': {
-                    if (!verifyAdmin()) return { ok: false, error: 'Nincs admin jogosultság.' };
-                    return { ok: true, logs };
-                }
-                default:
-                    return { ok: false, error: 'Ismeretlen művelet.' };
-            }
-        }
-
-        /* =========================================================
-           BEJELENTKEZÉS, KIJELENTKEZÉS & NAVIGÁCIÓ
-           ========================================================= */
-        async function handleLogin(event) {
-            event.preventDefault();
-            const username = document.getElementById('login-username').value.trim();
-            const password = document.getElementById('login-password').value;
-            const errBox = document.getElementById('login-error-box');
-            const errText = document.getElementById('login-error-text');
-            const btn = document.getElementById('login-submit-btn');
-            const spinner = document.getElementById('login-spinner');
-            const btnText = document.getElementById('login-btn-text');
-
-            errBox.classList.add('hidden');
-            btn.disabled = true;
-            spinner.classList.remove('hidden');
-            btnText.textContent = 'Bejelentkezés...';
-
-            const res = await apiCall({ action: 'login', username, password });
-
-            btn.disabled = false;
-            spinner.classList.add('hidden');
-            btnText.textContent = 'Bejelentkezés';
-
-            if (!res || !res.ok) {
-                errText.textContent = (res && res.error) ? res.error : 'Hibás felhasználónév vagy jelszó.';
-                errBox.classList.remove('hidden');
-                return;
-            }
-
-            appState.currentUser = res.user;
-            appState.currentPassword = password;
-
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-shell').classList.remove('hidden');
-            document.getElementById('login-password').value = '';
-
-            setupAuthenticatedUI();
-            showToast(`Üdv, ${res.user.fullName}!`, 'success');
-        }
-
-        function quickDemoLogin() {
-            document.getElementById('login-username').value = 'admin';
-            document.getElementById('login-password').value = 'admin';
-            document.getElementById('login-form').dispatchEvent(new Event('submit', { cancelable: true }));
-        }
-
-        function handleLogout() {
-            appState.currentUser = null;
-            appState.currentPassword = null;
-            appState.activeView = null;
-            document.getElementById('app-shell').classList.add('hidden');
-            document.getElementById('login-screen').classList.remove('hidden');
-            showToast('Sikeresen kijelentkeztél.', 'info');
-        }
-
-        function setupAuthenticatedUI() {
-            const user = appState.currentUser;
-            document.getElementById('nav-user-fullname').textContent = user.fullName || user.username;
-            document.getElementById('nav-user-role').textContent = user.role === 'admin' ? 'Adminisztrátor' : 'Felhasználó';
-
-            const modePill = document.getElementById('mode-pill');
-            if (isDemoMode()) {
-                modePill.textContent = 'Demó mód';
-                modePill.className = 'hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30';
-            } else {
-                modePill.textContent = 'Google Sheets';
-                modePill.className = 'hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-            }
-
-            // Navigációs fülek felépítése jogosultság alapján
-            const navContainer = document.getElementById('main-nav-tabs');
-            navContainer.innerHTML = '';
-
-            const perms = Array.isArray(user.permissions) ? user.permissions : [];
-            let firstAllowedView = null;
-
-            DOC_MODULES.forEach(mod => {
-                if (perms.includes(mod.key)) {
-                    if (!firstAllowedView) firstAllowedView = mod.key;
-                    const btn = document.createElement('button');
-                    btn.id = `nav-btn-${mod.key}`;
-                    btn.onclick = () => switchMainView(mod.key);
-                    btn.className = 'nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer text-slate-300 hover:bg-slate-800 hover:text-white';
-                    btn.textContent = mod.label;
-                    navContainer.appendChild(btn);
-                }
-            });
-
-            if (user.role === 'admin') {
-                if (!firstAllowedView) firstAllowedView = 'admin';
-                const adminBtn = document.createElement('button');
-                adminBtn.id = 'nav-btn-admin';
-                adminBtn.onclick = () => switchMainView('admin');
-                adminBtn.className = 'nav-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer text-orange-300 hover:bg-slate-800 hover:text-white flex items-center gap-1.5';
-                adminBtn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg> Admin Panel`;
-                navContainer.appendChild(adminBtn);
-            }
-
-            if (firstAllowedView) {
-                switchMainView(firstAllowedView);
-            } else {
-                switchMainView('no-access');
-            }
-        }
-
-        function switchMainView(viewKey) {
-            appState.activeView = viewKey;
-            document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
-            const target = document.getElementById(`view-${viewKey}`);
-            if (target) target.classList.remove('hidden');
-
-            // Fül aktív stílus frissítése
-            document.querySelectorAll('.nav-tab-btn').forEach(btn => {
-                btn.classList.remove('bg-[#e87320]', 'text-white', 'shadow-sm');
-                btn.classList.add('text-slate-300', 'hover:bg-slate-800');
-            });
-            const activeBtn = document.getElementById(`nav-btn-${viewKey}`);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-slate-300', 'text-orange-300', 'hover:bg-slate-800');
-                activeBtn.classList.add('bg-[#e87320]', 'text-white', 'shadow-sm');
-            }
-
-            if (viewKey === 'raktari_atadolap') {
-                setTimeout(autoFitZoom, 50);
-            } else if (viewKey === 'admin') {
-                loadUsersList();
-                loadLogsList();
-            }
-        }
-
-        /* =========================================================
-           ADMIN PANEL LOGIKA
-           ========================================================= */
-        function switchAdminTab(tab) {
-            const usersTab = document.getElementById('admin-tab-users');
-            const logsTab = document.getElementById('admin-tab-logs');
-            const usersContent = document.getElementById('admin-content-users');
-            const logsContent = document.getElementById('admin-content-logs');
-
-            if (tab === 'users') {
-                usersTab.className = 'px-4 py-2.5 text-xs font-bold border-b-2 border-[#e87320] text-[#c55a11] cursor-pointer transition-colors';
-                logsTab.className = 'px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 cursor-pointer transition-colors';
-                usersContent.classList.remove('hidden');
-                logsContent.classList.add('hidden');
-                loadUsersList();
-            } else {
-                logsTab.className = 'px-4 py-2.5 text-xs font-bold border-b-2 border-[#e87320] text-[#c55a11] cursor-pointer transition-colors';
-                usersTab.className = 'px-4 py-2.5 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 cursor-pointer transition-colors';
-                logsContent.classList.remove('hidden');
-                usersContent.classList.add('hidden');
-                loadLogsList();
-            }
-        }
-
-        function generateUsernameFromFullname() {
-            const full = document.getElementById('new-user-fullname').value.trim();
-            if (!full) {
-                showToast('Először írd be a teljes nevet!', 'warning');
-                return;
-            }
-            const clean = full
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9\s]/g, '')
-                .trim()
-                .replace(/\s+/g, '.');
-            document.getElementById('new-user-username').value = clean;
-        }
-
-        function generateStrongPassword() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
-            let pwd = '';
-            for (let i = 0; i < 12; i++) {
-                pwd += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            document.getElementById('new-user-password').value = pwd;
-        }
-
-        function copyNewPassword() {
-            const input = document.getElementById('new-user-password');
-            if (!input.value) {
-                showToast('Nincs mit másolni!', 'warning');
-                return;
-            }
-            input.select();
-            input.setSelectionRange(0, 99999);
-            try {
-                document.execCommand('copy');
-                showToast('Jelszó a vágólapra másolva!', 'success');
-            } catch (e) {
-                showToast('Nem sikerült a másolás.', 'error');
-            }
-        }
-
-        async function loadUsersList() {
-            const tbody = document.getElementById('admin-users-tbody');
-            tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Felhasználók betöltése...</td></tr>`;
-
-            const res = await apiCall({
-                action: 'getUsers',
-                adminUser: appState.currentUser.username,
-                adminPass: appState.currentPassword
-            });
-
-            if (!res || !res.ok) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-red-500">${escapeHtml(res?.error || 'Hiba a betöltéskor.')}</td></tr>`;
-                return;
-            }
-
-            appState.adminUsers = res.users || [];
-            renderUsersTable();
-        }
-
-        function renderUsersTable() {
-            const tbody = document.getElementById('admin-users-tbody');
-            if (appState.adminUsers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">Nincs megjeleníthető felhasználó.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = appState.adminUsers.map((u, idx) => {
-                const perms = Array.isArray(u.permissions) ? u.permissions : [];
-                const isSelf = u.username === appState.currentUser.username;
-                return `
-                    <tr class="hover:bg-slate-50/80 transition-colors">
-                        <td class="py-3 px-4 font-semibold text-slate-800">${escapeHtml(u.fullName)}</td>
-                        <td class="py-3 px-4 font-mono text-slate-600">${escapeHtml(u.username)}</td>
-                        <td class="py-3 px-4">
-                            <select id="edit-role-${idx}" ${isSelf ? 'disabled' : ''} class="rounded-lg border border-slate-300 px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-[#e87320]">
-                                <option value="user" ${u.role !== 'admin' ? 'selected' : ''}>Felhasználó</option>
-                                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
-                            </select>
-                        </td>
-                        <td class="py-3 px-4">
-                            <div class="flex flex-wrap gap-3">
-                                ${DOC_MODULES.map(m => `
-                                    <label class="inline-flex items-center gap-1.5 cursor-pointer text-slate-700">
-                                        <input type="checkbox" id="edit-perm-${idx}-${m.key}" ${perms.includes(m.key) ? 'checked' : ''} class="rounded accent-[#e87320] w-3.5 h-3.5">
-                                        <span>${m.label}</span>
-                                    </label>
-                                `).join('')}
-                            </div>
-                        </td>
-                        <td class="py-3 px-4 text-right whitespace-nowrap space-x-1.5">
-                            <button onclick="handleSaveUserPermissions(${idx}, '${escapeHtml(u.username)}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer">
-                                Mentés
-                            </button>
-                            ${!isSelf ? `
-                                <button onclick="confirmDeleteUser('${escapeHtml(u.username)}')" class="bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer">
-                                    Törlés
-                                </button>
-                            ` : `<span class="text-[11px] text-slate-400 italic px-2">(Saját fiók)</span>`}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        async function handleAddUser(event) {
-            event.preventDefault();
-            const fullName = document.getElementById('new-user-fullname').value.trim();
-            const username = document.getElementById('new-user-username').value.trim();
-            const password = document.getElementById('new-user-password').value.trim();
-            const role = document.getElementById('new-user-role').value;
-
-            const permissions = DOC_MODULES
-                .filter(m => document.getElementById(`new-perm-${m.key}`).checked)
-                .map(m => m.key);
-
-            const btn = document.getElementById('btn-add-user');
-            btn.disabled = true;
-            btn.textContent = 'Mentés...';
-
-            const res = await apiCall({
-                action: 'addUser',
-                adminUser: appState.currentUser.username,
-                adminPass: appState.currentPassword,
-                newUser: { username, password, fullName, role, permissions }
-            });
-
-            btn.disabled = false;
-            btn.textContent = '+ Felhasználó létrehozása';
-
-            if (!res || !res.ok) {
-                showToast(res?.error || 'Hiba a felhasználó létrehozásakor.', 'error');
-                return;
-            }
-
-            document.getElementById('add-user-form').reset();
-            document.getElementById('new-perm-raktari_atadolap').checked = true;
-            showToast(`${fullName} (${username}) sikeresen létrehozva!`, 'success');
-            loadUsersList();
-        }
-
-        async function handleSaveUserPermissions(idx, targetUsername) {
-            const role = document.getElementById(`edit-role-${idx}`).value;
-            const permissions = DOC_MODULES
-                .filter(m => document.getElementById(`edit-perm-${idx}-${m.key}`).checked)
-                .map(m => m.key);
-
-            const res = await apiCall({
-                action: 'updateUserPermissions',
-                adminUser: appState.currentUser.username,
-                adminPass: appState.currentPassword,
-                targetUsername,
-                permissions,
-                role
-            });
-
-            if (!res || !res.ok) {
-                showToast(res?.error || 'Nem sikerült menteni a módosításokat.', 'error');
-                return;
-            }
-
-            showToast(`${targetUsername} jogosultságai frissítve!`, 'success');
-            loadUsersList();
-        }
-
-        function confirmDeleteUser(targetUsername) {
-            openConfirmModal(
-                'Felhasználó törlése',
-                `Biztosan törölni szeretnéd a(z) "${targetUsername}" fiókot? Ez a művelet nem vonható vissza.`,
-                async () => {
-                    const res = await apiCall({
-                        action: 'deleteUser',
-                        adminUser: appState.currentUser.username,
-                        adminPass: appState.currentPassword,
-                        targetUsername
-                    });
-                    if (!res || !res.ok) {
-                        showToast(res?.error || 'Hiba a törlés során.', 'error');
-                        return;
-                    }
-                    showToast(`${targetUsername} törölve.`, 'info');
-                    loadUsersList();
-                }
-            );
-        }
-
-        async function loadLogsList() {
-            const tbody = document.getElementById('admin-logs-tbody');
-            tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400">Napló betöltése...</td></tr>`;
-
-            const res = await apiCall({
-                action: 'getLogs',
-                adminUser: appState.currentUser.username,
-                adminPass: appState.currentPassword
-            });
-
-            if (!res || !res.ok) {
-                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-red-500">${escapeHtml(res?.error || 'Hiba a napló betöltésekor.')}</td></tr>`;
-                return;
-            }
-
-            appState.adminLogs = res.logs || [];
-            renderLogsTable();
-        }
-
-        function renderLogsTable() {
-            const tbody = document.getElementById('admin-logs-tbody');
-            const query = (document.getElementById('logs-search-input').value || '').toLowerCase().trim();
-
-            const filtered = appState.adminLogs.filter(log => {
-                if (!query) return true;
-                const hay = `${log.timestamp} ${log.username} ${log.fullName} ${log.docType} ${log.details}`.toLowerCase();
-                return hay.includes(query);
-            });
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400">Nincs találat a naplóban.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = filtered.map(log => `
-                <tr class="hover:bg-slate-50/80 transition-colors">
-                    <td class="py-3 px-4 font-mono text-slate-600 whitespace-nowrap">${escapeHtml(log.timestamp)}</td>
-                    <td class="py-3 px-4">
-                        <div class="font-semibold text-slate-800">${escapeHtml(log.fullName || log.username)}</div>
-                        <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(log.username)}</div>
-                    </td>
-                    <td class="py-3 px-4">
-                        <span class="inline-block bg-orange-100 text-[#c55a11] font-semibold px-2.5 py-0.5 rounded-full text-[11px]">${escapeHtml(log.docType)}</span>
-                    </td>
-                    <td class="py-3 px-4 text-slate-700">${escapeHtml(log.details)}</td>
+        <div class="panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0;">Regisztrált felhasználók</h3>
+            <button class="btn btn-outline btn-sm" onclick="loadUsers()">Frissítés</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Teljes név</th>
+                  <th>Felhasználónév</th>
+                  <th>Szerepkör</th>
+                  <th>Jogosultságok</th>
+                  <th>Műveletek</th>
                 </tr>
-            `).join('');
-        }
-
-        /* =========================================================
-           NYOMTATÁS ÉS NAPLÓZÁS (RAKTÁRI ÁTADÓ LAP)
-           ========================================================= */
-        function handlePrintAndLog() {
-            const totalItemsCount = docState.activeItems.length;
-            const totalQty = docState.activeItems.reduce((sum, i) => sum + (parseInt(i.db, 10) || 0), 0);
-            const details = `Dátum: ${docState.meta.docDateRaw}, Átadó: ${docState.meta.senderCode} - ${docState.meta.senderName}, Átvevő: ${docState.meta.receiverCode} - ${docState.meta.receiverName}, Tételek: ${totalItemsCount} tétel / ${totalQty} db`;
-
-            // Háttérben elküldjük a naplózási kérést
-            if (appState.currentUser) {
-                apiCall({
-                    action: 'logDocument',
-                    username: appState.currentUser.username,
-                    password: appState.currentPassword,
-                    docType: 'Raktári átadólap',
-                    details
-                }).then(res => {
-                    if (res && res.ok) {
-                        showToast('Dokumentum elkészítése rögzítve a naplóban.', 'success');
-                    }
-                });
-            }
-
-            window.print();
-        }
-
-        /* =========================================================
-           EGYEDI MODÁL & TOAST ÉRTESÍTÉSEK
-           ========================================================= */
-        function openConfirmModal(title, desc, onConfirm) {
-            document.getElementById('confirm-modal-title').textContent = title;
-            document.getElementById('confirm-modal-desc').textContent = desc;
-            appState.confirmCallback = onConfirm;
-            document.getElementById('confirm-modal').classList.remove('hidden');
-        }
-
-        function closeConfirmModal(confirmed) {
-            document.getElementById('confirm-modal').classList.add('hidden');
-            if (confirmed && typeof appState.confirmCallback === 'function') {
-                appState.confirmCallback();
-            }
-            appState.confirmCallback = null;
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const colors = {
-                success: 'bg-emerald-600 text-white',
-                error: 'bg-red-600 text-white',
-                info: 'bg-slate-800 text-white',
-                warning: 'bg-amber-600 text-white'
-            };
-            toast.className = `${colors[type] || colors.info} px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto max-w-sm`;
-            toast.textContent = message;
-            container.appendChild(toast);
-            requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
-            setTimeout(() => {
-                toast.classList.add('translate-y-2', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
-        }
-
-        /* =========================================================
-           RAKTÁRI ÁTADÓ LAP: DÁTUM, CSV PARSER & A4 RENDERELÉS
-           ========================================================= */
-        function parseDateParts(dateStr) {
-            if (!dateStr) return null;
-            const match = String(dateStr).trim().match(/(\d{4})[\.\-\/\s]+(\d{1,2})[\.\-\/\s]+(\d{1,2})/);
-            if (!match) return null;
-            const y = match[1];
-            const m = match[2].padStart(2, '0');
-            const d = match[3].padStart(2, '0');
-            return {
-                year: parseInt(y, 10),
-                month: parseInt(m, 10),
-                day: parseInt(d, 10),
-                compact: `${y}.${m}.${d}`,
-                withDot: `${y}.${m}.${d}.`,
-                spaced: `${y}. ${m}. ${d}.`,
-                iso: `${y}-${m}-${d}`
-            };
-        }
-
-        function getHungarianDateSuffix(dayNum) {
-            const d = parseInt(dayNum, 10);
-            if (isNaN(d) || d < 1 || d > 31) return '-án';
-            if (d === 1) return '-jén';
-            const anDays = [2, 3, 6, 8, 13, 16, 18, 20, 23, 26, 28, 30];
-            return anDays.includes(d) ? '-án' : '-én';
-        }
-
-        function formatFooterDate(dateStr) {
-            const parts = parseDateParts(dateStr);
-            if (!parts) return `${dateStr || '____.__.__'}-án`;
-            return `${parts.compact}${getHungarianDateSuffix(parts.day)}`;
-        }
-
-        function formatSignatureDate(dateStr) {
-            const parts = parseDateParts(dateStr);
-            return parts ? parts.spaced : (dateStr || '____. __. __.');
-        }
-
-        function normalizeHeader(text) {
-            return String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
-        }
-
-        function detectDelimiter(text) {
-            const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0).slice(0, 5);
-            const counts = { '\t': 0, ';': 0, ',': 0 };
-            lines.forEach(line => {
-                counts['\t'] += (line.match(/\t/g) || []).length;
-                counts[';'] += (line.match(/;/g) || []).length;
-                counts[','] += (line.match(/,/g) || []).length;
-            });
-            if (counts['\t'] >= counts[';'] && counts['\t'] >= counts[','] && counts['\t'] > 0) return '\t';
-            if (counts[';'] >= counts[','] && counts[';'] > 0) return ';';
-            return ',';
-        }
-
-        function parseDelimitedTextToGrid(text, delimiter) {
-            const rows = [];
-            let currentRow = [], currentCell = '', inQuotes = false;
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i], nextChar = text[i + 1];
-                if (inQuotes) {
-                    if (char === '"' && nextChar === '"') { currentCell += '"'; i++; }
-                    else if (char === '"') { inQuotes = false; }
-                    else { currentCell += char; }
-                } else {
-                    if (char === '"' && currentCell.length === 0) { inQuotes = true; }
-                    else if (char === delimiter) { currentRow.push(currentCell.trim()); currentCell = ''; }
-                    else if (char === '\r' && nextChar === '\n') { currentRow.push(currentCell.trim()); rows.push(currentRow); currentRow = []; currentCell = ''; i++; }
-                    else if (char === '\n' || char === '\r') { currentRow.push(currentCell.trim()); rows.push(currentRow); currentRow = []; currentCell = ''; }
-                    else { currentCell += char; }
-                }
-            }
-            if (currentCell.length > 0 || currentRow.length > 0) { currentRow.push(currentCell.trim()); rows.push(currentRow); }
-            return rows;
-        }
-
-        function classifyHeaderCell(cellText) {
-            const norm = normalizeHeader(cellText);
-            if (!norm) return null;
-            if (norm.includes('sorszam') || norm === 'tetel' || norm === 'nr' || norm === 'sorsz') return 'sorszam';
-            if (norm.includes('nytsz') || norm.includes('nyilvantart') || norm.includes('leltar') || norm.includes('kod')) return 'nytsz';
-            if (norm.includes('megnevezes') || norm.includes('eszkoz') || norm.includes('nev') || norm.includes('targy') || norm.includes('termek')) return 'megnevezes';
-            if (norm.includes('mennyiseg') || norm === 'db' || norm.includes('darab') || norm.includes('menny')) return 'mennyiseg';
-            if (norm.includes('datum') || norm.includes('atadas') || norm.includes('idopont')) return 'datum';
-            if (norm.includes('megjegyzes') || norm.includes('specifikacio') || norm.includes('tipus') || norm.includes('gyariszam') || norm.includes('leiras')) return 'spec';
-            return null;
-        }
-
-        function processRawData(rawText) {
-            if (!rawText || !rawText.trim()) { showToast('Nincs feldolgozható adat!', 'warning'); return; }
-            const cleanText = rawText.replace(/^\uFEFF/, '');
-            const grid = parseDelimitedTextToGrid(cleanText, detectDelimiter(cleanText));
-            if (grid.length < 2) { showToast('A táblázat túl kevés sort tartalmaz.', 'error'); return; }
-
-            let headerRowIndex = -1;
-            for (let r = 0; r < Math.min(grid.length, 10); r++) {
-                let recognized = 0;
-                for (let c = 0; c < grid[r].length; c++) {
-                    if (classifyHeaderCell(grid[r][c])) recognized++;
-                }
-                if (recognized >= 2) { headerRowIndex = r; break; }
-            }
-            if (headerRowIndex === -1) { showToast('Nem sikerült felismerni a táblázat fejlécét.', 'error'); return; }
-
-            const headerRow = grid[headerRowIndex];
-            const blocks = [];
-            let currentBlock = null;
-
-            for (let c = 0; c < headerRow.length; c++) {
-                const role = classifyHeaderCell(headerRow[c]);
-                if (!role) {
-                    if (currentBlock && (currentBlock.megnevezes !== undefined || currentBlock.nytsz !== undefined)) {
-                        blocks.push(currentBlock);
-                        currentBlock = null;
-                    }
-                    continue;
-                }
-                if (currentBlock && currentBlock[role] !== undefined) {
-                    if (currentBlock.megnevezes !== undefined || currentBlock.nytsz !== undefined) blocks.push(currentBlock);
-                    currentBlock = {};
-                }
-                if (!currentBlock) currentBlock = {};
-                currentBlock[role] = c;
-            }
-            if (currentBlock && (currentBlock.megnevezes !== undefined || currentBlock.nytsz !== undefined)) blocks.push(currentBlock);
-
-            if (blocks.length === 0) { showToast('Nem található érvényes oszlopcsoport.', 'error'); return; }
-
-            const extractedItems = [];
-            let skipped = 0;
-
-            blocks.forEach((block, blockIdx) => {
-                let blockFallbackDate = '';
-                if (block.datum !== undefined) {
-                    for (let r = headerRowIndex + 1; r < grid.length; r++) {
-                        const parsed = parseDateParts(grid[r][block.datum] || '');
-                        if (parsed) { blockFallbackDate = parsed.withDot; break; }
-                    }
-                }
-                for (let r = headerRowIndex + 1; r < grid.length; r++) {
-                    const row = grid[r];
-                    if (!row) continue;
-                    const nytsz = block.nytsz !== undefined ? (row[block.nytsz] || '').trim() : '';
-                    const megnevezes = block.megnevezes !== undefined ? (row[block.megnevezes] || '').trim() : '';
-                    const rawQty = block.mennyiseg !== undefined ? (row[block.mennyiseg] || '').trim() : '';
-                    const rawDate = block.datum !== undefined ? (row[block.datum] || '').trim() : '';
-                    const spec = block.spec !== undefined ? (row[block.spec] || '').trim() : '';
-
-                    if (!nytsz && !megnevezes && !rawQty && !rawDate) continue;
-                    const normMegn = normalizeHeader(megnevezes);
-                    if ((!megnevezes && !nytsz) || normMegn === 'osszesen' || normMegn === 'sum' || normMegn === 'total') {
-                        skipped++;
-                        continue;
-                    }
-
-                    let qty = 1;
-                    if (rawQty !== '') {
-                        const parsedQty = parseFloat(rawQty.replace(',', '.').replace(/[^\d.]/g, ''));
-                        if (!isNaN(parsedQty) && parsedQty > 0) qty = Math.round(parsedQty);
-                    }
-
-                    let dateKey = 'Dátum nélkül';
-                    const parsedDate = parseDateParts(rawDate);
-                    if (parsedDate) dateKey = parsedDate.withDot;
-                    else if (blockFallbackDate) dateKey = blockFallbackDate;
-
-                    extractedItems.push({ nytsz, megnevezes, db: qty, spec, dateKey, blockIndex: blockIdx + 1 });
-                }
-            });
-
-            if (extractedItems.length === 0) { showToast('Nem sikerült érvényes tételt kinyerni.', 'error'); return; }
-
-            docState.allImportedItems = extractedItems;
-            document.getElementById('import-stats-box').classList.remove('hidden');
-            document.getElementById('import-stats-text').textContent = `${blocks.length} táblázatblokk • ${extractedItems.length} tétel betöltve` + (skipped > 0 ? ` • ${skipped} összesítő/üres sor kiszűrve.` : '.');
-
-            renderDateChips();
-            const uniqueDates = getUniqueDateGroups();
-            selectDateFilter(uniqueDates.length > 0 ? uniqueDates[0].dateKey : 'ALL');
-            showToast(`${extractedItems.length} tétel sikeresen importálva!`, 'success');
-        }
-
-        function getUniqueDateGroups() {
-            const map = new Map();
-            docState.allImportedItems.forEach(item => {
-                const key = item.dateKey || 'Dátum nélkül';
-                map.set(key, (map.get(key) || 0) + 1);
-            });
-            return Array.from(map.entries()).map(([dateKey, count]) => ({ dateKey, count })).sort((a, b) => a.dateKey.localeCompare(b.dateKey));
-        }
-
-        function renderDateChips() {
-            const section = document.getElementById('dates-section');
-            const container = document.getElementById('date-chips-container');
-            const groups = getUniqueDateGroups();
-            if (docState.allImportedItems.length === 0) { section.classList.add('hidden'); return; }
-            section.classList.remove('hidden');
-            container.innerHTML = '';
-
-            groups.forEach(g => {
-                const isActive = docState.selectedDateKey === g.dateKey;
-                const btn = document.createElement('button');
-                btn.onclick = () => selectDateFilter(g.dateKey);
-                btn.className = isActive
-                    ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-[#e87320] text-white shadow-sm cursor-pointer'
-                    : 'px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 hover:bg-orange-100 text-slate-700 border border-slate-200 cursor-pointer';
-                btn.textContent = `${g.dateKey} (${g.count})`;
-                container.appendChild(btn);
-            });
-
-            const allActive = docState.selectedDateKey === 'ALL';
-            const allBtn = document.createElement('button');
-            allBtn.onclick = () => selectDateFilter('ALL');
-            allBtn.className = allActive
-                ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-white shadow-sm cursor-pointer'
-                : 'px-3 py-1.5 rounded-lg text-xs font-medium bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 cursor-pointer';
-            allBtn.textContent = `Összes (${docState.allImportedItems.length})`;
-            container.appendChild(allBtn);
-        }
-
-        function selectDateFilter(dateKey) {
-            docState.selectedDateKey = dateKey;
-            const list = dateKey === 'ALL'
-                ? docState.allImportedItems
-                : docState.allImportedItems.filter(i => i.dateKey === dateKey);
-
-            docState.activeItems = list.map(i => ({ nytsz: i.nytsz, megnevezes: i.megnevezes, db: i.db, spec: i.spec }));
-            if (dateKey !== 'ALL') {
-                const parsed = parseDateParts(dateKey);
-                if (parsed) setDocumentDate(parsed.withDot);
-            }
-            renderDateChips();
-            renderItemsEditor();
-            renderPreview();
-        }
-
-        function loadSampleData() {
-            const sampleTSV = [
-                "Sorszám\tNYTSZ\tMegnevezés\tMennyiség\tÁtadás dátuma\t\tSorszám\tNYTSZ\tMegnevezés\tMennyiség\tÁtadás dátuma\t\tSorszám\tNYTSZ\tMegnevezés\tMennyiség\tÁtadás dátuma",
-                "1\t300260\tNotebook szoftverrel\t1\t2025.02.23.\t\t1\t310007\tHúsdaráló\t1\t2025.04.08.\t\t1\t300277\tFotelek szett\t2\t2025.05.12.",
-                "2\t300289\tTintasugaras nyomtató\t1\t2025.02.23.\t\t2\t300370\tFali pizzatartó\t1\t2025.04.08.\t\t2\t300278\tKanapé\t1\t2025.05.12.",
-                "3\t300306\tElektromos tésztafőző\t1\t2025.02.23.\t\t3\t300315\tMozarella reszelő\t1\t2025.04.08.\t\t3\t300280\tTároló polc\t3\t2025.05.12.",
-                "4\t300335\tSzgép konfiguráció\t1\t2025.02.23.\t\t4\t300331\tSütisvitrin\t1\t2025.04.08.\t\t4\t300341\tSzék\t6\t2025.05.12.",
-                "5\t300318\tElektromos rostlap\t1\t2025.02.23.\t\t5\t300313\tSzállító és kiadó kocsi\t1\t2025.04.08.\t\t5\t300340\tAsztal\t2\t2025.05.12.",
-                "6\t300321\tElektromos főzőzsámoly\t1\t2025.02.23.\t\t6\t300369\tTeraszlámpa\t8\t2025.04.08.\t\t6\t300308\tMozarella szeletelő\t1\t2025.05.12.",
-                "7\t310367\tHDD BELSŐ\t1\t2025.02.23.\t\t7\t300345\tKártyaolvasó\t1\t2025.04.08.\t\t7\t300309\tPizzakemence\t1\t2025.05.12.",
-                "8\t310333\tKávéfőző\t1\t2025.02.23.\t\t8\t300269\tSzék\t1\t2025.04.08.\t\t8\t300333\tPizza hűtőpult\t1\t2025.05.12.",
-                "9\t310232\tTurmix\t1\t2025.02.23.\t\t9\t300270\tSzék\t5\t2025.04.08.\t\t9\t300320\tSzekrény\t2\t2025.05.12.",
-                "10\t310161\tRÚDMIXER\t1\t2025.02.23.\t\t\t\t\t\t\t\t10\t300319\tSzeletelőgép\t1\t2025.05.12.",
-                "11\t310128\tTURMIX\t1\t2025.02.23.\t\t\t\t\t20\t\t\t11\t320005\tTV KONZOL\t2\t2025.05.12."
-            ].join('\n');
-            document.getElementById('paste-area').value = sampleTSV;
-            processRawData(sampleTSV);
-        }
-
-        function parsePastedText() {
-            processRawData(document.getElementById('paste-area').value);
-        }
-
-        function renderItemsEditor() {
-            const container = document.getElementById('items-editor-list');
-            document.getElementById('tab-items-count').textContent = docState.activeItems.length;
-
-            if (docState.activeItems.length === 0) {
-                container.innerHTML = `<div class="text-center py-8 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500 text-xs">Még nincs tétel a listában.</div>`;
-                return;
-            }
-
-            container.innerHTML = docState.activeItems.map((item, idx) => `
-                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-bold text-[#c55a11] bg-orange-100 px-2 py-0.5 rounded-md">#${idx + 1} tétel</span>
-                        <button onclick="deleteItem(${idx})" class="text-slate-400 hover:text-red-600 p-1 cursor-pointer" title="Törlés">✕</button>
-                    </div>
-                    <div class="grid grid-cols-12 gap-1.5">
-                        <div class="col-span-4">
-                            <label class="block text-[10px] text-slate-500">NYTSZ</label>
-                            <input type="text" value="${escapeHtml(item.nytsz)}" oninput="updateItemField(${idx}, 'nytsz', this.value)" class="w-full rounded-md border border-slate-300 px-2 py-1 text-xs bg-white">
-                        </div>
-                        <div class="col-span-6">
-                            <label class="block text-[10px] text-slate-500">Megnevezés</label>
-                            <input type="text" value="${escapeHtml(item.megnevezes)}" oninput="updateItemField(${idx}, 'megnevezes', this.value)" class="w-full rounded-md border border-slate-300 px-2 py-1 text-xs bg-white">
-                        </div>
-                        <div class="col-span-2">
-                            <label class="block text-[10px] text-slate-500">DB</label>
-                            <input type="number" min="1" value="${item.db}" oninput="updateItemField(${idx}, 'db', this.value)" class="w-full rounded-md border border-slate-300 px-1 py-1 text-xs text-center bg-white">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] text-slate-500">Típus, gyári szám, specifikáció, megjegyzés</label>
-                        <input type="text" value="${escapeHtml(item.spec)}" oninput="updateItemField(${idx}, 'spec', this.value)" class="w-full rounded-md border border-slate-300 px-2 py-1 text-xs bg-white">
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function updateItemField(index, field, value) {
-            if (!docState.activeItems[index]) return;
-            docState.activeItems[index][field] = field === 'db' ? Math.max(0, parseInt(value, 10) || 0) : value;
-            renderPreview();
-        }
-
-        function addNewItem() {
-            docState.activeItems.push({ nytsz: '', megnevezes: '', db: 1, spec: '' });
-            renderItemsEditor();
-            renderPreview();
-        }
-
-        function deleteItem(index) {
-            docState.activeItems.splice(index, 1);
-            renderItemsEditor();
-            renderPreview();
-        }
-
-        function clearCurrentItems() {
-            docState.activeItems = [];
-            renderItemsEditor();
-            renderPreview();
-        }
-
-        function updateMetadata() {
-            docState.meta.receiverCode = document.getElementById('input-receiver-code').value;
-            docState.meta.receiverName = document.getElementById('input-receiver-name').value;
-            docState.meta.senderCode = document.getElementById('input-sender-code').value;
-            docState.meta.senderName = document.getElementById('input-sender-name').value;
-            docState.meta.senderPerson = document.getElementById('input-sender-person').value;
-            docState.meta.receiverPerson = document.getElementById('input-receiver-person').value;
-            docState.meta.notes = document.getElementById('input-notes').value;
-            renderPreview();
-        }
-
-        function setDocumentDate(dateStr) {
-            docState.meta.docDateRaw = dateStr;
-            document.getElementById('input-doc-date-text').value = dateStr;
-            const parsed = parseDateParts(dateStr);
-            const hint = document.getElementById('date-preview-hint');
-            if (parsed) {
-                document.getElementById('input-doc-date-picker').value = parsed.iso;
-                hint.textContent = `Lábléc: ${formatFooterDate(dateStr)} | Aláírás: Debrecen, ${formatSignatureDate(dateStr)}`;
-            } else {
-                hint.textContent = '';
-            }
-        }
-
-        function onDatePickerChange() {
-            const parsed = parseDateParts(document.getElementById('input-doc-date-picker').value);
-            if (parsed) { setDocumentDate(parsed.withDot); renderPreview(); }
-        }
-
-        function onDateTextChange() {
-            const val = document.getElementById('input-doc-date-text').value;
-            docState.meta.docDateRaw = val;
-            const parsed = parseDateParts(val);
-            if (parsed) {
-                document.getElementById('input-doc-date-picker').value = parsed.iso;
-                document.getElementById('date-preview-hint').textContent = `Lábléc: ${formatFooterDate(val)} | Aláírás: Debrecen, ${formatSignatureDate(val)}`;
-            }
-            renderPreview();
-        }
-
-        function updatePaginationSetting() {
-            const val = parseInt(document.getElementById('input-max-rows').value, 10);
-            docState.maxRowsPerPage = val;
-            document.getElementById('max-rows-badge').textContent = `${val} sor / oldal`;
-            renderPreview();
-        }
-
-        function handleLogoUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                docState.customLogoUrl = e.target.result;
-                document.getElementById('btn-reset-logo').classList.remove('hidden');
-                renderPreview();
-                showToast('Egyedi logó beállítva!', 'success');
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function resetLogo() {
-            docState.customLogoUrl = null;
-            document.getElementById('logo-file-input').value = '';
-            document.getElementById('btn-reset-logo').classList.add('hidden');
-            renderPreview();
-        }
-
-        function escapeHtml(str) {
-            return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        }
-
-        function paginateItems(items, maxPerPage) {
-            const firstPageCap = Math.max(4, maxPerPage - 4);
-            const otherPageCap = Math.max(6, maxPerPage);
-            const closingBlockCost = 10;
-            const pages = [];
-
-            if (items.length === 0) {
-                pages.push({ items: [], startIndex: 0, showClosing: true });
-                return pages;
-            }
-
-            let cursor = 0;
-            while (cursor < items.length) {
-                const cap = pages.length === 0 ? firstPageCap : otherPageCap;
-                const chunk = items.slice(cursor, cursor + cap);
-                pages.push({ items: chunk, startIndex: cursor, showClosing: false });
-                cursor += chunk.length;
-            }
-
-            const lastPage = pages[pages.length - 1];
-            const lastPageCap = pages.length === 1 ? firstPageCap : otherPageCap;
-            const usedUnits = lastPage.items.reduce((sum, it) => sum + 1 + ((it.megnevezes.length > 36 || it.spec.length > 36) ? 0.6 : 0), 0);
-
-            if (usedUnits + closingBlockCost <= lastPageCap + 2) {
-                lastPage.showClosing = true;
-            } else {
-                pages.push({ items: [], startIndex: items.length, showClosing: true, closingOnly: true });
-            }
-            return pages;
-        }
-
-        function renderPreview() {
-            const container = document.getElementById('pages-container');
-            const totalItemsCount = docState.activeItems.length;
-            const totalQty = docState.activeItems.reduce((sum, i) => sum + (parseInt(i.db, 10) || 0), 0);
-            const pages = paginateItems(docState.activeItems, docState.maxRowsPerPage);
-
-            document.getElementById('stat-pages').textContent = pages.length;
-            document.getElementById('stat-items').textContent = totalItemsCount;
-            document.getElementById('stat-qty').textContent = totalQty;
-            document.getElementById('tab-items-count').textContent = totalItemsCount;
-
-            const logoHtml = docState.customLogoUrl
-                ? `<img src="${docState.customLogoUrl}" alt="Logó" style="max-height: 40px; max-width: 200px; object-fit: contain; display: block;">`
-                : getCampusLogoHtml(36);
-
-            const sigDate = formatSignatureDate(docState.meta.docDateRaw);
-            const footerDate = formatFooterDate(docState.meta.docDateRaw);
-            const senderInfo = `${docState.meta.senderCode} - ${docState.meta.senderName}`.trim();
-
-            container.innerHTML = pages.map((page, pageIdx) => {
-                const isFirst = pageIdx === 0;
-                const rowsHtml = page.items.length > 0
-                    ? page.items.map((item, idx) => `
-                        <tr>
-                            <td class="col-tetel">${page.startIndex + idx + 1}</td>
-                            <td class="col-nytsz">${escapeHtml(item.nytsz)}</td>
-                            <td class="col-megn">${escapeHtml(item.megnevezes)}</td>
-                            <td class="col-db">${item.db}</td>
-                            <td class="col-spec">${escapeHtml(item.spec)}</td>
-                        </tr>
-                    `).join('')
-                    : `<tr><td class="col-tetel">1</td><td class="col-nytsz"></td><td class="col-megn" style="color:#94a3b8;font-style:italic;">(Nincs megadott eszköz)</td><td class="col-db">0</td><td class="col-spec"></td></tr>`;
-
-                return `
-                    <div class="a4-page">
-                        <div class="doc-header">
-                            <div>${logoHtml}</div>
-                            <div class="doc-header-title-right">RAKTÁRI ÁTADÓ LAP</div>
-                        </div>
-
-                        ${isFirst ? `
-                            <div class="doc-main-title">RAKTÁRI ÁTADÓ LAP</div>
-                            <div class="party-grid">
-                                <table class="party-table">
-                                    <thead><tr><th colspan="2">ÁTVEVŐ</th></tr></thead>
-                                    <tbody>
-                                        <tr class="row-code"><td class="party-label">Egység kódja</td><td class="party-val">${escapeHtml(docState.meta.receiverCode)}</td></tr>
-                                        <tr><td class="party-label">Egység neve</td><td class="party-val">${escapeHtml(docState.meta.receiverName)}</td></tr>
-                                    </tbody>
-                                </table>
-                                <table class="party-table">
-                                    <thead><tr><th colspan="2">ÁTADÓ</th></tr></thead>
-                                    <tbody>
-                                        <tr class="row-code"><td class="party-label">Egység kódja</td><td class="party-val">${escapeHtml(docState.meta.senderCode)}</td></tr>
-                                        <tr><td class="party-label">Egység neve</td><td class="party-val">${escapeHtml(docState.meta.senderName)}</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        ` : ''}
-
-                        ${!page.closingOnly ? `
-                            <table class="items-table">
-                                <thead>
-                                    <tr>
-                                        <th class="col-tetel">TÉTEL</th>
-                                        <th class="col-nytsz">NYILVÁNTARTÁSI SZÁM</th>
-                                        <th class="col-megn">MEGNEVEZÉS</th>
-                                        <th class="col-db">DB</th>
-                                        <th class="col-spec">TÍPUS, GYÁRI SZÁM, SPECIFIKÁCIÓ (SZÍN, MÉRET), MEGJEGYZÉS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>${rowsHtml}</tbody>
-                            </table>
-                        ` : ''}
-
-                        ${page.showClosing ? `
-                            <div class="closing-block">
-                                <div class="closing-ownership">A fenti táblázatban szereplő eszközök a Debreceni Campus Nonprofit Közhasznú Kft. tulajdonát képezik.</div>
-                                <div class="closing-summary">A táblázat összesen ${totalItemsCount} tételben ${totalQty} db. eszközt tartalmaz.</div>
-                                <div class="closing-declaration">Az átvevő az Átadó lap aláírásával igazolja az eszközök tételes átvételét, valamint vállalja azok elkülönített, azonosítható módon történő nyilvántartását, biztonságos raktári elhelyezését és állapottól, használhatóságtól függően szükség esetén kezdeményezi azok selejtezését, értékesítését, vagy egyéb hasznosítását a hatályos belső szabályzatoknak megfelelően.</div>
-                                <table class="notes-table">
-                                    <thead><tr><th>MEGJEGYZÉS</th></tr></thead>
-                                    <tbody><tr><td>${escapeHtml(docState.meta.notes)}</td></tr></tbody>
-                                </table>
-                                <div class="signature-row">
-                                    <div class="sig-date">Debrecen, ${escapeHtml(sigDate)}</div>
-                                    <div class="sig-boxes">
-                                        <div class="sig-box">
-                                            <div class="sig-role">ÁTADÓ</div>
-                                            <div class="sig-line">${escapeHtml(docState.meta.senderPerson || '(név)')}</div>
-                                        </div>
-                                        <div class="sig-box">
-                                            <div class="sig-role">ÁTVEVŐ</div>
-                                            <div class="sig-line">${escapeHtml(docState.meta.receiverPerson || '(név)')}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ` : ''}
-
-                        <div class="doc-footer">
-                            <span class="doc-footer-page-num">${pageIdx + 1}</span>. oldal a ${escapeHtml(footerDate)} átadott ${escapeHtml(senderInfo)} eszközlistához
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function switchSubTab(tabName) {
-            ['import', 'details', 'items'].forEach(t => {
-                const btn = document.getElementById(`tab-btn-${t}`);
-                const content = document.getElementById(`tab-content-${t}`);
-                if (t === tabName) {
-                    btn.className = 'tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-[#e87320] text-[#c55a11] bg-white transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-                    content.classList.remove('hidden');
-                } else {
-                    btn.className = 'tab-btn flex-1 py-2 px-2 text-xs font-semibold rounded-t-lg border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex items-center justify-center gap-1.5 cursor-pointer';
-                    content.classList.add('hidden');
-                }
-            });
-        }
-
-        function applyZoom() {
-            document.getElementById('pages-container').style.transform = `scale(${docState.zoom})`;
-            const label = document.getElementById('zoom-label');
-            if (label) label.textContent = `${Math.round(docState.zoom * 100)}%`;
-        }
-
-        function changeZoom(delta) {
-            docState.zoom = Math.min(1.25, Math.max(0.4, Math.round((docState.zoom + delta) * 10) / 10));
-            applyZoom();
-        }
-
-        function autoFitZoom() {
-            const scrollArea = document.getElementById('preview-scroll-area');
-            if (!scrollArea || scrollArea.clientWidth === 0) return;
-            const optimal = Math.min(1.0, Math.max(0.42, (scrollArea.clientWidth - 48) / 794));
-            docState.zoom = Math.round(optimal * 20) / 20;
-            applyZoom();
-        }
-
-        function setupFileUpload() {
-            const dropZone = document.getElementById('drop-zone');
-            const fileInput = document.getElementById('csv-file-input');
-            dropZone.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files[0]) readUploadedFile(e.target.files[0]);
-                fileInput.value = '';
-            });
-            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-[#e87320]', 'bg-orange-50'); });
-            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-[#e87320]', 'bg-orange-50'));
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('border-[#e87320]', 'bg-orange-50');
-                if (e.dataTransfer.files[0]) readUploadedFile(e.dataTransfer.files[0]);
-            });
-        }
-
-        function readUploadedFile(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('paste-area').value = e.target.result;
-                processRawData(e.target.result);
-            };
-            reader.readAsText(file, 'UTF-8');
-        }
-
-        /* =========================================================
-           INICIALIZÁLÁS
-           ========================================================= */
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('login-logo-holder').innerHTML = getCampusLogoHtml(42);
-            document.getElementById('nav-logo-holder').innerHTML = getCampusLogoHtml(28);
-
-            if (isDemoMode()) {
-                initDemoStorage();
-                document.getElementById('demo-warning-banner').classList.remove('hidden');
-                document.getElementById('demo-login-wrapper').classList.remove('hidden');
-            }
-
-            setupFileUpload();
-            setDocumentDate(docState.meta.docDateRaw);
-            renderItemsEditor();
-            renderPreview();
-            window.addEventListener('resize', autoFitZoom);
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dokumentum Napló -->
+      <div id="adminLogsPane" class="hidden">
+        <div class="panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+            <h3 style="margin:0;">Dokumentum Napló</h3>
+            <div style="display:flex; gap:8px;">
+              <input id="logSearch" class="form-control" style="width:240px; padding:6px 10px;" placeholder="Keresés névre, típusra..." oninput="renderLogsTable()" />
+              <button class="btn btn-outline btn-sm" onclick="loadLogs()">Frissítés</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Időpont</th>
+                  <th>Felhasználó</th>
+                  <th>Dokumentum típusa</th>
+                  <th>Részletek</th>
+                </tr>
+              </thead>
+              <tbody id="logsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // =========================================================================
+  // IDE ILLESZD BE A GOOGLE APPS SCRIPT WEBALKALMAZÁS URL-CÍMEDET (../exec):
+  // =========================================================================
+  const API_URL = "https://script.google.com/macros/s/AKfycbxg1CE40fEftdrzepOQB4jN4dzXj_boAmFdXa-7hwH0HZSFV0t_1hRlTh1aBCbTAS_Rxw/exec";
+
+  // Beépített tartalék SVG logó, ha a campuslog.png még nincs feltöltve mellé
+  const FALLBACK_LOGO = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 56">' +
+    '<rect x="2" y="4" width="48" height="48" rx="8" fill="#e86c1f"/>' +
+    '<circle cx="20" cy="18" r="5" fill="#fff"/>' +
+    '<path d="M8 26 C18 26 24 34 24 44 M44 12 C34 12 28 20 28 30 C28 38 34 44 44 44" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+    '<text x="60" y="40" font-family="Arial, sans-serif" font-weight="800" font-size="38" fill="#e86c1f" letter-spacing="1">campus</text>' +
+    '</svg>'
+  );
+
+  let currentLogoSrc = "campuslog.png";
+  let currentUser = null;
+  let allParsedItems = [];
+  let activeItems = [];
+  let activeDateFilter = "";
+  let cachedUsers = [];
+  let cachedLogs = [];
+
+  const DOC_TYPES = [
+    { id: "raktari_atadolap", label: "Raktári átadólap" },
+    { id: "egysegek_kozotti", label: "Egységek közötti átadás" },
+    { id: "selejtezes", label: "Selejtezési jegyzőkönyv" }
+  ];
+
+  // ===== TOAST & HELPERS =====
+  function showToast(msg, type = "info") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "show " + type;
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.className = ""; }, 3200);
+  }
+
+  function togglePasswordVisibility(btn) {
+    const input = btn.previousElementSibling;
+    if (input.type === "password") {
+      input.type = "text";
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+    } else {
+      input.type = "password";
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    }
+  }
+
+  function isDemoMode() {
+    return !API_URL || !API_URL.trim();
+  }
+
+  // ===== LOCAL DEMO STORAGE =====
+  function getDemoUsers() {
+    const raw = localStorage.getItem("campus_demo_users");
+    if (raw) return JSON.parse(raw);
+    const def = [{
+      username: "admin",
+      password: "admin",
+      fullName: "Rendszeradminisztrátor (Demó)",
+      role: "admin",
+      permissions: ["raktari_atadolap", "egysegek_kozotti", "selejtezes"]
+    }];
+    localStorage.setItem("campus_demo_users", JSON.stringify(def));
+    return def;
+  }
+  function saveDemoUsers(list) { localStorage.setItem("campus_demo_users", JSON.stringify(list)); }
+  function getDemoLogs() {
+    const raw = localStorage.getItem("campus_demo_logs");
+    return raw ? JSON.parse(raw) : [];
+  }
+  function saveDemoLogs(list) { localStorage.setItem("campus_demo_logs", JSON.stringify(list)); }
+
+  // ===== API CALL WRAPPER =====
+  async function apiCall(payload) {
+    if (isDemoMode()) {
+      return handleDemoApi(payload);
+    }
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data && data.success === true) data.ok = true;
+    return data;
+  }
+
+  function handleDemoApi(p) {
+    const users = getDemoUsers();
+    if (p.action === "login") {
+      const u = users.find(x => x.username.toLowerCase() === String(p.username).toLowerCase() && x.password === p.password);
+      if (!u) return { ok: false, success: false, error: "Hibás felhasználónév vagy jelszó!" };
+      return { ok: true, success: true, user: { username: u.username, fullName: u.fullName, name: u.fullName, role: u.role, permissions: u.permissions } };
+    }
+    if (p.action === "getUsers") {
+      return { ok: true, success: true, users };
+    }
+    if (p.action === "addUser") {
+      if (!p.username || !p.password) return { ok: false, error: "A felhasználónév és a jelszó megadása kötelező!" };
+      if (users.some(x => x.username.toLowerCase() === p.username.toLowerCase())) return { ok: false, error: "Ez a felhasználónév már létezik!" };
+      users.push({ username: p.username, password: p.password, fullName: p.fullName || p.name || p.username, role: p.role, permissions: p.permissions });
+      saveDemoUsers(users);
+      return { ok: true, success: true };
+    }
+    if (p.action === "updateUser") {
+      const idx = users.findIndex(x => x.username.toLowerCase() === p.username.toLowerCase());
+      if (idx === -1) return { ok: false, error: "Felhasználó nem található." };
+      users[idx].role = p.role;
+      users[idx].permissions = p.permissions;
+      saveDemoUsers(users);
+      return { ok: true, success: true };
+    }
+    if (p.action === "deleteUser") {
+      saveDemoUsers(users.filter(x => x.username.toLowerCase() !== p.username.toLowerCase()));
+      return { ok: true, success: true };
+    }
+    if (p.action === "logDocument") {
+      const logs = getDemoLogs();
+      logs.unshift({
+        timestamp: new Date().toLocaleString("hu-HU"),
+        username: p.username,
+        userName: p.userName,
+        docType: p.docType,
+        details: p.details
+      });
+      saveDemoLogs(logs);
+      return { ok: true, success: true };
+    }
+    if (p.action === "getLogs") {
+      return { ok: true, success: true, logs: getDemoLogs() };
+    }
+    return { ok: false, error: "Ismeretlen művelet" };
+  }
+
+  // ===== AUTH =====
+  document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const errBox = document.getElementById("loginError");
+    errBox.classList.add("hidden");
+    const btn = document.getElementById("loginSubmitBtn");
+    btn.disabled = true;
+    btn.textContent = "Bejelentkezés...";
+
+    try {
+      const username = document.getElementById("loginUsername").value.trim();
+      const password = document.getElementById("loginPassword").value.trim();
+      const res = await apiCall({ action: "login", username, password });
+      if (res && (res.ok || res.success) && res.user) {
+        currentUser = res.user;
+        sessionStorage.setItem("campus_session", JSON.stringify(currentUser));
+        enterApp();
+      } else {
+        errBox.textContent = (res && res.error) ? res.error : "Hibás felhasználónév vagy jelszó!";
+        errBox.classList.remove("hidden");
+      }
+    } catch (err) {
+      errBox.textContent = "Nem sikerült csatlakozni a Google Sheets szerverhez. Ellenőrizd az API_URL beállítást!";
+      errBox.classList.remove("hidden");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Bejelentkezés";
+    }
+  });
+
+  function demoLogin() {
+    document.getElementById("loginUsername").value = "admin";
+    document.getElementById("loginPassword").value = "admin";
+    document.getElementById("loginForm").dispatchEvent(new Event("submit"));
+  }
+
+  function logout() {
+    currentUser = null;
+    sessionStorage.removeItem("campus_session");
+    document.getElementById("appView").classList.add("hidden");
+    document.getElementById("loginView").classList.remove("hidden");
+    document.getElementById("loginPassword").value = "";
+  }
+
+  function enterApp() {
+    document.getElementById("loginView").classList.add("hidden");
+    document.getElementById("appView").classList.remove("hidden");
+    const displayName = currentUser.fullName || currentUser.name || currentUser.username;
+    document.getElementById("navUserBadge").textContent = displayName + (currentUser.role === "admin" ? " (Admin)" : "");
+    buildNavTabs();
+    loadSampleData();
+  }
+
+  function buildNavTabs() {
+    const nav = document.getElementById("mainNavTabs");
+    nav.innerHTML = "";
+    const perms = currentUser.permissions || [];
+    let firstTab = null;
+
+    DOC_TYPES.forEach(dt => {
+      if (perms.includes(dt.id) || currentUser.role === "admin") {
+        const b = document.createElement("button");
+        b.className = "nav-tab";
+        b.textContent = dt.label;
+        b.dataset.tab = dt.id;
+        b.onclick = () => switchMainTab(dt.id);
+        nav.appendChild(b);
+        if (!firstTab) firstTab = dt.id;
+      }
+    });
+
+    if (currentUser.role === "admin") {
+      const b = document.createElement("button");
+      b.className = "nav-tab";
+      b.textContent = "Admin Panel";
+      b.dataset.tab = "admin";
+      b.onclick = () => switchMainTab("admin");
+      nav.appendChild(b);
+      if (!firstTab) firstTab = "admin";
+    }
+
+    if (firstTab) switchMainTab(firstTab);
+  }
+
+  function switchMainTab(tabId) {
+    document.querySelectorAll("#mainNavTabs .nav-tab").forEach(b => {
+      b.classList.toggle("active", b.dataset.tab === tabId);
+    });
+    document.getElementById("docRaktariView").classList.add("hidden");
+    document.getElementById("comingSoonView").classList.add("hidden");
+    document.getElementById("adminView").classList.add("hidden");
+
+    if (tabId === "raktari_atadolap") {
+      document.getElementById("docRaktariView").classList.remove("hidden");
+    } else if (tabId === "admin") {
+      document.getElementById("adminView").classList.remove("hidden");
+      loadUsers();
+      loadLogs();
+    } else {
+      const dt = DOC_TYPES.find(x => x.id === tabId);
+      document.getElementById("comingSoonTitle").textContent = (dt ? dt.label : "Dokumentum") + " — Fejlesztés alatt";
+      document.getElementById("comingSoonView").classList.remove("hidden");
+    }
+  }
+
+  // ===== CSV / GOOGLE SHEETS PARSER (TÖBBBLOKKOS) =====
+  const dropzone = document.getElementById("dropzone");
+  dropzone.addEventListener("dragover", e => { e.preventDefault(); dropzone.classList.add("dragover"); });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+  dropzone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    if (e.dataTransfer.files[0]) readUploadedFile(e.dataTransfer.files[0]);
+  });
+  document.getElementById("csvFileInput").addEventListener("change", e => {
+    if (e.target.files[0]) readUploadedFile(e.target.files[0]);
+  });
+  document.getElementById("logoUpload").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { currentLogoSrc = ev.target.result; renderDocument(); };
+    reader.readAsDataURL(file);
+  });
+
+  function readUploadedFile(file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById("pasteInput").value = ev.target.result;
+      parsePastedData();
+    };
+    reader.readAsText(file, "UTF-8");
+  }
+
+  function detectDelimiter(text) {
+    const firstLine = text.split(/\r?\n/)[0] || "";
+    const tabs = (firstLine.match(/\t/g) || []).length;
+    const semis = (firstLine.match(/;/g) || []).length;
+    const commas = (firstLine.match(/,/g) || []).length;
+    if (tabs >= semis && tabs >= commas && tabs > 0) return "\t";
+    if (semis >= commas && semis > 0) return ";";
+    return ",";
+  }
+
+  function splitRow(line, delim) {
+    const out = [];
+    let cur = "", inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === delim && !inQuotes) {
+        out.push(cur.trim());
+        cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    out.push(cur.trim());
+    return out;
+  }
+
+  function parsePastedData() {
+    const raw = document.getElementById("pasteInput").value.trim();
+    if (!raw) { showToast("Nincs beillesztett adat!", "error"); return; }
+
+    const delim = detectDelimiter(raw);
+    const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
+    const grid = lines.map(l => splitRow(l, delim));
+    if (grid.length === 0) return;
+
+    const header = grid[0];
+    const blocks = [];
+
+    // Vízszintes blokkok felismerése (NYTSZ / Megnevezés oszlopok alapján)
+    for (let c = 0; c < header.length; c++) {
+      const h = (header[c] || "").toLowerCase();
+      if (h.includes("nytsz") || h.includes("nyilvántart")) {
+        blocks.push({
+          nytsz: c,
+          name: c + 1,
+          qty: c + 2,
+          date: c + 3
         });
-    </script>
+      }
+    }
+
+    // Ha nem volt fejléc, alapértelmezett 5 oszlopos blokk (Sorszám, NYTSZ, Megnevezés, Mennyiség, Dátum)
+    const startRow = blocks.length > 0 ? 1 : 0;
+    if (blocks.length === 0) {
+      blocks.push({ nytsz: 1, name: 2, qty: 3, date: 4 });
+    }
+
+    const parsed = [];
+    for (let r = startRow; r < grid.length; r++) {
+      const row = grid[r];
+      blocks.forEach(b => {
+        const nytsz = (row[b.nytsz] || "").trim();
+        const name = (row[b.name] || "").trim();
+        const qtyRaw = (row[b.qty] || "").trim();
+        const date = (row[b.date] || "").trim();
+        // Üres és összesítő sorok kiszűrése (ahol nincs megnevezés és nincs NYTSZ)
+        if (!name && !nytsz) return;
+        const qty = parseInt(qtyRaw, 10) || 1;
+        parsed.push({ nytsz, name, qty, note: "", date });
+      });
+    }
+
+    if (parsed.length === 0) {
+      showToast("Nem sikerült érvényes tételeket találni!", "error");
+      return;
+    }
+
+    allParsedItems = parsed;
+    buildDateChips();
+    showToast(parsed.length + " tétel sikeresen beolvasva!", "success");
+  }
+
+  function buildDateChips() {
+    const dates = [...new Set(allParsedItems.map(i => i.date).filter(Boolean))];
+    const sec = document.getElementById("dateFilterSection");
+    const box = document.getElementById("dateChips");
+    box.innerHTML = "";
+
+    if (dates.length === 0) {
+      sec.classList.add("hidden");
+      activeItems = allParsedItems.map(x => ({ ...x }));
+      renderEditTable();
+      renderDocument();
+      return;
+    }
+
+    sec.classList.remove("hidden");
+    dates.forEach((d, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "date-chip" + (idx === 0 ? " active" : "");
+      btn.textContent = d;
+      btn.onclick = () => selectDateFilter(d);
+      box.appendChild(btn);
+    });
+    selectDateFilter(dates[0]);
+  }
+
+  function selectDateFilter(dateStr) {
+    activeDateFilter = dateStr;
+    document.querySelectorAll(".date-chip").forEach(c => {
+      c.classList.toggle("active", c.textContent === dateStr);
+    });
+    document.getElementById("docDate").value = dateStr;
+    activeItems = allParsedItems.filter(i => i.date === dateStr).map(x => ({ ...x }));
+    renderEditTable();
+    renderDocument();
+  }
+
+  function loadSampleData() {
+    activeItems = [
+      { nytsz: "140041", name: "Bankett asztal 20 db", qty: 1, note: "" },
+      { nytsz: "500015", name: "KOCSI ÜLÉS", qty: 1, note: "" },
+      { nytsz: "300294", name: "Fotel", qty: 1, note: "" },
+      { nytsz: "300098", name: "Kemence", qty: 1, note: "" },
+      { nytsz: "140069", name: "Kanapé 4 db", qty: 1, note: "" },
+      { nytsz: "300148", name: "Kiszolgáló mobilpult", qty: 4, note: "" }
+    ];
+    document.getElementById("dateFilterSection").classList.add("hidden");
+    renderEditTable();
+    renderDocument();
+  }
+
+  // ===== ITEM EDITOR =====
+  function renderEditTable() {
+    const tbody = document.getElementById("editItemsBody");
+    document.getElementById("itemCountBadge").textContent = activeItems.length;
+    tbody.innerHTML = "";
+    activeItems.forEach((item, idx) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><input value="${escapeHtml(item.nytsz)}" oninput="updateItem(${idx},'nytsz',this.value)" /></td>
+        <td><input value="${escapeHtml(item.name)}" oninput="updateItem(${idx},'name',this.value)" /></td>
+        <td><input type="number" min="1" value="${item.qty}" oninput="updateItem(${idx},'qty',this.value)" /></td>
+        <td><input value="${escapeHtml(item.note)}" oninput="updateItem(${idx},'note',this.value)" /></td>
+        <td style="text-align:center;"><button class="btn btn-danger btn-sm" style="padding:2px 6px;" onclick="removeItem(${idx})">×</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updateItem(idx, field, val) {
+    activeItems[idx][field] = field === "qty" ? (parseInt(val, 10) || 1) : val;
+    renderDocument();
+  }
+  function addEmptyItem() {
+    activeItems.push({ nytsz: "", name: "", qty: 1, note: "" });
+    renderEditTable();
+    renderDocument();
+  }
+  function removeItem(idx) {
+    activeItems.splice(idx, 1);
+    renderEditTable();
+    renderDocument();
+  }
+
+  // ===== HUNGARIAN DATE SUFFIX =====
+  function formatHungarianDateWithSuffix(dateStr) {
+    const clean = (dateStr || "").trim().replace(/\.$/, "");
+    const parts = clean.split(/[.\-\/]/).map(s => s.trim()).filter(Boolean);
+    if (parts.length < 3) return clean + "-án";
+    const day = parseInt(parts[2], 10);
+    const formatted = `${parts[0]}.${String(parts[1]).padStart(2, "0")}.${String(day).padStart(2, "0")}`;
+    let suffix = "-án";
+    if (day === 1) suffix = "-jén";
+    else if ([2, 3, 6, 8, 13, 16, 18, 20, 23, 26, 28, 30].includes(day)) suffix = "-án";
+    else suffix = "-én";
+    return formatted + suffix;
+  }
+
+  function formatSpacedDate(dateStr) {
+    const clean = (dateStr || "").trim().replace(/\.$/, "");
+    const parts = clean.split(/[.\-\/]/).map(s => s.trim()).filter(Boolean);
+    if (parts.length < 3) return dateStr;
+    return `${parts[0]}. ${String(parts[1]).padStart(2, "0")}. ${String(parts[2]).padStart(2, "0")}.`;
+  }
+
+  function escapeHtml(str) {
+    return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  // ===== A4 MULTI-PAGE RENDERER =====
+  function renderDocument() {
+    const container = document.getElementById("pagesContainer");
+    container.innerHTML = "";
+
+    const recCode = document.getElementById("recCode").value.trim();
+    const recName = document.getElementById("recName").value.trim();
+    const sndCode = document.getElementById("sndCode").value.trim();
+    const sndName = document.getElementById("sndName").value.trim();
+    const sndSign = document.getElementById("sndSign").value.trim();
+    const recSign = document.getElementById("recSign").value.trim();
+    const docDate = document.getElementById("docDate").value.trim();
+    const docNote = document.getElementById("docNote").value;
+
+    const totalItems = activeItems.length;
+    const totalQty = activeItems.reduce((sum, i) => sum + (parseInt(i.qty, 10) || 0), 0);
+    const footerDate = formatHungarianDateWithSuffix(docDate);
+    const spacedDate = formatSpacedDate(docDate);
+
+    // Tördelés: 1. oldalon max 15 sor (ha elfér a záró blokkal, különben 22), további oldalakon max 26 sor
+    const pages = [];
+    let idx = 0;
+    let pageNum = 1;
+
+    if (activeItems.length === 0) {
+      pages.push({ pageNum: 1, items: [], isFirst: true, isLast: true });
+    } else {
+      while (idx < activeItems.length) {
+        const isFirst = (pageNum === 1);
+        const remaining = activeItems.length - idx;
+        const maxWithClosing = isFirst ? 13 : 20;
+        const maxWithoutClosing = isFirst ? 22 : 30;
+
+        if (remaining <= maxWithClosing) {
+          pages.push({ pageNum, items: activeItems.slice(idx), startIndex: idx, isFirst, isLast: true });
+          idx = activeItems.length;
+        } else {
+          const take = Math.min(remaining, maxWithoutClosing);
+          const slice = activeItems.slice(idx, idx + take);
+          idx += take;
+          pages.push({ pageNum, items: slice, startIndex: idx - take, isFirst, isLast: false });
+          pageNum++;
+          if (idx === activeItems.length) {
+            // Záró blokk új oldalra kerül
+            pages.push({ pageNum, items: [], startIndex: idx, isFirst: false, isLast: true });
+          }
+        }
+      }
+    }
+
+    document.getElementById("pageCountInfo").textContent = `(${pages.length} oldal • ${totalItems} tétel • ${totalQty} db)`;
+
+    pages.forEach(p => {
+      const pageEl = document.createElement("div");
+      pageEl.className = "a4-page";
+
+      let html = `
+        <div class="doc-top-bar">
+          <img src="${currentLogoSrc}" alt="Campus" onerror="this.src=FALLBACK_LOGO" />
+          <div class="doc-top-title">RAKTÁRI ÁTADÓ LAP</div>
+        </div>
+      `;
+
+      if (p.isFirst) {
+        html += `
+          <div class="doc-main-title">RAKTÁRI ÁTADÓ LAP</div>
+          <div class="parties-grid">
+            <table class="party-table">
+              <tr><th colspan="2">ÁTVEVŐ</th></tr>
+              <tr><td>Egység kódja</td><td>${escapeHtml(recCode)}</td></tr>
+              <tr><td>Egység neve</td><td>${escapeHtml(recName)}</td></tr>
+            </table>
+            <table class="party-table">
+              <tr><th colspan="2">ÁTADÓ</th></tr>
+              <tr><td>Egység kódja</td><td>${escapeHtml(sndCode)}</td></tr>
+              <tr><td>Egység neve</td><td>${escapeHtml(sndName)}</td></tr>
+            </table>
+          </div>
+        `;
+      }
+
+      if (p.items.length > 0 || p.isFirst) {
+        html += `
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width:7%;">TÉTEL</th>
+                <th style="width:16%;">NYILVÁNTARTÁSI SZÁM</th>
+                <th style="width:37%;">MEGNEVEZÉS</th>
+                <th style="width:7%;">DB</th>
+                <th style="width:33%;">TÍPUS, GYÁRI SZÁM, SPECIFIKÁCIÓ (SZÍN, MÉRET), MEGJEGYZÉS</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${p.items.map((it, i) => `
+                <tr>
+                  <td class="c-center">${(p.startIndex || 0) + i + 1}</td>
+                  <td class="c-right">${escapeHtml(it.nytsz)}</td>
+                  <td>${escapeHtml(it.name)}</td>
+                  <td class="c-center">${escapeHtml(it.qty)}</td>
+                  <td>${escapeHtml(it.note)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+      }
+
+      if (p.isLast) {
+        html += `
+          <div class="doc-legal">
+            <div class="bold-line">A fenti táblázatban szereplő eszközök a Debreceni Campus Nonprofit Közhasznú Kft. tulajdonát képezik.</div>
+            <div class="sum-line">A táblázat összesen ${totalItems} tételben ${totalQty} db. eszközt tartalmaz.</div>
+            <div>Az átvevő az Átadó lap aláírásával igazolja az eszközök tételes átvételét, valamint vállalja azok elkülönített, azonosítható módon történő nyilvántartását, biztonságos raktári elhelyezését és állapottól, használhatóságtól függően szükség esetén kezdeményezi azok selejtezését, értékesítését, vagy egyéb hasznosítását a hatályos belső szabályzatoknak megfelelően.</div>
+          </div>
+
+          <table class="note-box">
+            <tr><th>MEGJEGYZÉS</th></tr>
+            <tr><td>${escapeHtml(docNote)}</td></tr>
+          </table>
+
+          <div class="sign-row">
+            <div style="padding-bottom:6mm;">Debrecen, ${escapeHtml(spacedDate)}</div>
+            <div class="sign-col">
+              <div class="sign-label">ÁTADÓ</div>
+              <div class="sign-line">${escapeHtml(sndSign)}</div>
+            </div>
+            <div class="sign-col">
+              <div class="sign-label">ÁTVEVŐ</div>
+              <div class="sign-line">${escapeHtml(recSign)}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `
+        <div class="doc-footer">
+          ${p.pageNum}. oldal a ${escapeHtml(footerDate)} átadott ${escapeHtml(sndCode)} - ${escapeHtml(sndName)} eszközlistához
+        </div>
+      `;
+
+      pageEl.innerHTML = html;
+      container.appendChild(pageEl);
+    });
+  }
+
+  async function printAndLog() {
+    window.print();
+    if (!currentUser) return;
+    const snd = `${document.getElementById("sndCode").value} ${document.getElementById("sndName").value}`;
+    const rec = `${document.getElementById("recCode").value} ${document.getElementById("recName").value}`;
+    const totalQty = activeItems.reduce((s, i) => s + (parseInt(i.qty, 10) || 0), 0);
+    const details = `Átadó: ${snd} → Átvevő: ${rec} | Dátum: ${document.getElementById("docDate").value} | ${activeItems.length} tétel (${totalQty} db)`;
+
+    try {
+      await apiCall({
+        action: "logDocument",
+        username: currentUser.username,
+        userName: currentUser.fullName || currentUser.name || currentUser.username,
+        docType: "Raktári átadólap",
+        details
+      });
+    } catch (e) { /* háttérben fut */ }
+  }
+
+  // ===== ADMIN PANEL =====
+  function switchAdminTab(sub) {
+    document.getElementById("tabUsersBtn").classList.toggle("active", sub === "users");
+    document.getElementById("tabLogsBtn").classList.toggle("active", sub === "logs");
+    document.getElementById("adminUsersPane").classList.toggle("hidden", sub !== "users");
+    document.getElementById("adminLogsPane").classList.toggle("hidden", sub !== "logs");
+    if (sub === "logs") loadLogs();
+  }
+
+  function generateUsername() {
+    const raw = document.getElementById("newFullName").value.trim();
+    if (!raw) { showToast("Előbb írd be a teljes nevet!", "error"); return; }
+    const clean = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, ".");
+    document.getElementById("newUsername").value = clean;
+  }
+
+  function generatePassword() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";
+    let pwd = "";
+    for (let i = 0; i < 10; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+    document.getElementById("newPassword").value = pwd;
+  }
+
+  function copyNewPassword() {
+    const val = document.getElementById("newPassword").value;
+    if (!val) return;
+    navigator.clipboard.writeText(val);
+    showToast("Jelszó a vágólapra másolva!", "success");
+  }
+
+  async function createUser() {
+    const fullName = document.getElementById("newFullName").value.trim();
+    const username = document.getElementById("newUsername").value.trim();
+    const password = document.getElementById("newPassword").value.trim();
+    const role = document.getElementById("newRole").value;
+    const permissions = [...document.querySelectorAll(".new-perm:checked")].map(c => c.value);
+
+    if (!username || !password) {
+      showToast("A felhasználónév és a jelszó megadása kötelező!", "error");
+      return;
+    }
+
+    try {
+      const res = await apiCall({ action: "addUser", username, password, fullName: fullName || username, name: fullName || username, role, permissions });
+      if (res && (res.ok || res.success)) {
+        showToast("Felhasználó sikeresen létrehozva!", "success");
+        document.getElementById("newFullName").value = "";
+        document.getElementById("newUsername").value = "";
+        document.getElementById("newPassword").value = "";
+        loadUsers();
+      } else {
+        showToast((res && res.error) || "Hiba a létrehozáskor!", "error");
+      }
+    } catch (e) {
+      showToast("Hálózati hiba!", "error");
+    }
+  }
+
+  async function loadUsers() {
+    try {
+      const res = await apiCall({ action: "getUsers" });
+      if (res && (res.ok || res.success)) {
+        cachedUsers = res.users || [];
+        renderUsersTable();
+      }
+    } catch (e) { showToast("Nem sikerült betölteni a felhasználókat.", "error"); }
+  }
+
+  function renderUsersTable() {
+    const tbody = document.getElementById("usersTableBody");
+    tbody.innerHTML = "";
+    cachedUsers.forEach((u, i) => {
+      const isSelf = currentUser && u.username.toLowerCase() === currentUser.username.toLowerCase();
+      const perms = u.permissions || [];
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${escapeHtml(u.fullName || u.name || "")}</strong></td>
+        <td><code>${escapeHtml(u.username)}</code></td>
+        <td>
+          <select id="role_${i}" class="form-control" style="padding:5px 8px; width:130px;">
+            <option value="user" ${u.role !== "admin" ? "selected" : ""}>Felhasználó</option>
+            <option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option>
+          </select>
+        </td>
+        <td>
+          <div class="perm-checks">
+            ${DOC_TYPES.map(dt => `
+              <label><input type="checkbox" class="u-perm-${i}" value="${dt.id}" ${perms.includes(dt.id) ? "checked" : ""} /> ${dt.label}</label>
+            `).join("")}
+          </div>
+        </td>
+        <td>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <button class="btn btn-success btn-sm" onclick="saveUser(${i}, '${escapeHtml(u.username)}')">Mentés</button>
+            ${isSelf ? '<span style="font-size:12px; color:var(--muted); font-style:italic;">(Saját fiók)</span>' : `<button class="btn btn-danger btn-sm" onclick="deleteUser('${escapeHtml(u.username)}')">Törlés</button>`}
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function saveUser(idx, username) {
+    const role = document.getElementById("role_" + idx).value;
+    const permissions = [...document.querySelectorAll(".u-perm-" + idx + ":checked")].map(c => c.value);
+    try {
+      const res = await apiCall({ action: "updateUser", username, role, permissions });
+      if (res && (res.ok || res.success)) showToast("Módosítások elmentve!", "success");
+      else showToast((res && res.error) || "Hiba mentéskor!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  async function deleteUser(username) {
+    if (!confirm(`Biztosan törlöd a(z) "${username}" felhasználót?`)) return;
+    try {
+      const res = await apiCall({ action: "deleteUser", username });
+      if (res && (res.ok || res.success)) { showToast("Felhasználó törölve!", "success"); loadUsers(); }
+      else showToast((res && res.error) || "Hiba törléskor!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  async function loadLogs() {
+    try {
+      const res = await apiCall({ action: "getLogs" });
+      if (res && (res.ok || res.success)) {
+        cachedLogs = res.logs || [];
+        renderLogsTable();
+      }
+    } catch (e) { showToast("Nem sikerült betölteni a naplót.", "error"); }
+  }
+
+  function renderLogsTable() {
+    const q = (document.getElementById("logSearch").value || "").toLowerCase();
+    const tbody = document.getElementById("logsTableBody");
+    tbody.innerHTML = "";
+    const filtered = cachedLogs.filter(l =>
+      JSON.stringify(l).toLowerCase().includes(q)
+    );
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:20px;">Nincs megjeleníthető naplóbejegyzés.</td></tr>';
+      return;
+    }
+    filtered.forEach(l => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="white-space:nowrap;">${escapeHtml(l.timestamp || l.date || "")}</td>
+        <td><strong>${escapeHtml(l.userName || l.fullName || "")}</strong> <span style="color:var(--muted);">(${escapeHtml(l.username || "")})</span></td>
+        <td>${escapeHtml(l.docType || l.type || "")}</td>
+        <td>${escapeHtml(l.details || "")}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ===== INIT =====
+  (function init() {
+    if (isDemoMode()) {
+      document.getElementById("demoBanner").classList.remove("hidden");
+    }
+    const saved = sessionStorage.getItem("campus_session");
+    if (saved) {
+      try {
+        currentUser = JSON.parse(saved);
+        enterApp();
+      } catch (e) { sessionStorage.removeItem("campus_session"); }
+    }
+  })();
+</script>
 </body>
 </html>
