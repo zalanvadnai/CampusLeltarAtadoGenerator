@@ -6,10 +6,12 @@
   <title>Campus Dokumentum Generátor & Admin</title>
   <style>
     :root {
-      --orange: #e86c1f;
-      --orange-dark: #c95812;
-      --orange-light: #fff3eb;
-      --peach: #f8cba6;
+      /* Alapértelmezett (DCNK narancs/sárga) téma */
+      --primary: #e86c1f;
+      --primary-dark: #c95812;
+      --primary-light: #fff3eb;
+      --table-head: #f8cba6;
+      --accent: #f59e0b;
       --bg: #f1f5f9;
       --card: #ffffff;
       --text: #1e293b;
@@ -19,12 +21,22 @@
       --success: #16a34a;
     }
 
+    /* UDC - UD Campus zöld téma */
+    body.theme-udc {
+      --primary: #0b5d36;
+      --primary-dark: #073f24;
+      --primary-light: #ecfdf5;
+      --table-head: #bbf7d0;
+      --accent: #f5a623;
+    }
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
+      transition: background 0.2s;
     }
 
     .hidden { display: none !important; }
@@ -69,7 +81,7 @@
       box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
     }
     .login-header {
-      background: var(--orange-dark);
+      background: #c95812;
       color: #fff;
       padding: 28px 24px 24px;
       text-align: center;
@@ -84,10 +96,11 @@
       margin-bottom: 14px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
-    .login-logo-box img { height: 36px; display: block; }
+    .login-logo-box img { height: 34px; display: block; }
     .login-header h1 { margin: 0 0 6px; font-size: 20px; }
     .login-header p { margin: 0; font-size: 13px; opacity: 0.9; }
     .login-body { padding: 24px; }
+
     .form-group { margin-bottom: 16px; }
     .form-group label {
       display: block;
@@ -106,7 +119,7 @@
       transition: border-color 0.2s;
       background: #fff;
     }
-    .form-control:focus { border-color: var(--orange); }
+    .form-control:focus { border-color: var(--primary); }
     .password-wrap {
       position: relative;
       display: flex;
@@ -139,8 +152,8 @@
       cursor: pointer;
       transition: all 0.15s;
     }
-    .btn-primary { background: var(--orange); color: #fff; }
-    .btn-primary:hover { background: var(--orange-dark); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
     .btn-secondary { background: #e2e8f0; color: #1e293b; }
     .btn-secondary:hover { background: #cbd5e1; }
     .btn-outline { background: #fff; border: 1.5px solid var(--border); color: #334155; }
@@ -175,19 +188,38 @@
     /* ===== TOP NAVBAR ===== */
     .navbar {
       background: #fff;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 3px solid var(--primary);
       padding: 0 20px;
-      height: 60px;
+      height: 62px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-    .nav-left { display: flex; align-items: center; gap: 20px; }
-    .nav-brand img { height: 28px; display: block; }
+    .nav-left { display: flex; align-items: center; gap: 18px; }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+    .nav-brand:hover { background: #f1f5f9; }
+    .nav-brand img { height: 30px; display: block; }
+    .company-pill {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border: 1px solid var(--table-head);
+    }
     .nav-tabs { display: flex; gap: 6px; }
     .nav-tab {
       background: none;
@@ -200,7 +232,7 @@
       cursor: pointer;
     }
     .nav-tab:hover { background: #f1f5f9; color: var(--text); }
-    .nav-tab.active { background: var(--orange-light); color: var(--orange-dark); }
+    .nav-tab.active { background: var(--primary-light); color: var(--primary-dark); }
     .nav-right { display: flex; align-items: center; gap: 12px; font-size: 13px; }
     .user-badge {
       background: #f1f5f9;
@@ -210,8 +242,117 @@
       color: #334155;
     }
 
-    /* ===== MAIN LAYOUTS ===== */
-    .app-container { max-width: 1440px; margin: 0 auto; padding: 20px; }
+    /* ===== MAIN CONTAINER ===== */
+    .app-container { max-width: 1440px; margin: 0 auto; padding: 24px 20px; }
+
+    /* ===== COMPANY SELECTOR VIEW ===== */
+    .company-select-wrap {
+      max-width: 860px;
+      margin: 40px auto;
+      text-align: center;
+    }
+    .company-select-wrap h2 { font-size: 26px; margin: 0 0 8px; color: #0f172a; }
+    .company-select-wrap p { color: var(--muted); margin: 0 0 32px; font-size: 15px; }
+    .company-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 700px) { .company-cards { grid-template-columns: 1fr; } }
+    .company-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 34px 24px;
+      border: 2px solid #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.05);
+    }
+    .company-card.card-dcnk:hover {
+      border-color: #e86c1f;
+      transform: translateY(-4px);
+      box-shadow: 0 14px 30px rgba(232, 108, 31, 0.16);
+    }
+    .company-card.card-udc:hover {
+      border-color: #0b5d36;
+      transform: translateY(-4px);
+      box-shadow: 0 14px 30px rgba(11, 93, 54, 0.16);
+    }
+    .company-card img { height: 52px; max-width: 240px; object-fit: contain; margin-bottom: 20px; }
+    .company-card .code-tag {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .card-dcnk .code-tag { background: #fff3eb; color: #c95812; }
+    .card-udc .code-tag { background: #ecfdf5; color: #073f24; }
+    .company-card h3 { margin: 0 0 6px; font-size: 18px; }
+    .company-card span { font-size: 13px; color: var(--muted); }
+
+    /* ===== DOCUMENT SELECTOR + PREVIEW VIEW ===== */
+    .doc-selector-grid {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 28px;
+      align-items: start;
+      max-width: 1120px;
+      margin: 16px auto;
+    }
+    @media (max-width: 900px) { .doc-selector-grid { grid-template-columns: 1fr; } }
+    .preview-stage {
+      background: #e2e8f0;
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 480px;
+    }
+    .mini-doc-paper {
+      width: 100%;
+      max-width: 440px;
+      aspect-ratio: 210 / 297;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.18);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      font-family: Arial, sans-serif;
+      color: #111;
+    }
+    .mini-doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .mini-doc-header img { height: 22px; }
+    .mini-doc-title {
+      text-align: center;
+      font-weight: 800;
+      font-size: 14px;
+      margin: 6px 0 14px;
+      letter-spacing: 0.4px;
+    }
+    .mini-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .mini-box { border: 1px solid #333; font-size: 8px; }
+    .mini-box-h { background: var(--primary-dark); color: #fff; text-align: center; font-weight: 700; padding: 2px; }
+    .mini-box-r { padding: 3px 5px; border-top: 1px solid #999; background: #f8fafc; }
+    .mini-tbl { width: 100%; border-collapse: collapse; font-size: 7.5px; margin-bottom: 12px; }
+    .mini-tbl th { background: var(--table-head); border: 1px solid #333; padding: 3px; }
+    .mini-tbl td { border: 1px solid #333; padding: 4px; }
+    .mini-note { border: 1px solid #333; margin-top: 8px; }
+    .mini-note-h { background: var(--primary-dark); color: #fff; text-align: center; font-size: 7.5px; font-weight: 700; padding: 2px; }
+    .mini-note-b { height: 28px; }
+    .mini-sign { display: flex; justify-content: space-between; margin-top: auto; padding-top: 18px; font-size: 8px; }
+    .mini-sign div { width: 28%; text-align: center; border-top: 1px solid #666; padding-top: 3px; }
 
     /* ===== GENERATOR SPLIT LAYOUT ===== */
     .gen-grid {
@@ -220,9 +361,7 @@
       gap: 24px;
       align-items: start;
     }
-    @media (max-width: 1100px) {
-      .gen-grid { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 1100px) { .gen-grid { grid-template-columns: 1fr; } }
     .panel {
       background: #fff;
       border-radius: 12px;
@@ -236,7 +375,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      border-left: 4px solid var(--orange);
+      border-left: 4px solid var(--primary);
       padding-left: 10px;
     }
     .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -253,9 +392,9 @@
       color: var(--muted);
     }
     .dropzone:hover, .dropzone.dragover {
-      border-color: var(--orange);
-      background: var(--orange-light);
-      color: var(--orange-dark);
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary-dark);
     }
     textarea.paste-box {
       width: 100%;
@@ -280,8 +419,8 @@
       cursor: pointer;
     }
     .date-chip.active {
-      background: var(--orange);
-      border-color: var(--orange);
+      background: var(--primary);
+      border-color: var(--primary);
       color: #fff;
     }
 
@@ -296,7 +435,7 @@
       padding: 2px 4px;
       outline: none;
     }
-    .mini-table input:focus { background: #fff7ed; }
+    .mini-table input:focus { background: var(--primary-light); }
 
     /* ===== A4 PREVIEW & PRINT ===== */
     .preview-toolbar {
@@ -308,6 +447,8 @@
       padding: 12px 16px;
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+      gap: 10px;
+      flex-wrap: wrap;
     }
     .pages-wrapper {
       display: flex;
@@ -361,7 +502,7 @@
       font-size: 9.5pt;
     }
     .party-table th {
-      background: #c95812;
+      background: var(--primary-dark);
       color: #fff;
       text-align: center;
       padding: 4px 6px;
@@ -383,7 +524,7 @@
       margin-bottom: 5mm;
     }
     .items-table th {
-      background: var(--peach);
+      background: var(--table-head);
       border: 1px solid #000;
       padding: 5px 4px;
       text-align: center;
@@ -415,7 +556,7 @@
       font-family: Arial, sans-serif;
     }
     .note-box th {
-      background: #c95812;
+      background: var(--primary-dark);
       color: #fff;
       border: 1px solid #000;
       padding: 3px;
@@ -464,7 +605,7 @@
       border-bottom: 2px solid transparent;
       margin-bottom: -2px;
     }
-    .sub-tab.active { color: var(--orange-dark); border-bottom-color: var(--orange); }
+    .sub-tab.active { color: var(--primary-dark); border-bottom-color: var(--primary); }
 
     .admin-form-grid {
       display: grid;
@@ -499,16 +640,18 @@
     .coming-soon {
       background: #fff;
       border-radius: 14px;
-      padding: 60px 20px;
+      padding: 50px 20px;
       text-align: center;
       box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      max-width: 640px;
+      margin: 20px auto;
     }
 
     /* ===== PRINT RULES ===== */
     @page { size: A4 portrait; margin: 0; }
     @media print {
-      body { background: #fff; }
-      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #adminView, #comingSoonView, #toast {
+      body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #companySelectView, #docSelectView, #adminView, #comingSoonView, #toast {
         display: none !important;
       }
       .app-container { padding: 0; max-width: none; }
@@ -535,7 +678,7 @@
   <div class="login-card">
     <div class="login-header">
       <div class="login-logo-box">
-        <img src="campuslog.png" alt="Campus" onerror="this.src=FALLBACK_LOGO" />
+        <img src="campuslog.png" alt="Campus" onerror="this.src=FALLBACK_DCNK_LOGO" />
       </div>
       <h1>Dokumentum Generátor & Admin</h1>
       <p>Jelentkezz be a céges fiókoddal a folytatáshoz</p>
@@ -571,8 +714,9 @@
 <div id="appView" class="hidden">
   <header class="navbar no-print">
     <div class="nav-left">
-      <div class="nav-brand">
-        <img src="campuslog.png" alt="Campus" onerror="this.src=FALLBACK_LOGO" />
+      <div class="nav-brand" onclick="goHomeToCompanySelect()" title="Vissza a cégválasztáshoz (Kezdőlap)">
+        <img id="navLogoImg" src="campuslog.png" alt="Campus" onerror="this.src=FALLBACK_DCNK_LOGO" />
+        <span id="navCompanyPill" class="company-pill hidden"></span>
       </div>
       <nav class="nav-tabs" id="mainNavTabs"></nav>
     </div>
@@ -584,11 +728,65 @@
 
   <main class="app-container">
 
-    <!-- ===== RAKTÁRI ÁTADÓLAP GENERATOR ===== -->
+    <!-- ===== 1. CÉGVÁLASZTÓ KÉPERNYŐ ===== -->
+    <section id="companySelectView" class="hidden">
+      <div class="company-select-wrap">
+        <h2>Melyik céghez szeretnél nyomtatványt készíteni?</h2>
+        <p>A nyomtatványok eléréséhez először válaszd ki a megfelelő céget.</p>
+        <div class="company-cards">
+          <div class="company-card card-dcnk" onclick="selectCompany('DCNK')">
+            <img src="campuslog.png" alt="DCNK" onerror="this.src=FALLBACK_DCNK_LOGO" />
+            <div class="code-tag">DCNK</div>
+            <h3>Debreceni Campus NK Kft.</h3>
+            <span>Debreceni Campus Nonprofit Közhasznú Kft.</span>
+          </div>
+          <div class="company-card card-udc" onclick="selectCompany('UDC')">
+            <img src="UD_campus_logo_hosszu.png" alt="UD Campus" onerror="this.src=FALLBACK_UDC_LOGO" />
+            <div class="code-tag">UDC</div>
+            <h3>UD Campus</h3>
+            <span>UD Campus arculatú formanyomtatványok</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 2. NYOMTATVÁNYVÁLASZTÓ + PREVIEW ===== -->
+    <section id="docSelectView" class="hidden">
+      <div class="doc-selector-grid">
+        <div class="panel">
+          <h3>Nyomtatvány kiválasztása</h3>
+          <p style="font-size:13px; color:var(--muted); margin-top:0;">
+            Kiválasztott cég: <strong id="selectorCompanyName"></strong>
+          </p>
+          <div class="form-group">
+            <label for="docTypeDropdown">Elérhető formanyomtatványok</label>
+            <select id="docTypeDropdown" class="form-control" onchange="renderMiniPreview()"></select>
+          </div>
+          <p id="docTypeDesc" style="font-size:13px; color:var(--muted); min-height:42px; margin-bottom:18px;"></p>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" style="flex:1;" onclick="openSelectedDocument()">Kiválasztás →</button>
+            <button class="btn btn-outline" onclick="goHomeToCompanySelect(true)">Cégváltás</button>
+          </div>
+        </div>
+
+        <div class="preview-stage">
+          <div style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:12px;">
+            Nyomtatvány előnézet (Preview)
+          </div>
+          <div id="miniPreviewContainer" class="mini-doc-paper"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 3. RAKTÁRI ÁTADÓLAP GENERATOR ===== -->
     <section id="docRaktariView" class="hidden">
       <div class="gen-grid">
         <!-- Bal oldali vezérlőpanel -->
         <div class="left-controls no-print">
+          <div style="margin-bottom:12px;">
+            <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
+          </div>
+
           <div class="panel">
             <h3>1. Adatok betöltése (Google Sheets / CSV)</h3>
             <div class="dropzone" id="dropzone" onclick="document.getElementById('csvFileInput').click()">
@@ -692,7 +890,8 @@
     <section id="comingSoonView" class="hidden">
       <div class="coming-soon">
         <h2 id="comingSoonTitle" style="margin-top:0;">Fejlesztés alatt</h2>
-        <p style="color:var(--muted); max-width:480px; margin:0 auto;">Ez a dokumentumtípus már elő van készítve a jogosultságkezelőben, a sablonja a következő frissítésben kerül be.</p>
+        <p style="color:var(--muted); max-width:480px; margin:0 auto 20px;">Ez a dokumentumtípus már elő van készítve a jogosultságkezelőben, a szerkeszthető sablonja a következő frissítésben kerül be.</p>
+        <button class="btn btn-outline" onclick="backToDocSelector(true)">← Vissza a nyomtatványválasztóhoz</button>
       </div>
     </section>
 
@@ -723,7 +922,7 @@
               <label>Jelszó</label>
               <div class="input-inline">
                 <input id="newPassword" class="form-control" placeholder="Jelszó" />
-                <button type="button" class="btn btn-outline btn-sm" style="color:var(--orange-dark); border-color:var(--peach);" onclick="generatePassword()">Generál</button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="generatePassword()">Generál</button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="copyNewPassword()">Másol</button>
               </div>
             </div>
@@ -805,8 +1004,7 @@
   // =========================================================================
   const API_URL = "https://script.google.com/macros/s/AKfycbxg1CE40fEftdrzepOQB4jN4dzXj_boAmFdXa-7hwH0HZSFV0t_1hRlTh1aBCbTAS_Rxw/exec";
 
-  // Beépített tartalék SVG logó, ha a campuslog.png még nincs feltöltve mellé
-  const FALLBACK_LOGO = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  const FALLBACK_DCNK_LOGO = 'data:image/svg+xml;utf8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 56">' +
     '<rect x="2" y="4" width="48" height="48" rx="8" fill="#e86c1f"/>' +
     '<circle cx="20" cy="18" r="5" fill="#fff"/>' +
@@ -815,19 +1013,63 @@
     '</svg>'
   );
 
-  let currentLogoSrc = "campuslog.png";
+  const FALLBACK_UDC_LOGO = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 56">' +
+    '<path d="M26 4 L48 12 L44 38 L26 52 L8 38 L4 12 Z" fill="#0b5d36" stroke="#f5a623" stroke-width="3"/>' +
+    '<text x="12" y="34" font-family="Arial, sans-serif" font-weight="800" font-size="18" fill="#fff">UD</text>' +
+    '<text x="60" y="40" font-family="Arial, sans-serif" font-weight="800" font-size="36" fill="#0b5d36" letter-spacing="1">campus</text>' +
+    '</svg>'
+  );
+
+  const COMPANIES = {
+    DCNK: {
+      code: "DCNK",
+      shortName: "DCNK",
+      fullName: "Debreceni Campus Nonprofit Közhasznú Kft.",
+      logo: "campuslog.png",
+      fallbackLogo: FALLBACK_DCNK_LOGO,
+      themeClass: ""
+    },
+    UDC: {
+      code: "UDC",
+      shortName: "UD Campus",
+      fullName: "UD Campus",
+      logo: "UD_campus_logo_hosszu.png",
+      fallbackLogo: FALLBACK_UDC_LOGO,
+      themeClass: "theme-udc"
+    }
+  };
+
+  const DOC_TYPES = [
+    {
+      id: "raktari_atadolap",
+      label: "Raktári átadólap",
+      title: "RAKTÁRI ÁTADÓ LAP",
+      desc: "Többoldalas raktári eszközátadási bizonylat Google Sheets / CSV importtal, dátumszűréssel és automatikus összesítéssel."
+    },
+    {
+      id: "egysegek_kozotti",
+      label: "Egységek közötti átadás",
+      title: "EGYSÉGEK KÖZÖTTI ÁTADÁSI LAP",
+      desc: "Eszközök és készletek belső egységek közötti mozgatásának hivatalos bizonylata (hamarosan elérhető)."
+    },
+    {
+      id: "selejtezes",
+      label: "Selejtezési jegyzőkönyv",
+      title: "SELEJTEZÉSI JEGYZŐKÖNYV",
+      desc: "Használhatatlanná vált eszközök bizottsági selejtezésének hivatalos jegyzőkönyve (hamarosan elérhető)."
+    }
+  ];
+
+  let selectedCompany = null;
+  let currentView = "companySelect"; // companySelect | docSelect | docRaktari | comingSoon | admin
+  let customLogoOverride = null;
   let currentUser = null;
   let allParsedItems = [];
   let activeItems = [];
   let activeDateFilter = "";
   let cachedUsers = [];
   let cachedLogs = [];
-
-  const DOC_TYPES = [
-    { id: "raktari_atadolap", label: "Raktári átadólap" },
-    { id: "egysegek_kozotti", label: "Egységek közötti átadás" },
-    { id: "selejtezes", label: "Selejtezési jegyzőkönyv" }
-  ];
 
   // ===== TOAST & HELPERS =====
   function showToast(msg, type = "info") {
@@ -849,8 +1091,15 @@
     }
   }
 
-  function isDemoMode() {
-    return !API_URL || !API_URL.trim();
+  function isDemoMode() { return !API_URL || !API_URL.trim(); }
+
+  function getActiveLogoSrc() {
+    if (customLogoOverride) return customLogoOverride;
+    return selectedCompany ? selectedCompany.logo : COMPANIES.DCNK.logo;
+  }
+
+  function getActiveFallbackLogo() {
+    return selectedCompany ? selectedCompany.fallbackLogo : FALLBACK_DCNK_LOGO;
   }
 
   // ===== LOCAL DEMO STORAGE =====
@@ -876,9 +1125,7 @@
 
   // ===== API CALL WRAPPER =====
   async function apiCall(payload) {
-    if (isDemoMode()) {
-      return handleDemoApi(payload);
-    }
+    if (isDemoMode()) return handleDemoApi(payload);
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -896,9 +1143,7 @@
       if (!u) return { ok: false, success: false, error: "Hibás felhasználónév vagy jelszó!" };
       return { ok: true, success: true, user: { username: u.username, fullName: u.fullName, name: u.fullName, role: u.role, permissions: u.permissions } };
     }
-    if (p.action === "getUsers") {
-      return { ok: true, success: true, users };
-    }
+    if (p.action === "getUsers") return { ok: true, success: true, users };
     if (p.action === "addUser") {
       if (!p.username || !p.password) return { ok: false, error: "A felhasználónév és a jelszó megadása kötelező!" };
       if (users.some(x => x.username.toLowerCase() === p.username.toLowerCase())) return { ok: false, error: "Ez a felhasználónév már létezik!" };
@@ -906,7 +1151,7 @@
       saveDemoUsers(users);
       return { ok: true, success: true };
     }
-    if (p.action === "updateUser") {
+    if (p.action === "updateUser" || p.action === "updateUserPermissions") {
       const idx = users.findIndex(x => x.username.toLowerCase() === p.username.toLowerCase());
       if (idx === -1) return { ok: false, error: "Felhasználó nem található." };
       users[idx].role = p.role;
@@ -930,9 +1175,7 @@
       saveDemoLogs(logs);
       return { ok: true, success: true };
     }
-    if (p.action === "getLogs") {
-      return { ok: true, success: true, logs: getDemoLogs() };
-    }
+    if (p.action === "getLogs") return { ok: true, success: true, logs: getDemoLogs() };
     return { ok: false, error: "Ismeretlen művelet" };
   }
 
@@ -974,6 +1217,8 @@
 
   function logout() {
     currentUser = null;
+    selectedCompany = null;
+    document.body.className = "";
     sessionStorage.removeItem("campus_session");
     document.getElementById("appView").classList.add("hidden");
     document.getElementById("loginView").classList.remove("hidden");
@@ -985,60 +1230,182 @@
     document.getElementById("appView").classList.remove("hidden");
     const displayName = currentUser.fullName || currentUser.name || currentUser.username;
     document.getElementById("navUserBadge").textContent = displayName + (currentUser.role === "admin" ? " (Admin)" : "");
+    goHomeToCompanySelect(true);
+  }
+
+  // ===== VIEW & COMPANY NAVIGATION =====
+  function showOnlySection(sectionId, viewKey) {
+    ["companySelectView", "docSelectView", "docRaktariView", "comingSoonView", "adminView"].forEach(id => {
+      document.getElementById(id).classList.toggle("hidden", id !== sectionId);
+    });
+    currentView = viewKey;
     buildNavTabs();
-    loadSampleData();
+  }
+
+  function goHomeToCompanySelect(skipConfirm = false) {
+    if (!skipConfirm && currentView === "docRaktari") {
+      if (!confirm("Biztosan vissza akarsz lépni a cégválasztáshoz? A nem mentett módosítások elveszhetnek.")) {
+        return;
+      }
+    }
+    selectedCompany = null;
+    customLogoOverride = null;
+    document.body.className = "";
+    const navLogo = document.getElementById("navLogoImg");
+    navLogo.src = COMPANIES.DCNK.logo;
+    navLogo.onerror = () => { navLogo.src = FALLBACK_DCNK_LOGO; };
+    document.getElementById("navCompanyPill").classList.add("hidden");
+    showOnlySection("companySelectView", "companySelect");
+  }
+
+  function selectCompany(code) {
+    selectedCompany = COMPANIES[code];
+    customLogoOverride = null;
+    document.body.className = selectedCompany.themeClass;
+
+    const navLogo = document.getElementById("navLogoImg");
+    navLogo.src = selectedCompany.logo;
+    navLogo.onerror = () => { navLogo.src = selectedCompany.fallbackLogo; };
+
+    const pill = document.getElementById("navCompanyPill");
+    pill.textContent = selectedCompany.code;
+    pill.classList.remove("hidden");
+
+    document.getElementById("selectorCompanyName").textContent = `${selectedCompany.code} — ${selectedCompany.fullName}`;
+    populateDocDropdown();
+    showOnlySection("docSelectView", "docSelect");
+    renderMiniPreview();
   }
 
   function buildNavTabs() {
     const nav = document.getElementById("mainNavTabs");
     nav.innerHTML = "";
-    const perms = currentUser.permissions || [];
-    let firstTab = null;
 
-    DOC_TYPES.forEach(dt => {
-      if (perms.includes(dt.id) || currentUser.role === "admin") {
-        const b = document.createElement("button");
-        b.className = "nav-tab";
-        b.textContent = dt.label;
-        b.dataset.tab = dt.id;
-        b.onclick = () => switchMainTab(dt.id);
-        nav.appendChild(b);
-        if (!firstTab) firstTab = dt.id;
-      }
-    });
-
-    if (currentUser.role === "admin") {
-      const b = document.createElement("button");
-      b.className = "nav-tab";
-      b.textContent = "Admin Panel";
-      b.dataset.tab = "admin";
-      b.onclick = () => switchMainTab("admin");
-      nav.appendChild(b);
-      if (!firstTab) firstTab = "admin";
+    if (selectedCompany) {
+      const bDocs = document.createElement("button");
+      bDocs.className = "nav-tab" + (currentView === "docSelect" || currentView === "docRaktari" || currentView === "comingSoon" ? " active" : "");
+      bDocs.textContent = "Nyomtatványok";
+      bDocs.onclick = () => {
+        if (currentView === "docRaktari") backToDocSelector();
+        else showOnlySection("docSelectView", "docSelect");
+      };
+      nav.appendChild(bDocs);
     }
 
-    if (firstTab) switchMainTab(firstTab);
+    if (currentUser && currentUser.role === "admin") {
+      const bAdmin = document.createElement("button");
+      bAdmin.className = "nav-tab" + (currentView === "admin" ? " active" : "");
+      bAdmin.textContent = "Admin Panel";
+      bAdmin.onclick = () => {
+        if (currentView === "docRaktari" && !confirm("Biztosan elhagyod a szerkesztőt az Admin Panelhez?")) return;
+        showOnlySection("adminView", "admin");
+        loadUsers();
+        loadLogs();
+      };
+      nav.appendChild(bAdmin);
+    }
   }
 
-  function switchMainTab(tabId) {
-    document.querySelectorAll("#mainNavTabs .nav-tab").forEach(b => {
-      b.classList.toggle("active", b.dataset.tab === tabId);
-    });
-    document.getElementById("docRaktariView").classList.add("hidden");
-    document.getElementById("comingSoonView").classList.add("hidden");
-    document.getElementById("adminView").classList.add("hidden");
+  function populateDocDropdown() {
+    const sel = document.getElementById("docTypeDropdown");
+    sel.innerHTML = "";
+    const perms = currentUser.permissions || [];
+    const allowed = DOC_TYPES.filter(dt => currentUser.role === "admin" || perms.includes(dt.id));
 
-    if (tabId === "raktari_atadolap") {
-      document.getElementById("docRaktariView").classList.remove("hidden");
-    } else if (tabId === "admin") {
-      document.getElementById("adminView").classList.remove("hidden");
-      loadUsers();
-      loadLogs();
-    } else {
-      const dt = DOC_TYPES.find(x => x.id === tabId);
-      document.getElementById("comingSoonTitle").textContent = (dt ? dt.label : "Dokumentum") + " — Fejlesztés alatt";
-      document.getElementById("comingSoonView").classList.remove("hidden");
+    if (allowed.length === 0) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Nincs elérhető jogosultságod";
+      sel.appendChild(opt);
+      return;
     }
+
+    allowed.forEach(dt => {
+      const opt = document.createElement("option");
+      opt.value = dt.id;
+      opt.textContent = dt.label;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderMiniPreview() {
+    const docId = document.getElementById("docTypeDropdown").value;
+    const dt = DOC_TYPES.find(x => x.id === docId);
+    document.getElementById("docTypeDesc").textContent = dt ? dt.desc : "";
+
+    const box = document.getElementById("miniPreviewContainer");
+    if (!dt || !selectedCompany) { box.innerHTML = ""; return; }
+
+    box.innerHTML = `
+      <div class="mini-doc-header">
+        <img src="${selectedCompany.logo}" alt="${selectedCompany.code}" onerror="this.src='${selectedCompany.fallbackLogo}'" />
+        <div style="font-size:8px; font-weight:700;">${dt.title}</div>
+      </div>
+      <div class="mini-doc-title">${dt.title}</div>
+      <div class="mini-boxes">
+        <div class="mini-box">
+          <div class="mini-box-h">ÁTVEVŐ</div>
+          <div class="mini-box-r">Egység kódja: 5120</div>
+          <div class="mini-box-r">Egység neve: Raktár</div>
+        </div>
+        <div class="mini-box">
+          <div class="mini-box-h">ÁTADÓ</div>
+          <div class="mini-box-r">Egység kódja: 3101</div>
+          <div class="mini-box-r">Egység neve: Központi</div>
+        </div>
+      </div>
+      <table class="mini-tbl">
+        <thead>
+          <tr><th>#</th><th>NYTSZ</th><th>Megnevezés</th><th>Db</th><th>Megjegyzés</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>140041</td><td>Bankett asztal</td><td>1</td><td></td></tr>
+          <tr><td>2</td><td>300294</td><td>Fotel</td><td>1</td><td></td></tr>
+          <tr><td>3</td><td>300148</td><td>Kiszolgáló pult</td><td>4</td><td></td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:7px; color:#333; line-height:1.3;">
+        A fenti táblázatban szereplő eszközök a(z) <strong>${selectedCompany.fullName}</strong> tulajdonát képezik.
+      </div>
+      <div class="mini-note">
+        <div class="mini-note-h">MEGJEGYZÉS</div>
+        <div class="mini-note-b"></div>
+      </div>
+      <div class="mini-sign">
+        <span style="font-size:8px;">Debrecen, 2025. 04. 08.</span>
+        <div>ÁTADÓ</div>
+        <div>ÁTVEVŐ</div>
+      </div>
+    `;
+  }
+
+  function openSelectedDocument() {
+    if (!selectedCompany) {
+      showToast("Előbb válassz céget!", "error");
+      return;
+    }
+    const docId = document.getElementById("docTypeDropdown").value;
+    if (!docId) {
+      showToast("Nincs kiválasztott nyomtatvány!", "error");
+      return;
+    }
+    if (docId === "raktari_atadolap") {
+      showOnlySection("docRaktariView", "docRaktari");
+      if (activeItems.length === 0) loadSampleData();
+      else renderDocument();
+    } else {
+      const dt = DOC_TYPES.find(x => x.id === docId);
+      document.getElementById("comingSoonTitle").textContent = (dt ? dt.label : "Dokumentum") + " — Fejlesztés alatt";
+      showOnlySection("comingSoonView", "comingSoon");
+    }
+  }
+
+  function backToDocSelector(skipConfirm = false) {
+    if (!skipConfirm) {
+      if (!confirm("Biztosan vissza akarsz lépni a nyomtatványválasztóhoz?")) return;
+    }
+    showOnlySection("docSelectView", "docSelect");
+    renderMiniPreview();
   }
 
   // ===== CSV / GOOGLE SHEETS PARSER (TÖBBBLOKKOS) =====
@@ -1057,7 +1424,7 @@
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => { currentLogoSrc = ev.target.result; renderDocument(); };
+    reader.onload = ev => { customLogoOverride = ev.target.result; renderDocument(); };
     reader.readAsDataURL(file);
   });
 
@@ -1111,24 +1478,15 @@
     const header = grid[0];
     const blocks = [];
 
-    // Vízszintes blokkok felismerése (NYTSZ / Megnevezés oszlopok alapján)
     for (let c = 0; c < header.length; c++) {
       const h = (header[c] || "").toLowerCase();
       if (h.includes("nytsz") || h.includes("nyilvántart")) {
-        blocks.push({
-          nytsz: c,
-          name: c + 1,
-          qty: c + 2,
-          date: c + 3
-        });
+        blocks.push({ nytsz: c, name: c + 1, qty: c + 2, date: c + 3 });
       }
     }
 
-    // Ha nem volt fejléc, alapértelmezett 5 oszlopos blokk (Sorszám, NYTSZ, Megnevezés, Mennyiség, Dátum)
     const startRow = blocks.length > 0 ? 1 : 0;
-    if (blocks.length === 0) {
-      blocks.push({ nytsz: 1, name: 2, qty: 3, date: 4 });
-    }
+    if (blocks.length === 0) blocks.push({ nytsz: 1, name: 2, qty: 3, date: 4 });
 
     const parsed = [];
     for (let r = startRow; r < grid.length; r++) {
@@ -1138,7 +1496,6 @@
         const name = (row[b.name] || "").trim();
         const qtyRaw = (row[b.qty] || "").trim();
         const date = (row[b.date] || "").trim();
-        // Üres és összesítő sorok kiszűrése (ahol nincs megnevezés és nincs NYTSZ)
         if (!name && !nytsz) return;
         const qty = parseInt(qtyRaw, 10) || 1;
         parsed.push({ nytsz, name, qty, note: "", date });
@@ -1277,12 +1634,15 @@
     const docDate = document.getElementById("docDate").value.trim();
     const docNote = document.getElementById("docNote").value;
 
+    const companyFullName = selectedCompany ? selectedCompany.fullName : COMPANIES.DCNK.fullName;
+    const logoSrc = getActiveLogoSrc();
+    const fallbackLogo = getActiveFallbackLogo();
+
     const totalItems = activeItems.length;
     const totalQty = activeItems.reduce((sum, i) => sum + (parseInt(i.qty, 10) || 0), 0);
     const footerDate = formatHungarianDateWithSuffix(docDate);
     const spacedDate = formatSpacedDate(docDate);
 
-    // Tördelés: 1. oldalon max 15 sor (ha elfér a záró blokkal, különben 22), további oldalakon max 26 sor
     const pages = [];
     let idx = 0;
     let pageNum = 1;
@@ -1306,7 +1666,6 @@
           pages.push({ pageNum, items: slice, startIndex: idx - take, isFirst, isLast: false });
           pageNum++;
           if (idx === activeItems.length) {
-            // Záró blokk új oldalra kerül
             pages.push({ pageNum, items: [], startIndex: idx, isFirst: false, isLast: true });
           }
         }
@@ -1321,7 +1680,7 @@
 
       let html = `
         <div class="doc-top-bar">
-          <img src="${currentLogoSrc}" alt="Campus" onerror="this.src=FALLBACK_LOGO" />
+          <img src="${logoSrc}" alt="Campus" onerror="this.src='${fallbackLogo}'" />
           <div class="doc-top-title">RAKTÁRI ÁTADÓ LAP</div>
         </div>
       `;
@@ -1374,7 +1733,7 @@
       if (p.isLast) {
         html += `
           <div class="doc-legal">
-            <div class="bold-line">A fenti táblázatban szereplő eszközök a Debreceni Campus Nonprofit Közhasznú Kft. tulajdonát képezik.</div>
+            <div class="bold-line">A fenti táblázatban szereplő eszközök a ${escapeHtml(companyFullName)} tulajdonát képezik.</div>
             <div class="sum-line">A táblázat összesen ${totalItems} tételben ${totalQty} db. eszközt tartalmaz.</div>
             <div>Az átvevő az Átadó lap aláírásával igazolja az eszközök tételes átvételét, valamint vállalja azok elkülönített, azonosítható módon történő nyilvántartását, biztonságos raktári elhelyezését és állapottól, használhatóságtól függően szükség esetén kezdeményezi azok selejtezését, értékesítését, vagy egyéb hasznosítását a hatályos belső szabályzatoknak megfelelően.</div>
           </div>
@@ -1412,10 +1771,11 @@
   async function printAndLog() {
     window.print();
     if (!currentUser) return;
+    const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
     const snd = `${document.getElementById("sndCode").value} ${document.getElementById("sndName").value}`;
     const rec = `${document.getElementById("recCode").value} ${document.getElementById("recName").value}`;
     const totalQty = activeItems.reduce((s, i) => s + (parseInt(i.qty, 10) || 0), 0);
-    const details = `Átadó: ${snd} → Átvevő: ${rec} | Dátum: ${document.getElementById("docDate").value} | ${activeItems.length} tétel (${totalQty} db)`;
+    const details = `${compTag}Átadó: ${snd} → Átvevő: ${rec} | Dátum: ${document.getElementById("docDate").value} | ${activeItems.length} tétel (${totalQty} db)`;
 
     try {
       await apiCall({
@@ -1425,7 +1785,7 @@
         docType: "Raktári átadólap",
         details
       });
-    } catch (e) { /* háttérben fut */ }
+    } catch (e) {}
   }
 
   // ===== ADMIN PANEL =====
@@ -1563,9 +1923,7 @@
     const q = (document.getElementById("logSearch").value || "").toLowerCase();
     const tbody = document.getElementById("logsTableBody");
     tbody.innerHTML = "";
-    const filtered = cachedLogs.filter(l =>
-      JSON.stringify(l).toLowerCase().includes(q)
-    );
+    const filtered = cachedLogs.filter(l => JSON.stringify(l).toLowerCase().includes(q));
     if (filtered.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:20px;">Nincs megjeleníthető naplóbejegyzés.</td></tr>';
       return;
