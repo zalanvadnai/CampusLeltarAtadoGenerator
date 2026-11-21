@@ -624,13 +624,13 @@
     }
 
     /* Dinamikusan teret kitöltő aláírási zóna jobb oldalon */
-    .sign-zone {
+.sign-zone {
       flex: 1;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      min-height: 26mm;
-      padding: 4mm 0;
+      min-height: 20mm;
+      padding: 2mm 0;
     }
     .sign-row {
       display: grid;
@@ -641,7 +641,7 @@
       font-size: 11pt;
     }
     .sign-col { text-align: center; }
-    .sign-label { margin-bottom: 12mm; font-size: 10.5pt; }
+    .sign-label { margin-bottom: 9mm; font-size: 10.5pt; }
     .sign-line { border-top: 1px solid #555; padding-top: 3px; font-size: 10.5pt; }
 
     .doc-footer {
@@ -1757,8 +1757,8 @@
       while (idx < activeItems.length) {
         const isFirst = (pageNum === 1);
         const remaining = activeItems.length - idx;
-        const maxWithClosing = isFirst ? 13 : 20;
-        const maxWithoutClosing = isFirst ? 22 : 30;
+        const maxWithClosing = isFirst ? 19 : 25;
+        const maxWithoutClosing = isFirst ? 29 : 36;
 
         if (remaining <= maxWithClosing) {
           pages.push({ pageNum, items: activeItems.slice(idx), startIndex: idx, isFirst, isLast: true });
