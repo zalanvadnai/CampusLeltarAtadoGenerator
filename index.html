@@ -61,6 +61,32 @@
     #toast.error { background: var(--danger); }
     #toast.info { background: #2563eb; }
 
+    /* ===== BADGES ===== */
+    .notif-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+    .status-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status-pending { background: #fef3c7; color: #b45309; }
+    .status-approved { background: #dcfce7; color: #15803d; }
+    .status-rejected { background: #fee2e2; color: #b91c1c; }
+
     /* ===== MODAL ===== */
     .modal-backdrop {
       position: fixed;
@@ -101,7 +127,7 @@
       background: #f8fafc;
     }
 
-    /* ===== UNIT PICKER GRID ===== */
+    /* ===== UNIT PICKER GRID (ADMIN) ===== */
     .unit-picker-toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -134,6 +160,58 @@
     }
     .unit-check-item:hover { border-color: var(--primary); background: var(--primary-light); }
     .unit-check-item input { margin-top: 2px; }
+
+    /* ===== CUSTOM UNIT COMBOBOX (GENERATOR) ===== */
+    .unit-combo { position: relative; }
+    .unit-combo input { padding-right: 30px; }
+    .unit-combo-arrow {
+      position: absolute;
+      right: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .unit-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      min-width: 240px;
+      max-height: 230px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+      z-index: 500;
+      padding: 4px;
+    }
+    .unit-dropdown-item {
+      padding: 7px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12.5px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .unit-dropdown-item:hover { background: var(--primary-light); color: var(--primary-dark); }
+    .unit-dropdown-item .u-code { font-weight: 700; }
+    .unit-dropdown-item .u-leader { font-size: 11px; color: var(--muted); }
+    .unit-dropdown-empty { padding: 10px; font-size: 12px; color: var(--muted); text-align: center; }
+
+    .form-control.input-error {
+      border-color: var(--danger) !important;
+      background: #fef2f2 !important;
+    }
+    .field-error-msg {
+      color: var(--danger);
+      font-size: 11.5px;
+      font-weight: 600;
+      margin-top: 4px;
+    }
 
     /* ===== LOGIN SCREEN ===== */
     #loginView {
@@ -188,15 +266,16 @@
       border-radius: 8px;
       font-size: 14px;
       outline: none;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
       background: #fff;
     }
-    .form-control:focus { border-color: var(--primary); }
-    .password-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
     }
+    select.form-control { cursor: pointer; }
+
+    .password-wrap { position: relative; display: flex; align-items: center; }
     .password-wrap input { padding-right: 42px; }
     .toggle-pwd-btn {
       position: absolute;
@@ -226,6 +305,7 @@
     }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-dark); }
+    .btn-lg { padding: 13px 20px; font-size: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
     .btn-secondary { background: #e2e8f0; color: #1e293b; }
     .btn-secondary:hover { background: #cbd5e1; }
     .btn-outline { background: #fff; border: 1.5px solid var(--border); color: #334155; }
@@ -292,7 +372,7 @@
       color: var(--primary-dark);
       border: 1px solid var(--table-head);
     }
-    .nav-tabs { display: flex; gap: 6px; }
+    .nav-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
     .nav-tab {
       background: none;
       border: none;
@@ -302,6 +382,8 @@
       font-weight: 600;
       color: var(--muted);
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
     }
     .nav-tab:hover { background: #f1f5f9; color: var(--text); }
     .nav-tab.active { background: var(--primary-light); color: var(--primary-dark); }
@@ -318,18 +400,10 @@
     .app-container { max-width: 1440px; margin: 0 auto; padding: 24px 20px; }
 
     /* ===== COMPANY SELECTOR VIEW ===== */
-    .company-select-wrap {
-      max-width: 860px;
-      margin: 40px auto;
-      text-align: center;
-    }
+    .company-select-wrap { max-width: 860px; margin: 40px auto; text-align: center; }
     .company-select-wrap h2 { font-size: 26px; margin: 0 0 8px; color: #0f172a; }
     .company-select-wrap p { color: var(--muted); margin: 0 0 32px; font-size: 15px; }
-    .company-cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
+    .company-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
     @media (max-width: 700px) { .company-cards { grid-template-columns: 1fr; } }
     .company-card {
       background: #fff;
@@ -375,7 +449,6 @@
       border-radius: 20px;
     }
     .company-card.locked .lock-badge { display: inline-block; }
-
     .company-card img { height: 52px; max-width: 240px; object-fit: contain; margin-bottom: 20px; }
     .company-card .code-tag {
       font-size: 12px;
@@ -393,13 +466,34 @@
     /* ===== DOCUMENT SELECTOR + PREVIEW VIEW ===== */
     .doc-selector-grid {
       display: grid;
-      grid-template-columns: 420px 1fr;
+      grid-template-columns: 430px 1fr;
       gap: 28px;
       align-items: start;
       max-width: 1120px;
       margin: 16px auto;
     }
     @media (max-width: 900px) { .doc-selector-grid { grid-template-columns: 1fr; } }
+    .styled-select-wrap { position: relative; }
+    .styled-select-wrap select {
+      appearance: none;
+      padding: 12px 38px 12px 14px;
+      font-size: 15px;
+      font-weight: 600;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+    }
+    .styled-select-wrap select:focus { border-color: var(--primary); }
+    .styled-select-wrap::after {
+      content: "▼";
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      color: var(--primary);
+      pointer-events: none;
+    }
     .preview-stage {
       background: #e2e8f0;
       border-radius: 14px;
@@ -422,20 +516,9 @@
       font-family: Arial, sans-serif;
       color: #111;
     }
-    .mini-doc-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
+    .mini-doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .mini-doc-header img { height: 22px; }
-    .mini-doc-title {
-      text-align: center;
-      font-weight: 800;
-      font-size: 14px;
-      margin: 6px 0 14px;
-      letter-spacing: 0.4px;
-    }
+    .mini-doc-title { text-align: center; font-weight: 800; font-size: 14px; margin: 6px 0 14px; letter-spacing: 0.4px; }
     .mini-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
     .mini-box { border: 1px solid #333; font-size: 8px; }
     .mini-box-h { background: var(--primary-dark); color: #fff; text-align: center; font-weight: 700; padding: 2px; }
@@ -446,38 +529,13 @@
     .mini-note { border: 1px solid #333; margin-top: 8px; }
     .mini-note-h { background: var(--primary-dark); color: #fff; text-align: center; font-size: 7.5px; font-weight: 700; padding: 2px; }
     .mini-note-b { height: 28px; }
-    .mini-date-line {
-      margin-top: 10px;
-      font-size: 8.5px;
-      font-family: "Times New Roman", Times, serif;
-    }
-    .mini-sign-zone {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-top: 12px;
-    }
-    .mini-sign-cols {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      width: 66%;
-      font-size: 8px;
-      text-align: center;
-    }
-    .mini-sign-cols div {
-      border-top: 1px solid #666;
-      padding-top: 3px;
-    }
+    .mini-date-line { margin-top: 10px; font-size: 8.5px; font-family: "Times New Roman", Times, serif; }
+    .mini-sign-zone { flex: 1; display: flex; align-items: center; justify-content: flex-end; padding-top: 12px; }
+    .mini-sign-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 66%; font-size: 8px; text-align: center; }
+    .mini-sign-cols div { border-top: 1px solid #666; padding-top: 3px; }
 
     /* ===== GENERATOR SPLIT LAYOUT ===== */
-    .gen-grid {
-      display: grid;
-      grid-template-columns: 430px 1fr;
-      gap: 24px;
-      align-items: start;
-    }
+    .gen-grid { display: grid; grid-template-columns: 430px 1fr; gap: 24px; align-items: start; }
     @media (max-width: 1100px) { .gen-grid { grid-template-columns: 1fr; } }
     .panel {
       background: #fff;
@@ -535,23 +593,12 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .date-chip.active {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: #fff;
-    }
+    .date-chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
     .mini-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
     .mini-table th, .mini-table td { border: 1px solid #e2e8f0; padding: 4px; text-align: left; }
     .mini-table th { background: #f8fafc; font-weight: 600; }
-    .mini-table input {
-      width: 100%;
-      border: none;
-      background: transparent;
-      font-size: 12px;
-      padding: 2px 4px;
-      outline: none;
-    }
+    .mini-table input { width: 100%; border: none; background: transparent; font-size: 12px; padding: 2px 4px; outline: none; }
     .mini-table input:focus { background: var(--primary-light); }
 
     /* ===== A4 PREVIEW & PRINT ===== */
@@ -567,12 +614,7 @@
       gap: 10px;
       flex-wrap: wrap;
     }
-    .pages-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-    }
+    .pages-wrapper { display: flex; flex-direction: column; align-items: center; gap: 20px; }
     .a4-page {
       width: 210mm;
       height: 297mm;
@@ -585,145 +627,36 @@
       color: #000;
       font-family: "Times New Roman", Times, serif;
     }
-    .doc-top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8mm;
-    }
+    .doc-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8mm; }
     .doc-top-bar img { height: 11mm; display: block; }
-    .doc-top-title {
-      font-family: Arial, sans-serif;
-      font-weight: 700;
-      font-size: 10pt;
-      letter-spacing: 0.4px;
-    }
-    .doc-main-title {
-      text-align: center;
-      font-family: "Times New Roman", Times, serif;
-      font-size: 18pt;
-      font-weight: 700;
-      margin: 2mm 0 7mm;
-      letter-spacing: 0.5px;
-    }
-    .parties-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14mm;
-      margin-bottom: 7mm;
-    }
-    .party-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: Arial, sans-serif;
-      font-size: 9.5pt;
-    }
-    .party-table th {
-      background: var(--primary-dark);
-      color: #fff;
-      text-align: center;
-      padding: 4px 6px;
-      border: 1px solid #000;
-      font-weight: 700;
-    }
-    .party-table td {
-      border: 1px solid #000;
-      padding: 4px 7px;
-      background: #f2f2f2;
-    }
+    .doc-top-title { font-family: Arial, sans-serif; font-weight: 700; font-size: 10pt; letter-spacing: 0.4px; }
+    .doc-main-title { text-align: center; font-family: "Times New Roman", Times, serif; font-size: 18pt; font-weight: 700; margin: 2mm 0 7mm; letter-spacing: 0.5px; }
+    .parties-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14mm; margin-bottom: 7mm; }
+    .party-table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 9.5pt; }
+    .party-table th { background: var(--primary-dark); color: #fff; text-align: center; padding: 4px 6px; border: 1px solid #000; font-weight: 700; }
+    .party-table td { border: 1px solid #000; padding: 4px 7px; background: #f2f2f2; }
     .party-table td:first-child { width: 42%; font-weight: 600; }
-
-    .items-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: Arial, sans-serif;
-      font-size: 8.5pt;
-      margin-bottom: 5mm;
-    }
-    .items-table th {
-      background: var(--table-head);
-      border: 1px solid #000;
-      padding: 5px 4px;
-      text-align: center;
-      font-weight: 700;
-      font-size: 7.5pt;
-      text-transform: uppercase;
-    }
-    .items-table td {
-      border: 1px solid #000;
-      padding: 4px 6px;
-      vertical-align: middle;
-    }
+    .items-table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 8.5pt; margin-bottom: 5mm; }
+    .items-table th { background: var(--table-head); border: 1px solid #000; padding: 5px 4px; text-align: center; font-weight: 700; font-size: 7.5pt; text-transform: uppercase; }
+    .items-table td { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; }
     .items-table td.c-center { text-align: center; }
     .items-table td.c-right { text-align: right; }
-
-    .doc-legal {
-      font-family: "Times New Roman", Times, serif;
-      font-size: 9pt;
-      line-height: 1.35;
-      margin-bottom: 5mm;
-    }
+    .doc-legal { font-family: "Times New Roman", Times, serif; font-size: 9pt; line-height: 1.35; margin-bottom: 5mm; }
     .doc-legal .bold-line { font-family: Arial, sans-serif; font-size: 8pt; font-weight: 700; margin-bottom: 2px; }
     .doc-legal .sum-line { font-family: Arial, sans-serif; font-size: 8pt; margin-bottom: 4px; }
-
-    .note-box {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 5mm;
-      font-family: Arial, sans-serif;
-    }
-    .note-box th {
-      background: var(--primary-dark);
-      color: #fff;
-      border: 1px solid #000;
-      padding: 3px;
-      font-size: 9pt;
-    }
-    .note-box td {
-      border: 1px solid #000;
-      height: 20mm;
-      padding: 6px 8px;
-      vertical-align: top;
-      font-size: 9pt;
-      white-space: pre-wrap;
-    }
-
-    .doc-date-line {
-      font-family: "Times New Roman", Times, serif;
-      font-size: 11pt;
-      margin-bottom: 4mm;
-    }
-
-    .sign-zone {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      min-height: 20mm;
-      padding: 2mm 0;
-    }
-    .sign-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14mm;
-      width: 66%;
-      font-family: "Times New Roman", Times, serif;
-      font-size: 11pt;
-    }
+    .note-box { width: 100%; border-collapse: collapse; margin-bottom: 5mm; font-family: Arial, sans-serif; }
+    .note-box th { background: var(--primary-dark); color: #fff; border: 1px solid #000; padding: 3px; font-size: 9pt; }
+    .note-box td { border: 1px solid #000; height: 20mm; padding: 6px 8px; vertical-align: top; font-size: 9pt; white-space: pre-wrap; }
+    .doc-date-line { font-family: "Times New Roman", Times, serif; font-size: 11pt; margin-bottom: 4mm; }
+    .sign-zone { flex: 1; display: flex; align-items: center; justify-content: flex-end; min-height: 20mm; padding: 2mm 0; }
+    .sign-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14mm; width: 66%; font-family: "Times New Roman", Times, serif; font-size: 11pt; }
     .sign-col { text-align: center; }
     .sign-label { margin-bottom: 9mm; font-size: 10.5pt; }
     .sign-line { border-top: 1px solid #555; padding-top: 3px; font-size: 10.5pt; }
+    .doc-footer { margin-top: auto; padding-top: 4mm; font-family: Arial, sans-serif; font-size: 8.5pt; color: #333; }
 
-    .doc-footer {
-      margin-top: auto;
-      padding-top: 4mm;
-      font-family: Arial, sans-serif;
-      font-size: 8.5pt;
-      color: #333;
-    }
-
-    /* ===== ADMIN PANEL ===== */
-    .sub-tabs { display: flex; gap: 16px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
+    /* ===== ADMIN & SETTINGS ===== */
+    .sub-tabs { display: flex; gap: 16px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; flex-wrap: wrap; }
     .sub-tab {
       background: none;
       border: none;
@@ -734,67 +667,40 @@
       cursor: pointer;
       border-bottom: 2px solid transparent;
       margin-bottom: -2px;
+      display: inline-flex;
+      align-items: center;
     }
     .sub-tab.active { color: var(--primary-dark); border-bottom-color: var(--primary); }
 
-    .admin-form-grid {
-      display: grid;
-      grid-template-columns: 1.2fr 1.4fr 1.5fr 1fr;
-      gap: 12px;
-      align-items: end;
-    }
+    .admin-form-grid { display: grid; grid-template-columns: 1.2fr 1.4fr 1.5fr 1fr; gap: 12px; align-items: end; }
     @media (max-width: 960px) { .admin-form-grid { grid-template-columns: 1fr 1fr; } }
+    .unit-form-grid { display: grid; grid-template-columns: 140px 1fr 1fr auto; gap: 10px; align-items: end; }
+    @media (max-width: 800px) { .unit-form-grid { grid-template-columns: 1fr; } }
+    .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1100px; margin: 0 auto; }
+    @media (max-width: 850px) { .settings-grid { grid-template-columns: 1fr; } }
+
     .input-inline { display: flex; gap: 6px; }
-    .perm-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
-      margin-top: 14px;
-      padding-top: 12px;
-      border-top: 1px solid #f1f5f9;
-    }
+    .perm-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
     .perm-checks { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 13px; }
     .perm-checks label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 
     .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .data-table th, .data-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #e2e8f0;
-      text-align: left;
-      vertical-align: middle;
-    }
+    .data-table th, .data-table td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
     .data-table th { font-size: 11px; text-transform: uppercase; color: var(--muted); background: #f8fafc; }
 
-    .coming-soon {
-      background: #fff;
-      border-radius: 14px;
-      padding: 50px 20px;
-      text-align: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      max-width: 640px;
-      margin: 20px auto;
-    }
+    .coming-soon { background: #fff; border-radius: 14px; padding: 50px 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-width: 640px; margin: 20px auto; }
 
     /* ===== PRINT RULES ===== */
     @page { size: A4 portrait; margin: 0; }
     @media print {
       body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #companySelectView, #docSelectView, #adminView, #comingSoonView, #toast, .modal-backdrop {
+      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #companySelectView, #docSelectView, #adminView, #settingsView, #comingSoonView, #toast, .modal-backdrop {
         display: none !important;
       }
       .app-container { padding: 0; max-width: none; }
       .gen-grid { display: block; }
       .pages-wrapper { gap: 0; }
-      .a4-page {
-        box-shadow: none;
-        margin: 0;
-        width: 210mm;
-        height: 297mm;
-        page-break-after: always;
-        break-after: page;
-      }
+      .a4-page { box-shadow: none; margin: 0; width: 210mm; height: 297mm; page-break-after: always; break-after: page; }
       .a4-page:last-child { page-break-after: auto; break-after: auto; }
     }
   </style>
@@ -914,12 +820,14 @@
           </p>
           <div class="form-group">
             <label for="docTypeDropdown">Elérhető formanyomtatványok</label>
-            <select id="docTypeDropdown" class="form-control" onchange="renderMiniPreview()"></select>
+            <div class="styled-select-wrap">
+              <select id="docTypeDropdown" class="form-control" onchange="renderMiniPreview()"></select>
+            </div>
           </div>
-          <p id="docTypeDesc" style="font-size:13px; color:var(--muted); min-height:42px; margin-bottom:18px;"></p>
-          <div style="display:flex; gap:10px;">
-            <button class="btn btn-primary" style="flex:1;" onclick="openSelectedDocument()">Kiválasztás →</button>
-            <button class="btn btn-outline" onclick="goHomeToCompanySelect(true)">Cégváltás</button>
+          <p id="docTypeDesc" style="font-size:13px; color:var(--muted); min-height:44px; margin-bottom:20px; line-height:1.45;"></p>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn btn-primary btn-lg btn-block" onclick="openSelectedDocument()">✓ Nyomtatvány megnyitása →</button>
+            <button class="btn btn-outline btn-block" onclick="goHomeToCompanySelect(true)">← Másik cég választása</button>
           </div>
         </div>
 
@@ -934,7 +842,6 @@
 
     <!-- ===== 3. RAKTÁRI ÁTADÓLAP GENERATOR ===== -->
     <section id="docRaktariView" class="hidden">
-      <datalist id="allowedUnitsDatalist"></datalist>
       <div class="gen-grid">
         <div class="left-controls no-print">
           <div style="margin-bottom:12px;">
@@ -963,31 +870,41 @@
             <div class="row-2">
               <div class="form-group">
                 <label>Átvevő egység kódja</label>
-                <input id="recCode" list="allowedUnitsDatalist" class="form-control" value="5120" placeholder="Kód vagy választás..." oninput="handleUnitInput('rec')" />
+                <div class="unit-combo">
+                  <input id="recCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="openUnitDropdown('rec')" oninput="handleUnitInput('rec')" />
+                  <span class="unit-combo-arrow">▼</span>
+                  <div id="recDropdown" class="unit-dropdown-menu hidden"></div>
+                </div>
+                <div id="recCodeError" class="field-error-msg hidden">Nincs hozzáférésed ehhez az egységhez!</div>
               </div>
               <div class="form-group">
                 <label>Átvevő egység neve</label>
-                <input id="recName" class="form-control" value="Levéltár, raktár" oninput="renderDocument()" />
+                <input id="recName" class="form-control" oninput="renderDocument()" />
               </div>
             </div>
             <div class="row-2">
               <div class="form-group">
                 <label>Átadó egység kódja</label>
-                <input id="sndCode" list="allowedUnitsDatalist" class="form-control" value="3101" placeholder="Kód vagy választás..." oninput="handleUnitInput('snd')" />
+                <div class="unit-combo">
+                  <input id="sndCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="openUnitDropdown('snd')" oninput="handleUnitInput('snd')" />
+                  <span class="unit-combo-arrow">▼</span>
+                  <div id="sndDropdown" class="unit-dropdown-menu hidden"></div>
+                </div>
+                <div id="sndCodeError" class="field-error-msg hidden">Nincs hozzáférésed ehhez az egységhez!</div>
               </div>
               <div class="form-group">
                 <label>Átadó egység neve</label>
-                <input id="sndName" class="form-control" value="Központi raktár" oninput="renderDocument()" />
+                <input id="sndName" class="form-control" oninput="renderDocument()" />
               </div>
             </div>
             <div class="row-2">
               <div class="form-group">
                 <label>Átadó aláíró</label>
-                <input id="sndSign" class="form-control" value="Tóth Zoli" oninput="renderDocument()" />
+                <input id="sndSign" class="form-control" oninput="renderDocument()" />
               </div>
               <div class="form-group">
                 <label>Átvevő aláíró</label>
-                <input id="recSign" class="form-control" value="Kovács László" oninput="renderDocument()" />
+                <input id="recSign" class="form-control" oninput="renderDocument()" />
               </div>
             </div>
             <div class="row-2">
@@ -1048,13 +965,89 @@
       </div>
     </section>
 
-    <!-- ===== ADMIN PANEL ===== -->
+    <!-- ===== 4. BEÁLLÍTÁSOK FÜL (MINDEN FELHASZNÁLÓNAK) ===== -->
+    <section id="settingsView" class="hidden">
+      <div class="settings-grid">
+        <div class="panel">
+          <h3>Jelszó módosítása</h3>
+          <form id="changePwdForm" onsubmit="submitChangePassword(event)">
+            <div class="form-group">
+              <label>Jelenlegi jelszó</label>
+              <div class="password-wrap">
+                <input type="password" id="oldPwdInput" class="form-control" required />
+                <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility(this)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Új jelszó</label>
+              <div class="password-wrap">
+                <input type="password" id="newPwdInput" class="form-control" minlength="4" required />
+                <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility(this)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Új jelszó megerősítése</label>
+              <div class="password-wrap">
+                <input type="password" id="newPwdConfirmInput" class="form-control" minlength="4" required />
+                <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility(this)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Jelszó mentése</button>
+          </form>
+        </div>
+
+        <div class="panel">
+          <h3>Üzenet / Kérelem küldése az adminisztrátoroknak</h3>
+          <p style="font-size:13px; color:var(--muted); margin-top:0;">
+            Ha új egységhez szeretnél hozzáférést, hibát találtál, vagy bármiben segítségre van szükséged, írd meg itt:
+          </p>
+          <div class="form-group">
+            <label>Kérelem / Üzenet leírása</label>
+            <textarea id="userReportMessage" class="form-control" rows="5" placeholder="pl. Kérek hozzáférést a 3105-ös egységhez is..."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="submitUserReport()">Kérelem elküldése</button>
+        </div>
+      </div>
+
+      <div class="panel" style="max-width:1100px; margin:16px auto 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="margin:0;">Korábbi kérelmeim és visszaigazolások</h3>
+          <button class="btn btn-outline btn-sm" onclick="loadUserReports()">Frissítés</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Időpont</th>
+                <th>Kérelem / Üzenet</th>
+                <th>Státusz</th>
+                <th>Admin visszajelzés</th>
+              </tr>
+            </thead>
+            <tbody id="userReportsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 5. ADMIN PANEL ===== -->
     <section id="adminView" class="hidden">
       <div class="sub-tabs">
         <button class="sub-tab active" id="tabUsersBtn" onclick="switchAdminTab('users')">Felhasználók kezelése</button>
+        <button class="sub-tab" id="tabUnitsBtn" onclick="switchAdminTab('units')">Egységek kezelése</button>
+        <button class="sub-tab" id="tabReportsBtn" onclick="switchAdminTab('reports')">
+          Értesítések <span id="adminReportsSubBadge" class="notif-badge hidden">0</span>
+        </button>
         <button class="sub-tab" id="tabLogsBtn" onclick="switchAdminTab('logs')">Dokumentum Napló</button>
       </div>
 
+      <!-- Felhasználók -->
       <div id="adminUsersPane">
         <div class="panel">
           <h3>Új felhasználó létrehozása</h3>
@@ -1140,6 +1133,73 @@
         </div>
       </div>
 
+      <!-- Egységek kezelése -->
+      <div id="adminUnitsPane" class="hidden">
+        <div class="panel">
+          <h3>Új egység hozzáadása</h3>
+          <div class="unit-form-grid">
+            <div class="form-group" style="margin:0;">
+              <label>Egységkód</label>
+              <input id="addUnitCode" class="form-control" placeholder="pl. 3180" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Egység neve</label>
+              <input id="addUnitName" class="form-control" placeholder="pl. Új Büfé" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Egységvezető (alapértelmezett aláíró)</label>
+              <input id="addUnitLeader" class="form-control" placeholder="pl. Kiss Péter (opcionális)" />
+            </div>
+            <button class="btn btn-primary" onclick="addNewUnit()">+ Hozzáadás</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+            <h3 style="margin:0;">Egységek listája (<span id="adminUnitsCount">0</span>)</h3>
+            <input id="adminUnitSearch" class="form-control" style="max-width:260px; padding:6px 10px;" placeholder="Keresés kódra, névre, vezetőre..." oninput="renderAdminUnitsTable()" />
+          </div>
+          <div style="overflow-x:auto; max-height:520px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width:100px;">Kód</th>
+                  <th>Egység neve</th>
+                  <th>Egységvezető</th>
+                  <th style="width:100px;">Művelet</th>
+                </tr>
+              </thead>
+              <tbody id="adminUnitsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Értesítések / Kérelmek -->
+      <div id="adminReportsPane" class="hidden">
+        <div class="panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0;">Beérkezett felhasználói kérelmek</h3>
+            <button class="btn btn-outline btn-sm" onclick="loadAdminReports()">Frissítés</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Időpont</th>
+                  <th>Felhasználó</th>
+                  <th>Kérelem / Üzenet</th>
+                  <th>Státusz</th>
+                  <th>Műveletek</th>
+                </tr>
+              </thead>
+              <tbody id="adminReportsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dokumentum Napló -->
       <div id="adminLogsPane" class="hidden">
         <div class="panel">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
@@ -1170,11 +1230,10 @@
 </div>
 
 <script>
-  // Google Apps Script API URL
   const API_URL = "https://script.google.com/macros/s/AKfycbxg1CE40fEftdrzepOQB4jN4dzXj_boAmFdXa-7hwH0HZSFV0t_1hRlTh1aBCbTAS_Rxw/exec";
 
-  // ===== EGYSÉG ADATBÁZIS =====
-  const UNITS_LIST = [
+  // Alapértelmezett egységlista (a Google Sheets Egységek munkalapja felülírhatja / bővítheti)
+  const DEFAULT_UNITS = [
     { code: "1010", name: "Ügyvezetés, adminisztráció", leader: "Soltész Timi" },
     { code: "1022", name: "Heineken", leader: "Pocsai Tamás - Popovics Péter" },
     { code: "1033", name: "Futball krónika", leader: "" },
@@ -1252,6 +1311,8 @@
     { code: "8000", name: "Számviteli szolgáltatás", leader: "" }
   ];
 
+  let UNITS_LIST = DEFAULT_UNITS.map(u => ({ ...u }));
+
   const FALLBACK_DCNK_LOGO = 'data:image/svg+xml;utf8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 56">' +
     '<rect x="2" y="4" width="48" height="48" rx="8" fill="#e86c1f"/>' +
@@ -1270,43 +1331,14 @@
   );
 
   const COMPANIES = {
-    DCNK: {
-      code: "DCNK",
-      shortName: "DCNK",
-      fullName: "Debreceni Campus Nonprofit Közhasznú Kft.",
-      logo: "campuslog.png",
-      fallbackLogo: FALLBACK_DCNK_LOGO,
-      themeClass: ""
-    },
-    UDC: {
-      code: "UDC",
-      shortName: "UD Campus",
-      fullName: "UD Campus",
-      logo: "UD_campus_logo_hosszu.png",
-      fallbackLogo: FALLBACK_UDC_LOGO,
-      themeClass: "theme-udc"
-    }
+    DCNK: { code: "DCNK", shortName: "DCNK", fullName: "Debreceni Campus Nonprofit Közhasznú Kft.", logo: "campuslog.png", fallbackLogo: FALLBACK_DCNK_LOGO, themeClass: "" },
+    UDC: { code: "UDC", shortName: "UD Campus", fullName: "UD Campus", logo: "UD_campus_logo_hosszu.png", fallbackLogo: FALLBACK_UDC_LOGO, themeClass: "theme-udc" }
   };
 
   const DOC_TYPES = [
-    {
-      id: "raktari_atadolap",
-      label: "Raktári átadólap",
-      title: "RAKTÁRI ÁTADÓ LAP",
-      desc: "Többoldalas raktári eszközátadási bizonylat Google Sheets / CSV importtal, dátumszűréssel és automatikus összesítéssel."
-    },
-    {
-      id: "egysegek_kozotti",
-      label: "Egységek közötti átadás",
-      title: "EGYSÉGEK KÖZÖTTI ÁTADÁSI LAP",
-      desc: "Eszközök és készletek belső egységek közötti mozgatásának hivatalos bizonylata (hamarosan elérhető)."
-    },
-    {
-      id: "selejtezes",
-      label: "Selejtezési jegyzőkönyv",
-      title: "SELEJTEZÉSI JEGYZŐKÖNYV",
-      desc: "Használhatatlanná vált eszközök bizottsági selejtezésének hivatalos jegyzőkönyve (hamarosan elérhető)."
-    }
+    { id: "raktari_atadolap", label: "Raktári átadólap", title: "RAKTÁRI ÁTADÓ LAP", desc: "Többoldalas raktári eszközátadási bizonylat Google Sheets / CSV importtal, dátumszűréssel és automatikus összesítéssel." },
+    { id: "egysegek_kozotti", label: "Egységek közötti átadás", title: "EGYSÉGEK KÖZÖTTI ÁTADÁSI LAP", desc: "Eszközök és készletek belső egységek közötti mozgatásának hivatalos bizonylata (hamarosan elérhető)." },
+    { id: "selejtezes", label: "Selejtezési jegyzőkönyv", title: "SELEJTEZÉSI JEGYZŐKÖNYV", desc: "Használhatatlanná vált eszközök bizottsági selejtezésének hivatalos jegyzőkönyve (hamarosan elérhető)." }
   ];
 
   let selectedCompany = null;
@@ -1315,10 +1347,13 @@
   let currentUser = null;
   let allParsedItems = [];
   let activeItems = [];
-  let activeDateFilter = "";
   let cachedUsers = [];
   let cachedLogs = [];
+  let cachedAdminReports = [];
+  let cachedUserReports = [];
+  let pendingReportsCount = 0;
   let modalEditingUserIdx = null;
+  let unitValidationState = { rec: true, snd: true };
 
   // ===== TOAST & HELPERS =====
   function showToast(msg, type = "info") {
@@ -1335,13 +1370,7 @@
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) {
       const d = new Date(str);
       if (!isNaN(d.getTime())) {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        const hh = String(d.getHours()).padStart(2, "0");
-        const mm = String(d.getMinutes()).padStart(2, "0");
-        const ss = String(d.getSeconds()).padStart(2, "0");
-        return `${y}. ${m}. ${day}. ${hh}:${mm}:${ss}`;
+        return `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, "0")}. ${String(d.getDate()).padStart(2, "0")}. ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
       }
     }
     return str;
@@ -1349,54 +1378,133 @@
 
   function hasCompanyAccess(code) {
     if (!currentUser) return false;
-    const comps = Array.isArray(currentUser.companies) && currentUser.companies.length > 0
-      ? currentUser.companies
-      : ["DCNK", "UDC"];
+    const comps = Array.isArray(currentUser.companies) && currentUser.companies.length > 0 ? currentUser.companies : ["DCNK", "UDC"];
     return comps.includes(code);
   }
 
   function getAllowedUnitsForCurrentUser() {
-    if (!currentUser) return UNITS_LIST;
+    if (!currentUser) return [];
     if (currentUser.role === "admin") return UNITS_LIST;
     const uList = currentUser.units;
-    if (!Array.isArray(uList) || uList.length === 0 || uList.includes("ALL")) return UNITS_LIST;
+    if (!Array.isArray(uList) || uList.includes("ALL")) return UNITS_LIST;
     return UNITS_LIST.filter(u => uList.includes(u.code));
   }
 
-  function populateAllowedUnitsDatalist() {
-    const dl = document.getElementById("allowedUnitsDatalist");
-    dl.innerHTML = "";
-    const allowed = getAllowedUnitsForCurrentUser();
-    allowed.forEach(u => {
-      const opt = document.createElement("option");
-      opt.value = u.code;
-      opt.label = `${u.code} - ${u.name}` + (u.leader ? ` (${u.leader})` : "");
-      dl.appendChild(opt);
-    });
+  // ===== CUSTOM UNIT DROPDOWN & STRICT VALIDATION =====
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".unit-combo")) {
+      document.getElementById("recDropdown")?.classList.add("hidden");
+      document.getElementById("sndDropdown")?.classList.add("hidden");
+    }
+  });
+
+  function openUnitDropdown(side) {
+    document.getElementById(side === "rec" ? "sndDropdown" : "recDropdown").classList.add("hidden");
+    renderUnitDropdownList(side, document.getElementById(side === "rec" ? "recCode" : "sndCode").value);
+    document.getElementById(side === "rec" ? "recDropdown" : "sndDropdown").classList.remove("hidden");
   }
 
-  function handleUnitInput(side) {
+  function renderUnitDropdownList(side, query = "") {
+    const menu = document.getElementById(side === "rec" ? "recDropdown" : "sndDropdown");
+    const allowed = getAllowedUnitsForCurrentUser();
+    const q = (query || "").trim().toLowerCase();
+    const filtered = allowed.filter(u =>
+      !q || u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || (u.leader || "").toLowerCase().includes(q)
+    );
+
+    if (filtered.length === 0) {
+      menu.innerHTML = `<div class="unit-dropdown-empty">Nincs találat az engedélyezett egységek között.</div>`;
+      return;
+    }
+
+    menu.innerHTML = filtered.map(u => `
+      <div class="unit-dropdown-item" onmousedown="pickUnitFromDropdown('${side}', '${escapeHtml(u.code)}')">
+        <div><span class="u-code">${escapeHtml(u.code)}</span> – ${escapeHtml(u.name)}</div>
+        ${u.leader ? `<div class="u-leader">Vezető: ${escapeHtml(u.leader)}</div>` : ""}
+      </div>
+    `).join("");
+  }
+
+  function pickUnitFromDropdown(side, code) {
+    const codeEl = document.getElementById(side === "rec" ? "recCode" : "sndCode");
+    codeEl.value = code;
+    document.getElementById(side === "rec" ? "recDropdown" : "sndDropdown").classList.add("hidden");
+    handleUnitInput(side, false);
+  }
+
+  function handleUnitInput(side, keepMenuOpen = true) {
     const codeEl = document.getElementById(side === "rec" ? "recCode" : "sndCode");
     const nameEl = document.getElementById(side === "rec" ? "recName" : "sndName");
     const signEl = document.getElementById(side === "rec" ? "recSign" : "sndSign");
+    const errEl = document.getElementById(side === "rec" ? "recCodeError" : "sndCodeError");
 
     const typed = codeEl.value.trim();
-    const match = UNITS_LIST.find(u => u.code.toLowerCase() === typed.toLowerCase());
-    if (match) {
-      nameEl.value = match.name;
-      signEl.value = match.leader || "";
+    if (keepMenuOpen) {
+      renderUnitDropdownList(side, typed);
+      document.getElementById(side === "rec" ? "recDropdown" : "sndDropdown").classList.remove("hidden");
+    }
+
+    if (!typed) {
+      codeEl.classList.remove("input-error");
+      errEl.classList.add("hidden");
+      nameEl.value = "";
+      signEl.value = "";
+      unitValidationState[side] = true;
+      renderDocument();
+      return;
+    }
+
+    const allowed = getAllowedUnitsForCurrentUser();
+    const matchAllowed = allowed.find(u => u.code.toLowerCase() === typed.toLowerCase());
+
+    if (matchAllowed) {
+      codeEl.classList.remove("input-error");
+      errEl.classList.add("hidden");
+      nameEl.value = matchAllowed.name;
+      signEl.value = matchAllowed.leader || "";
+      unitValidationState[side] = true;
+    } else {
+      // Nincs hozzáférése ehhez az egységkódhoz -> piros keret + figyelmeztetés, ne töltse ki!
+      codeEl.classList.add("input-error");
+      errEl.classList.remove("hidden");
+      nameEl.value = "";
+      signEl.value = "";
+      unitValidationState[side] = false;
     }
     renderDocument();
+  }
+
+  function initDefaultUnitsForUser() {
+    const allowed = getAllowedUnitsForCurrentUser();
+    const recEl = document.getElementById("recCode");
+    const sndEl = document.getElementById("sndCode");
+
+    if (allowed.length === 0) {
+      recEl.value = "";
+      sndEl.value = "";
+      handleUnitInput("rec", false);
+      handleUnitInput("snd", false);
+      return;
+    }
+
+    const has5120 = allowed.find(u => u.code === "5120");
+    const has3101 = allowed.find(u => u.code === "3101");
+
+    recEl.value = has5120 ? "5120" : allowed[0].code;
+    sndEl.value = has3101 ? "3101" : allowed[0].code;
+
+    handleUnitInput("rec", false);
+    handleUnitInput("snd", false);
   }
 
   function togglePasswordVisibility(btn) {
     const input = btn.previousElementSibling;
     if (input.type === "password") {
       input.type = "text";
-      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
     } else {
       input.type = "password";
-      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
     }
   }
 
@@ -1469,32 +1577,8 @@
     return `${units.length} egység`;
   }
 
-  // ===== LOCAL DEMO STORAGE =====
-  function getDemoUsers() {
-    const raw = localStorage.getItem("campus_demo_users");
-    if (raw) return JSON.parse(raw);
-    const def = [{
-      username: "admin",
-      password: "admin",
-      fullName: "Rendszeradminisztrátor (Demó)",
-      role: "admin",
-      permissions: ["raktari_atadolap", "egysegek_kozotti", "selejtezes"],
-      companies: ["DCNK", "UDC"],
-      units: ["ALL"]
-    }];
-    localStorage.setItem("campus_demo_users", JSON.stringify(def));
-    return def;
-  }
-  function saveDemoUsers(list) { localStorage.setItem("campus_demo_users", JSON.stringify(list)); }
-  function getDemoLogs() {
-    const raw = localStorage.getItem("campus_demo_logs");
-    return raw ? JSON.parse(raw) : [];
-  }
-  function saveDemoLogs(list) { localStorage.setItem("campus_demo_logs", JSON.stringify(list)); }
-
   // ===== API CALL WRAPPER =====
   async function apiCall(payload) {
-    if (isDemoMode()) return handleDemoApi(payload);
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -1505,49 +1589,17 @@
     return data;
   }
 
-  function handleDemoApi(p) {
-    const users = getDemoUsers();
-    if (p.action === "login") {
-      const u = users.find(x => x.username.toLowerCase() === String(p.username).toLowerCase() && x.password === p.password);
-      if (!u) return { ok: false, success: false, error: "Hibás felhasználónév vagy jelszó!" };
-      return { ok: true, success: true, user: { username: u.username, fullName: u.fullName, name: u.fullName, role: u.role, permissions: u.permissions, companies: u.companies || ["DCNK", "UDC"], units: u.units || ["ALL"] } };
-    }
-    if (p.action === "getUsers") return { ok: true, success: true, users };
-    if (p.action === "addUser") {
-      if (!p.username || !p.password) return { ok: false, error: "A felhasználónév és a jelszó megadása kötelező!" };
-      if (users.some(x => x.username.toLowerCase() === p.username.toLowerCase())) return { ok: false, error: "Ez a felhasználónév már létezik!" };
-      users.push({ username: p.username, password: p.password, fullName: p.fullName || p.name || p.username, role: p.role, permissions: p.permissions, companies: p.companies || ["DCNK", "UDC"], units: p.units || ["ALL"] });
-      saveDemoUsers(users);
-      return { ok: true, success: true };
-    }
-    if (p.action === "updateUser" || p.action === "updateUserPermissions") {
-      const idx = users.findIndex(x => x.username.toLowerCase() === p.username.toLowerCase());
-      if (idx === -1) return { ok: false, error: "Felhasználó nem található." };
-      users[idx].role = p.role;
-      users[idx].permissions = p.permissions;
-      if (p.companies) users[idx].companies = p.companies;
-      if (p.units) users[idx].units = p.units;
-      saveDemoUsers(users);
-      return { ok: true, success: true };
-    }
-    if (p.action === "deleteUser") {
-      saveDemoUsers(users.filter(x => x.username.toLowerCase() !== p.username.toLowerCase()));
-      return { ok: true, success: true };
-    }
-    if (p.action === "logDocument") {
-      const logs = getDemoLogs();
-      logs.unshift({
-        timestamp: formatLogTimestamp(new Date().toISOString()),
-        username: p.username,
-        userName: p.userName,
-        docType: p.docType,
-        details: p.details
-      });
-      saveDemoLogs(logs);
-      return { ok: true, success: true };
-    }
-    if (p.action === "getLogs") return { ok: true, success: true, logs: getDemoLogs() };
-    return { ok: false, error: "Ismeretlen művelet" };
+  async function loadServerUnits() {
+    try {
+      const res = await apiCall({ action: "getUnits" });
+      if (res && (res.ok || res.success) && Array.isArray(res.units)) {
+        const map = new Map(DEFAULT_UNITS.map(u => [u.code.toLowerCase(), { ...u }]));
+        res.units.forEach(u => {
+          map.set(u.code.toLowerCase(), { code: u.code, name: u.name, leader: u.leader || "" });
+        });
+        UNITS_LIST = [...map.values()].sort((a, b) => a.code.localeCompare(b.code, "hu"));
+      }
+    } catch (e) {}
   }
 
   // ===== AUTH =====
@@ -1580,12 +1632,6 @@
     }
   });
 
-  function demoLogin() {
-    document.getElementById("loginUsername").value = "admin";
-    document.getElementById("loginPassword").value = "admin";
-    document.getElementById("loginForm").dispatchEvent(new Event("submit"));
-  }
-
   function logout() {
     currentUser = null;
     selectedCompany = null;
@@ -1596,19 +1642,20 @@
     document.getElementById("loginPassword").value = "";
   }
 
-  function enterApp() {
+  async function enterApp() {
     document.getElementById("loginView").classList.add("hidden");
     document.getElementById("appView").classList.remove("hidden");
     const displayName = currentUser.fullName || currentUser.name || currentUser.username;
     document.getElementById("navUserBadge").textContent = displayName + (currentUser.role === "admin" ? " (Admin)" : "");
-    populateAllowedUnitsDatalist();
+    await loadServerUnits();
     renderUnitCheckboxGrid("newUserUnitGrid", ["ALL"]);
+    if (currentUser.role === "admin") loadAdminReports(true);
     goHomeToCompanySelect(true);
   }
 
   // ===== VIEW & COMPANY NAVIGATION =====
   function showOnlySection(sectionId, viewKey) {
-    ["companySelectView", "docSelectView", "docRaktariView", "comingSoonView", "adminView"].forEach(id => {
+    ["companySelectView", "docSelectView", "docRaktariView", "comingSoonView", "settingsView", "adminView"].forEach(id => {
       document.getElementById(id).classList.toggle("hidden", id !== sectionId);
     });
     currentView = viewKey;
@@ -1622,9 +1669,7 @@
 
   function goHomeToCompanySelect(skipConfirm = false) {
     if (!skipConfirm && currentView === "docRaktari") {
-      if (!confirm("Biztosan vissza akarsz lépni a cégválasztáshoz? A nem mentett módosítások elveszhetnek.")) {
-        return;
-      }
+      if (!confirm("Biztosan vissza akarsz lépni a cégválasztáshoz? A nem mentett módosítások elveszhetnek.")) return;
     }
     selectedCompany = null;
     customLogoOverride = null;
@@ -1666,7 +1711,7 @@
 
     if (selectedCompany) {
       const bDocs = document.createElement("button");
-      bDocs.className = "nav-tab" + (currentView === "docSelect" || currentView === "docRaktari" || currentView === "comingSoon" ? " active" : "");
+      bDocs.className = "nav-tab" + (["docSelect", "docRaktari", "comingSoon"].includes(currentView) ? " active" : "");
       bDocs.textContent = "Nyomtatványok";
       bDocs.onclick = () => {
         if (currentView === "docRaktari") backToDocSelector();
@@ -1675,14 +1720,25 @@
       nav.appendChild(bDocs);
     }
 
+    const bSettings = document.createElement("button");
+    bSettings.className = "nav-tab" + (currentView === "settings" ? " active" : "");
+    bSettings.textContent = "Beállítások";
+    bSettings.onclick = () => {
+      if (currentView === "docRaktari" && !confirm("Biztosan elhagyod a szerkesztőt a Beállításokhoz?")) return;
+      showOnlySection("settingsView", "settings");
+      loadUserReports();
+    };
+    nav.appendChild(bSettings);
+
     if (currentUser && currentUser.role === "admin") {
       const bAdmin = document.createElement("button");
       bAdmin.className = "nav-tab" + (currentView === "admin" ? " active" : "");
-      bAdmin.textContent = "Admin Panel";
+      bAdmin.innerHTML = `Admin Panel ${pendingReportsCount > 0 ? `<span class="notif-badge">${pendingReportsCount}</span>` : ""}`;
       bAdmin.onclick = () => {
         if (currentView === "docRaktari" && !confirm("Biztosan elhagyod a szerkesztőt az Admin Panelhez?")) return;
         showOnlySection("adminView", "admin");
         loadUsers();
+        loadAdminReports();
         loadLogs();
       };
       nav.appendChild(bAdmin);
@@ -1719,6 +1775,9 @@
     const box = document.getElementById("miniPreviewContainer");
     if (!dt || !selectedCompany) { box.innerHTML = ""; return; }
 
+    const allowed = getAllowedUnitsForCurrentUser();
+    const sampleUnit = allowed[0] || { code: "—", name: "—" };
+
     box.innerHTML = `
       <div class="mini-doc-header">
         <img src="${selectedCompany.logo}" alt="${selectedCompany.code}" onerror="this.src='${selectedCompany.fallbackLogo}'" />
@@ -1728,19 +1787,17 @@
       <div class="mini-boxes">
         <div class="mini-box">
           <div class="mini-box-h">ÁTVEVŐ</div>
-          <div class="mini-box-r">Egység kódja: 5120</div>
-          <div class="mini-box-r">Egység neve: Levéltár, raktár</div>
+          <div class="mini-box-r">Egység kódja: ${escapeHtml(sampleUnit.code)}</div>
+          <div class="mini-box-r">Egység neve: ${escapeHtml(sampleUnit.name)}</div>
         </div>
         <div class="mini-box">
           <div class="mini-box-h">ÁTADÓ</div>
-          <div class="mini-box-r">Egység kódja: 3101</div>
-          <div class="mini-box-r">Egység neve: Központi raktár</div>
+          <div class="mini-box-r">Egység kódja: ${escapeHtml(sampleUnit.code)}</div>
+          <div class="mini-box-r">Egység neve: ${escapeHtml(sampleUnit.name)}</div>
         </div>
       </div>
       <table class="mini-tbl">
-        <thead>
-          <tr><th>#</th><th>NYTSZ</th><th>Megnevezés</th><th>Db</th><th>Megjegyzés</th></tr>
-        </thead>
+        <thead><tr><th>#</th><th>NYTSZ</th><th>Megnevezés</th><th>Db</th><th>Megjegyzés</th></tr></thead>
         <tbody>
           <tr><td>1</td><td>140041</td><td>Bankett asztal</td><td>1</td><td></td></tr>
           <tr><td>2</td><td>300294</td><td>Fotel</td><td>1</td><td></td></tr>
@@ -1756,10 +1813,7 @@
       </div>
       <div class="mini-date-line">Debrecen, 2025. 04. 08.</div>
       <div class="mini-sign-zone">
-        <div class="mini-sign-cols">
-          <div>ÁTADÓ</div>
-          <div>ÁTVEVŐ</div>
-        </div>
+        <div class="mini-sign-cols"><div>ÁTADÓ</div><div>ÁTVEVŐ</div></div>
       </div>
     `;
   }
@@ -1770,8 +1824,8 @@
     if (!docId) { showToast("Nincs kiválasztott nyomtatvány!", "error"); return; }
 
     if (docId === "raktari_atadolap") {
-      populateAllowedUnitsDatalist();
       showOnlySection("docRaktariView", "docRaktari");
+      initDefaultUnitsForUser();
       if (activeItems.length === 0) loadSampleData();
       else renderDocument();
     } else {
@@ -1782,9 +1836,7 @@
   }
 
   function backToDocSelector(skipConfirm = false) {
-    if (!skipConfirm) {
-      if (!confirm("Biztosan vissza akarsz lépni a nyomtatványválasztóhoz?")) return;
-    }
+    if (!skipConfirm && !confirm("Biztosan vissza akarsz lépni a nyomtatványválasztóhoz?")) return;
     showOnlySection("docSelectView", "docSelect");
     renderMiniPreview();
   }
@@ -1811,10 +1863,7 @@
 
   function readUploadedFile(file) {
     const reader = new FileReader();
-    reader.onload = ev => {
-      document.getElementById("pasteInput").value = ev.target.result;
-      parsePastedData();
-    };
+    reader.onload = ev => { document.getElementById("pasteInput").value = ev.target.result; parsePastedData(); };
     reader.readAsText(file, "UTF-8");
   }
 
@@ -1836,12 +1885,8 @@
       if (ch === '"') {
         if (inQuotes && line[i + 1] === '"') { cur += '"'; i++; }
         else inQuotes = !inQuotes;
-      } else if (ch === delim && !inQuotes) {
-        out.push(cur.trim());
-        cur = "";
-      } else {
-        cur += ch;
-      }
+      } else if (ch === delim && !inQuotes) { out.push(cur.trim()); cur = ""; }
+      else cur += ch;
     }
     out.push(cur.trim());
     return out;
@@ -1858,12 +1903,9 @@
 
     const header = grid[0];
     const blocks = [];
-
     for (let c = 0; c < header.length; c++) {
       const h = (header[c] || "").toLowerCase();
-      if (h.includes("nytsz") || h.includes("nyilvántart")) {
-        blocks.push({ nytsz: c, name: c + 1, qty: c + 2, date: c + 3 });
-      }
+      if (h.includes("nytsz") || h.includes("nyilvántart")) blocks.push({ nytsz: c, name: c + 1, qty: c + 2, date: c + 3 });
     }
 
     const startRow = blocks.length > 0 ? 1 : 0;
@@ -1878,16 +1920,11 @@
         const qtyRaw = (row[b.qty] || "").trim();
         const date = (row[b.date] || "").trim();
         if (!name && !nytsz) return;
-        const qty = parseInt(qtyRaw, 10) || 1;
-        parsed.push({ nytsz, name, qty, note: "", date });
+        parsed.push({ nytsz, name, qty: parseInt(qtyRaw, 10) || 1, note: "", date });
       });
     }
 
-    if (parsed.length === 0) {
-      showToast("Nem sikerült érvényes tételeket találni!", "error");
-      return;
-    }
-
+    if (parsed.length === 0) { showToast("Nem sikerült érvényes tételeket találni!", "error"); return; }
     allParsedItems = parsed;
     buildDateChips();
     showToast(parsed.length + " tétel sikeresen beolvasva!", "success");
@@ -1898,7 +1935,6 @@
     const sec = document.getElementById("dateFilterSection");
     const box = document.getElementById("dateChips");
     box.innerHTML = "";
-
     if (dates.length === 0) {
       sec.classList.add("hidden");
       activeItems = allParsedItems.map(x => ({ ...x }));
@@ -1906,7 +1942,6 @@
       renderDocument();
       return;
     }
-
     sec.classList.remove("hidden");
     dates.forEach((d, idx) => {
       const btn = document.createElement("button");
@@ -1919,10 +1954,7 @@
   }
 
   function selectDateFilter(dateStr) {
-    activeDateFilter = dateStr;
-    document.querySelectorAll(".date-chip").forEach(c => {
-      c.classList.toggle("active", c.textContent === dateStr);
-    });
+    document.querySelectorAll(".date-chip").forEach(c => c.classList.toggle("active", c.textContent === dateStr));
     document.getElementById("docDate").value = dateStr;
     activeItems = allParsedItems.filter(i => i.date === dateStr).map(x => ({ ...x }));
     renderEditTable();
@@ -1961,22 +1993,11 @@
     });
   }
 
-  function updateItem(idx, field, val) {
-    activeItems[idx][field] = field === "qty" ? (parseInt(val, 10) || 1) : val;
-    renderDocument();
-  }
-  function addEmptyItem() {
-    activeItems.push({ nytsz: "", name: "", qty: 1, note: "" });
-    renderEditTable();
-    renderDocument();
-  }
-  function removeItem(idx) {
-    activeItems.splice(idx, 1);
-    renderEditTable();
-    renderDocument();
-  }
+  function updateItem(idx, field, val) { activeItems[idx][field] = field === "qty" ? (parseInt(val, 10) || 1) : val; renderDocument(); }
+  function addEmptyItem() { activeItems.push({ nytsz: "", name: "", qty: 1, note: "" }); renderEditTable(); renderDocument(); }
+  function removeItem(idx) { activeItems.splice(idx, 1); renderEditTable(); renderDocument(); }
 
-  // ===== HUNGARIAN DATE SUFFIX =====
+  // ===== DATES & ESCAPE =====
   function formatHungarianDateWithSuffix(dateStr) {
     const clean = (dateStr || "").trim().replace(/\.$/, "");
     const parts = clean.split(/[.\-\/]/).map(s => s.trim()).filter(Boolean);
@@ -2006,9 +2027,9 @@
     const container = document.getElementById("pagesContainer");
     container.innerHTML = "";
 
-    const recCode = document.getElementById("recCode").value.trim();
+    const recCode = unitValidationState.rec ? document.getElementById("recCode").value.trim() : "";
     const recName = document.getElementById("recName").value.trim();
-    const sndCode = document.getElementById("sndCode").value.trim();
+    const sndCode = unitValidationState.snd ? document.getElementById("sndCode").value.trim() : "";
     const sndName = document.getElementById("sndName").value.trim();
     const sndSign = document.getElementById("sndSign").value.trim();
     const recSign = document.getElementById("recSign").value.trim();
@@ -2025,8 +2046,7 @@
     const spacedDate = formatSpacedDate(docDate);
 
     const pages = [];
-    let idx = 0;
-    let pageNum = 1;
+    let idx = 0, pageNum = 1;
 
     if (activeItems.length === 0) {
       pages.push({ pageNum: 1, items: [], isFirst: true, isLast: true });
@@ -2042,13 +2062,10 @@
           idx = activeItems.length;
         } else {
           const take = Math.min(remaining, maxWithoutClosing);
-          const slice = activeItems.slice(idx, idx + take);
+          pages.push({ pageNum, items: activeItems.slice(idx, idx + take), startIndex: idx, isFirst, isLast: false });
           idx += take;
-          pages.push({ pageNum, items: slice, startIndex: idx - take, isFirst, isLast: false });
           pageNum++;
-          if (idx === activeItems.length) {
-            pages.push({ pageNum, items: [], startIndex: idx, isFirst: false, isLast: true });
-          }
+          if (idx === activeItems.length) pages.push({ pageNum, items: [], startIndex: idx, isFirst: false, isLast: true });
         }
       }
     }
@@ -2153,6 +2170,10 @@
   }
 
   async function printAndLog() {
+    if (!unitValidationState.rec || !unitValidationState.snd) {
+      showToast("Hibás vagy nem engedélyezett egységkód szerepel a nyomtatványon!", "error");
+      return;
+    }
     window.print();
     if (!currentUser) return;
     const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
@@ -2172,20 +2193,98 @@
     } catch (e) {}
   }
 
+  // ===== SETTINGS (PASSWORD & USER REPORTS) =====
+  async function submitChangePassword(e) {
+    e.preventDefault();
+    const oldPassword = document.getElementById("oldPwdInput").value.trim();
+    const newPassword = document.getElementById("newPwdInput").value.trim();
+    const confirmPwd = document.getElementById("newPwdConfirmInput").value.trim();
+
+    if (newPassword !== confirmPwd) {
+      showToast("Az új jelszó és a megerősítés nem egyezik!", "error");
+      return;
+    }
+
+    try {
+      const res = await apiCall({ action: "changePassword", username: currentUser.username, oldPassword, newPassword });
+      if (res && (res.ok || res.success)) {
+        showToast("Jelszó sikeresen megváltoztatva!", "success");
+        document.getElementById("changePwdForm").reset();
+      } else {
+        showToast((res && res.error) || "Hiba a jelszó módosításakor!", "error");
+      }
+    } catch (err) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  async function submitUserReport() {
+    const msg = document.getElementById("userReportMessage").value.trim();
+    if (!msg) { showToast("Írd le a kérelmedet / üzenetedet!", "error"); return; }
+
+    try {
+      const res = await apiCall({
+        action: "createReport",
+        username: currentUser.username,
+        fullName: currentUser.fullName || currentUser.name || currentUser.username,
+        message: msg
+      });
+      if (res && (res.ok || res.success)) {
+        showToast("Kérelem elküldve az adminisztrátoroknak!", "success");
+        document.getElementById("userReportMessage").value = "";
+        loadUserReports();
+      } else {
+        showToast((res && res.error) || "Hiba küldéskor!", "error");
+      }
+    } catch (err) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  async function loadUserReports() {
+    try {
+      const res = await apiCall({ action: "getReports", username: currentUser.username });
+      if (res && (res.ok || res.success)) {
+        cachedUserReports = res.reports || [];
+        renderUserReportsTable();
+      }
+    } catch (e) {}
+  }
+
+  function renderStatusBadge(status) {
+    if (status === "approved") return '<span class="status-pill status-approved">✓ Elfogadva / Teljesült</span>';
+    if (status === "rejected") return '<span class="status-pill status-rejected">✕ Elutasítva</span>';
+    return '<span class="status-pill status-pending">⏳ Függőben</span>';
+  }
+
+  function renderUserReportsTable() {
+    const tbody = document.getElementById("userReportsTableBody");
+    if (cachedUserReports.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:18px;">Még nem küldtél be kérelmet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = cachedUserReports.map(r => `
+      <tr>
+        <td style="white-space:nowrap;">${escapeHtml(formatLogTimestamp(r.timestamp))}</td>
+        <td>${escapeHtml(r.message)}</td>
+        <td>${renderStatusBadge(r.status)}</td>
+        <td>${r.adminNote ? escapeHtml(r.adminNote) : '<span style="color:var(--muted);">—</span>'}</td>
+      </tr>
+    `).join("");
+  }
+
   // ===== ADMIN PANEL =====
   function switchAdminTab(sub) {
-    document.getElementById("tabUsersBtn").classList.toggle("active", sub === "users");
-    document.getElementById("tabLogsBtn").classList.toggle("active", sub === "logs");
-    document.getElementById("adminUsersPane").classList.toggle("hidden", sub !== "users");
-    document.getElementById("adminLogsPane").classList.toggle("hidden", sub !== "logs");
+    const map = { users: ["tabUsersBtn", "adminUsersPane"], units: ["tabUnitsBtn", "adminUnitsPane"], reports: ["tabReportsBtn", "adminReportsPane"], logs: ["tabLogsBtn", "adminLogsPane"] };
+    Object.keys(map).forEach(k => {
+      document.getElementById(map[k][0]).classList.toggle("active", k === sub);
+      document.getElementById(map[k][1]).classList.toggle("hidden", k !== sub);
+    });
+    if (sub === "units") renderAdminUnitsTable();
+    if (sub === "reports") loadAdminReports();
     if (sub === "logs") loadLogs();
   }
 
   function generateUsername() {
     const raw = document.getElementById("newFullName").value.trim();
     if (!raw) { showToast("Előbb írd be a teljes nevet!", "error"); return; }
-    const clean = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, ".");
-    document.getElementById("newUsername").value = clean;
+    document.getElementById("newUsername").value = raw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, ".");
   }
 
   function generatePassword() {
@@ -2211,44 +2310,24 @@
     const companies = [...document.querySelectorAll(".new-comp:checked")].map(c => c.value);
     const units = getSelectedUnitsFromGrid("newUserUnitGrid");
 
-    if (!username || !password) {
-      showToast("A felhasználónév és a jelszó megadása kötelező!", "error");
-      return;
-    }
+    if (!username || !password) { showToast("A felhasználónév és a jelszó megadása kötelező!", "error"); return; }
 
     try {
-      const res = await apiCall({
-        action: "addUser",
-        username,
-        password,
-        fullName: fullName || username,
-        name: fullName || username,
-        role,
-        permissions,
-        companies,
-        units
-      });
+      const res = await apiCall({ action: "addUser", username, password, fullName: fullName || username, name: fullName || username, role, permissions, companies, units });
       if (res && (res.ok || res.success)) {
         showToast("Felhasználó sikeresen létrehozva!", "success");
         document.getElementById("newFullName").value = "";
         document.getElementById("newUsername").value = "";
         document.getElementById("newPassword").value = "";
         loadUsers();
-      } else {
-        showToast((res && res.error) || "Hiba a létrehozáskor!", "error");
-      }
-    } catch (e) {
-      showToast("Hálózati hiba!", "error");
-    }
+      } else showToast((res && res.error) || "Hiba a létrehozáskor!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
   }
 
   async function loadUsers() {
     try {
       const res = await apiCall({ action: "getUsers" });
-      if (res && (res.ok || res.success)) {
-        cachedUsers = res.users || [];
-        renderUsersTable();
-      }
+      if (res && (res.ok || res.success)) { cachedUsers = res.users || []; renderUsersTable(); }
     } catch (e) { showToast("Nem sikerült betölteni a felhasználókat.", "error"); }
   }
 
@@ -2277,14 +2356,10 @@
             <label><input type="checkbox" class="u-comp-${i}" value="UDC" ${comps.includes("UDC") ? "checked" : ""} /> UDC</label>
           </div>
         </td>
-        <td>
-          <button type="button" id="u_units_btn_${i}" class="btn btn-outline btn-sm" onclick="openUnitModal(${i})">${formatUnitsBadge(u.units)}</button>
-        </td>
+        <td><button type="button" id="u_units_btn_${i}" class="btn btn-outline btn-sm" onclick="openUnitModal(${i})">${formatUnitsBadge(u.units)}</button></td>
         <td>
           <div class="perm-checks">
-            ${DOC_TYPES.map(dt => `
-              <label><input type="checkbox" class="u-perm-${i}" value="${dt.id}" ${perms.includes(dt.id) ? "checked" : ""} /> ${dt.label}</label>
-            `).join("")}
+            ${DOC_TYPES.map(dt => `<label><input type="checkbox" class="u-perm-${i}" value="${dt.id}" ${perms.includes(dt.id) ? "checked" : ""} /> ${dt.label}</label>`).join("")}
           </div>
         </td>
         <td>
@@ -2308,16 +2383,10 @@
       if (res && (res.ok || res.success)) {
         showToast("Módosítások elmentve!", "success");
         if (currentUser && currentUser.username.toLowerCase() === username.toLowerCase()) {
-          currentUser.role = role;
-          currentUser.permissions = permissions;
-          currentUser.companies = companies;
-          currentUser.units = units;
+          currentUser.role = role; currentUser.permissions = permissions; currentUser.companies = companies; currentUser.units = units;
           sessionStorage.setItem("campus_session", JSON.stringify(currentUser));
-          populateAllowedUnitsDatalist();
         }
-      } else {
-        showToast((res && res.error) || "Hiba mentéskor!", "error");
-      }
+      } else showToast((res && res.error) || "Hiba mentéskor!", "error");
     } catch (e) { showToast("Hálózati hiba!", "error"); }
   }
 
@@ -2330,48 +2399,146 @@
     } catch (e) { showToast("Hálózati hiba!", "error"); }
   }
 
+  // ===== ADMIN: UNITS MANAGEMENT =====
+  function renderAdminUnitsTable() {
+    const q = (document.getElementById("adminUnitSearch").value || "").trim().toLowerCase();
+    const filtered = UNITS_LIST.filter(u =>
+      !q || u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || (u.leader || "").toLowerCase().includes(q)
+    );
+    document.getElementById("adminUnitsCount").textContent = filtered.length;
+    const tbody = document.getElementById("adminUnitsTableBody");
+    tbody.innerHTML = filtered.map((u, idx) => `
+      <tr>
+        <td><strong>${escapeHtml(u.code)}</strong></td>
+        <td><input id="edit_uname_${idx}" class="form-control" style="padding:6px 8px; font-size:13px;" value="${escapeHtml(u.name)}" /></td>
+        <td><input id="edit_uleader_${idx}" class="form-control" style="padding:6px 8px; font-size:13px;" value="${escapeHtml(u.leader)}" placeholder="Nincs megadva" /></td>
+        <td><button class="btn btn-success btn-sm" onclick="saveUnitRow('${escapeHtml(u.code)}', ${idx})">Mentés</button></td>
+      </tr>
+    `).join("");
+  }
+
+  async function saveUnitRow(code, idx) {
+    const name = document.getElementById("edit_uname_" + idx).value.trim();
+    const leader = document.getElementById("edit_uleader_" + idx).value.trim();
+    if (!name) { showToast("Az egység neve nem lehet üres!", "error"); return; }
+
+    try {
+      const res = await apiCall({ action: "saveUnit", code, name, leader });
+      if (res && (res.ok || res.success)) {
+        const target = UNITS_LIST.find(u => u.code === code);
+        if (target) { target.name = name; target.leader = leader; }
+        renderUnitCheckboxGrid("newUserUnitGrid", ["ALL"]);
+        showToast(`${code} egység elmentve!`, "success");
+      } else showToast((res && res.error) || "Hiba mentéskor!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  async function addNewUnit() {
+    const code = document.getElementById("addUnitCode").value.trim();
+    const name = document.getElementById("addUnitName").value.trim();
+    const leader = document.getElementById("addUnitLeader").value.trim();
+    if (!code || !name) { showToast("Az egységkód és a név megadása kötelező!", "error"); return; }
+
+    try {
+      const res = await apiCall({ action: "saveUnit", code, name, leader });
+      if (res && (res.ok || res.success)) {
+        await loadServerUnits();
+        document.getElementById("addUnitCode").value = "";
+        document.getElementById("addUnitName").value = "";
+        document.getElementById("addUnitLeader").value = "";
+        renderAdminUnitsTable();
+        renderUnitCheckboxGrid("newUserUnitGrid", ["ALL"]);
+        showToast("Új egység sikeresen hozzáadva!", "success");
+      } else showToast((res && res.error) || "Hiba hozzáadáskor!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  // ===== ADMIN: REPORTS / NOTIFICATIONS =====
+  async function loadAdminReports(silent = false) {
+    try {
+      const res = await apiCall({ action: "getReports" });
+      if (res && (res.ok || res.success)) {
+        cachedAdminReports = res.reports || [];
+        pendingReportsCount = cachedAdminReports.filter(r => r.status === "pending").length;
+        const subBadge = document.getElementById("adminReportsSubBadge");
+        if (subBadge) {
+          subBadge.textContent = pendingReportsCount;
+          subBadge.classList.toggle("hidden", pendingReportsCount === 0);
+        }
+        buildNavTabs();
+        if (!silent) renderAdminReportsTable();
+      }
+    } catch (e) {}
+  }
+
+  function renderAdminReportsTable() {
+    const tbody = document.getElementById("adminReportsTableBody");
+    if (cachedAdminReports.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">Nincs beérkezett kérelem.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = cachedAdminReports.map(r => `
+      <tr>
+        <td style="white-space:nowrap;">${escapeHtml(formatLogTimestamp(r.timestamp))}</td>
+        <td><strong>${escapeHtml(r.fullName)}</strong><br><span style="color:var(--muted); font-size:12px;">(${escapeHtml(r.username)})</span></td>
+        <td>${escapeHtml(r.message)}${r.adminNote ? `<div style="font-size:12px; color:var(--muted); margin-top:4px;"><em>Válasz: ${escapeHtml(r.adminNote)}</em></div>` : ""}</td>
+        <td>${renderStatusBadge(r.status)}</td>
+        <td style="white-space:nowrap;">
+          ${r.status === "pending" ? `
+            <button class="btn btn-success btn-sm" onclick="handleReportDecision('${escapeHtml(r.id)}', 'approved')">✓ Elfogadás</button>
+            <button class="btn btn-danger btn-sm" onclick="handleReportDecision('${escapeHtml(r.id)}', 'rejected')">✕ Elutasítás</button>
+          ` : `<span style="font-size:12px; color:var(--muted);">Kezelve</span>`}
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function handleReportDecision(id, status) {
+    const label = status === "approved" ? "Elfogadás" : "Elutasítás";
+    const note = prompt(`${label} — Írj egy rövid visszajelzést a felhasználónak (opcionális):`, status === "approved" ? "Kérelem teljesítve." : "Kérelem elutasítva.");
+    if (note === null) return;
+
+    try {
+      const res = await apiCall({ action: "updateReportStatus", id, status, adminNote: note });
+      if (res && (res.ok || res.success)) {
+        showToast("Visszaigazolás elküldve a felhasználónak!", "success");
+        loadAdminReports();
+      } else showToast((res && res.error) || "Hiba történt!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  // ===== ADMIN: LOGS =====
   async function loadLogs() {
     try {
       const res = await apiCall({ action: "getLogs" });
-      if (res && (res.ok || res.success)) {
-        cachedLogs = res.logs || [];
-        renderLogsTable();
-      }
+      if (res && (res.ok || res.success)) { cachedLogs = res.logs || []; renderLogsTable(); }
     } catch (e) { showToast("Nem sikerült betölteni a naplót.", "error"); }
   }
 
   function renderLogsTable() {
     const q = (document.getElementById("logSearch").value || "").toLowerCase();
     const tbody = document.getElementById("logsTableBody");
-    tbody.innerHTML = "";
     const filtered = cachedLogs.filter(l => JSON.stringify(l).toLowerCase().includes(q));
     if (filtered.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:20px;">Nincs megjeleníthető naplóbejegyzés.</td></tr>';
       return;
     }
-    filtered.forEach(l => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
+    tbody.innerHTML = filtered.map(l => `
+      <tr>
         <td style="white-space:nowrap;">${escapeHtml(formatLogTimestamp(l.timestamp || l.date || ""))}</td>
         <td><strong>${escapeHtml(l.userName || l.fullName || "")}</strong> <span style="color:var(--muted);">(${escapeHtml(l.username || "")})</span></td>
         <td>${escapeHtml(l.docType || l.type || "")}</td>
         <td>${escapeHtml(l.details || "")}</td>
-      `;
-      tbody.appendChild(tr);
-    });
+      </tr>
+    `).join("");
   }
 
   // ===== INIT =====
   (function init() {
-    if (isDemoMode()) {
-      document.getElementById("demoBanner").classList.remove("hidden");
-    }
     const saved = sessionStorage.getItem("campus_session");
     if (saved) {
-      try {
-        currentUser = JSON.parse(saved);
-        enterApp();
-      } catch (e) { sessionStorage.removeItem("campus_session"); }
+      try { currentUser = JSON.parse(saved); enterApp(); }
+      catch (e) { sessionStorage.removeItem("campus_session"); }
     }
   })();
 </script>
