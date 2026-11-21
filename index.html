@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Campus Dokumentum Generátor & Admin</title>
+  <title>Campus Dokumentum Generátor</title>
   <style>
     :root {
       /* Alapértelmezett (DCNK narancs/sárga) téma */
@@ -269,18 +269,41 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      position: relative;
       box-shadow: 0 4px 16px rgba(15,23,42,0.05);
     }
-    .company-card.card-dcnk:hover {
+    .company-card.card-dcnk:not(.locked):hover {
       border-color: #e86c1f;
       transform: translateY(-4px);
       box-shadow: 0 14px 30px rgba(232, 108, 31, 0.16);
     }
-    .company-card.card-udc:hover {
+    .company-card.card-udc:not(.locked):hover {
       border-color: #0b5d36;
       transform: translateY(-4px);
       box-shadow: 0 14px 30px rgba(11, 93, 54, 0.16);
     }
+    .company-card.locked {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+      filter: grayscale(100%);
+      opacity: 0.65;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .company-card .lock-badge {
+      display: none;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #475569;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .company-card.locked .lock-badge { display: inline-block; }
+
     .company-card img { height: 52px; max-width: 240px; object-fit: contain; margin-bottom: 20px; }
     .company-card .code-tag {
       font-size: 12px;
@@ -351,8 +374,30 @@
     .mini-note { border: 1px solid #333; margin-top: 8px; }
     .mini-note-h { background: var(--primary-dark); color: #fff; text-align: center; font-size: 7.5px; font-weight: 700; padding: 2px; }
     .mini-note-b { height: 28px; }
-    .mini-sign { display: flex; justify-content: space-between; margin-top: auto; padding-top: 18px; font-size: 8px; }
-    .mini-sign div { width: 28%; text-align: center; border-top: 1px solid #666; padding-top: 3px; }
+    .mini-date-line {
+      margin-top: 10px;
+      font-size: 8.5px;
+      font-family: "Times New Roman", Times, serif;
+    }
+    .mini-sign-zone {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-top: 12px;
+    }
+    .mini-sign-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 66%;
+      font-size: 8px;
+      text-align: center;
+    }
+    .mini-sign-cols div {
+      border-top: 1px solid #666;
+      padding-top: 3px;
+    }
 
     /* ===== GENERATOR SPLIT LAYOUT ===== */
     .gen-grid {
@@ -458,7 +503,7 @@
     }
     .a4-page {
       width: 210mm;
-      min-height: 297mm;
+      height: 297mm;
       background: #fff;
       padding: 14mm 15mm 14mm 15mm;
       box-shadow: 0 8px 28px rgba(15,23,42,0.14);
@@ -552,7 +597,7 @@
     .note-box {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 10mm;
+      margin-bottom: 5mm;
       font-family: Arial, sans-serif;
     }
     .note-box th {
@@ -564,19 +609,34 @@
     }
     .note-box td {
       border: 1px solid #000;
-      height: 22mm;
+      height: 20mm;
       padding: 6px 8px;
       vertical-align: top;
       font-size: 9pt;
       white-space: pre-wrap;
     }
 
+    /* Dátum közvetlenül a megjegyzés alatt */
+    .doc-date-line {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 11pt;
+      margin-bottom: 4mm;
+    }
+
+    /* Dinamikusan teret kitöltő aláírási zóna jobb oldalon */
+    .sign-zone {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      min-height: 26mm;
+      padding: 4mm 0;
+    }
     .sign-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10mm;
-      align-items: end;
-      margin-top: 4mm;
+      grid-template-columns: 1fr 1fr;
+      gap: 14mm;
+      width: 66%;
       font-family: "Times New Roman", Times, serif;
       font-size: 11pt;
     }
@@ -586,7 +646,7 @@
 
     .doc-footer {
       margin-top: auto;
-      padding-top: 6mm;
+      padding-top: 4mm;
       font-family: Arial, sans-serif;
       font-size: 8.5pt;
       color: #333;
@@ -625,7 +685,7 @@
       padding-top: 12px;
       border-top: 1px solid #f1f5f9;
     }
-    .perm-checks { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px; }
+    .perm-checks { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; font-size: 13px; }
     .perm-checks label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
 
     .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -680,7 +740,7 @@
       <div class="login-logo-box">
         <img src="campuslog.png" alt="Campus" onerror="this.src=FALLBACK_DCNK_LOGO" />
       </div>
-      <h1>Dokumentum Generátor & Admin</h1>
+      <h1>Dokumentum Generátor</h1>
       <p>Jelentkezz be a céges fiókoddal a folytatáshoz</p>
     </div>
     <div class="login-body">
@@ -734,13 +794,15 @@
         <h2>Melyik céghez szeretnél nyomtatványt készíteni?</h2>
         <p>A nyomtatványok eléréséhez először válaszd ki a megfelelő céget.</p>
         <div class="company-cards">
-          <div class="company-card card-dcnk" onclick="selectCompany('DCNK')">
+          <div id="cardDCNK" class="company-card card-dcnk" onclick="selectCompany('DCNK')">
+            <span class="lock-badge">Nincs hozzáférés</span>
             <img src="campuslog.png" alt="DCNK" onerror="this.src=FALLBACK_DCNK_LOGO" />
             <div class="code-tag">DCNK</div>
             <h3>Debreceni Campus NK Kft.</h3>
             <span>Debreceni Campus Nonprofit Közhasznú Kft.</span>
           </div>
-          <div class="company-card card-udc" onclick="selectCompany('UDC')">
+          <div id="cardUDC" class="company-card card-udc" onclick="selectCompany('UDC')">
+            <span class="lock-badge">Nincs hozzáférés</span>
             <img src="UD_campus_logo_hosszu.png" alt="UD Campus" onerror="this.src=FALLBACK_UDC_LOGO" />
             <div class="code-tag">UDC</div>
             <h3>UD Campus</h3>
@@ -936,11 +998,18 @@
           </div>
 
           <div class="perm-row">
-            <div class="perm-checks">
-              <strong>Dokumentum jogosultságok:</strong>
-              <label><input type="checkbox" class="new-perm" value="raktari_atadolap" checked /> Raktári átadólap</label>
-              <label><input type="checkbox" class="new-perm" value="egysegek_kozotti" /> Egységek közötti átadás</label>
-              <label><input type="checkbox" class="new-perm" value="selejtezes" /> Selejtezési jegyzőkönyv</label>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <div class="perm-checks">
+                <strong>Cég hozzáférés:</strong>
+                <label><input type="checkbox" class="new-comp" value="DCNK" checked /> DCNK</label>
+                <label><input type="checkbox" class="new-comp" value="UDC" checked /> UDC (UD Campus)</label>
+              </div>
+              <div class="perm-checks">
+                <strong>Dokumentum jogosultságok:</strong>
+                <label><input type="checkbox" class="new-perm" value="raktari_atadolap" checked /> Raktári átadólap</label>
+                <label><input type="checkbox" class="new-perm" value="egysegek_kozotti" /> Egységek közötti átadás</label>
+                <label><input type="checkbox" class="new-perm" value="selejtezes" /> Selejtezési jegyzőkönyv</label>
+              </div>
             </div>
             <button class="btn btn-primary" onclick="createUser()">+ Felhasználó létrehozása</button>
           </div>
@@ -958,6 +1027,7 @@
                   <th>Teljes név</th>
                   <th>Felhasználónév</th>
                   <th>Szerepkör</th>
+                  <th>Cégek</th>
                   <th>Jogosultságok</th>
                   <th>Műveletek</th>
                 </tr>
@@ -999,9 +1069,7 @@
 </div>
 
 <script>
-  // =========================================================================
-  // IDE ILLESZD BE A GOOGLE APPS SCRIPT WEBALKALMAZÁS URL-CÍMEDET (../exec):
-  // =========================================================================
+  // Google Apps Script API URL
   const API_URL = "https://script.google.com/macros/s/AKfycbxg1CE40fEftdrzepOQB4jN4dzXj_boAmFdXa-7hwH0HZSFV0t_1hRlTh1aBCbTAS_Rxw/exec";
 
   const FALLBACK_DCNK_LOGO = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -1062,7 +1130,7 @@
   ];
 
   let selectedCompany = null;
-  let currentView = "companySelect"; // companySelect | docSelect | docRaktari | comingSoon | admin
+  let currentView = "companySelect";
   let customLogoOverride = null;
   let currentUser = null;
   let allParsedItems = [];
@@ -1078,6 +1146,33 @@
     t.className = "show " + type;
     clearTimeout(t._timer);
     t._timer = setTimeout(() => { t.className = ""; }, 3200);
+  }
+
+  function formatLogTimestamp(val) {
+    if (!val) return "";
+    const str = String(val).trim();
+    // Ha ISO formátumú (pl. 2026-11-20T08:49:48.000Z), alakítsuk magyar helyi időre
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) {
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        const ss = String(d.getSeconds()).padStart(2, "0");
+        return `${y}. ${m}. ${day}. ${hh}:${mm}:${ss}`;
+      }
+    }
+    return str;
+  }
+
+  function hasCompanyAccess(code) {
+    if (!currentUser) return false;
+    const comps = Array.isArray(currentUser.companies) && currentUser.companies.length > 0
+      ? currentUser.companies
+      : ["DCNK", "UDC"];
+    return comps.includes(code);
   }
 
   function togglePasswordVisibility(btn) {
@@ -1111,7 +1206,8 @@
       password: "admin",
       fullName: "Rendszeradminisztrátor (Demó)",
       role: "admin",
-      permissions: ["raktari_atadolap", "egysegek_kozotti", "selejtezes"]
+      permissions: ["raktari_atadolap", "egysegek_kozotti", "selejtezes"],
+      companies: ["DCNK", "UDC"]
     }];
     localStorage.setItem("campus_demo_users", JSON.stringify(def));
     return def;
@@ -1141,13 +1237,13 @@
     if (p.action === "login") {
       const u = users.find(x => x.username.toLowerCase() === String(p.username).toLowerCase() && x.password === p.password);
       if (!u) return { ok: false, success: false, error: "Hibás felhasználónév vagy jelszó!" };
-      return { ok: true, success: true, user: { username: u.username, fullName: u.fullName, name: u.fullName, role: u.role, permissions: u.permissions } };
+      return { ok: true, success: true, user: { username: u.username, fullName: u.fullName, name: u.fullName, role: u.role, permissions: u.permissions, companies: u.companies || ["DCNK", "UDC"] } };
     }
     if (p.action === "getUsers") return { ok: true, success: true, users };
     if (p.action === "addUser") {
       if (!p.username || !p.password) return { ok: false, error: "A felhasználónév és a jelszó megadása kötelező!" };
       if (users.some(x => x.username.toLowerCase() === p.username.toLowerCase())) return { ok: false, error: "Ez a felhasználónév már létezik!" };
-      users.push({ username: p.username, password: p.password, fullName: p.fullName || p.name || p.username, role: p.role, permissions: p.permissions });
+      users.push({ username: p.username, password: p.password, fullName: p.fullName || p.name || p.username, role: p.role, permissions: p.permissions, companies: p.companies || ["DCNK", "UDC"] });
       saveDemoUsers(users);
       return { ok: true, success: true };
     }
@@ -1156,6 +1252,7 @@
       if (idx === -1) return { ok: false, error: "Felhasználó nem található." };
       users[idx].role = p.role;
       users[idx].permissions = p.permissions;
+      if (p.companies) users[idx].companies = p.companies;
       saveDemoUsers(users);
       return { ok: true, success: true };
     }
@@ -1166,7 +1263,7 @@
     if (p.action === "logDocument") {
       const logs = getDemoLogs();
       logs.unshift({
-        timestamp: new Date().toLocaleString("hu-HU"),
+        timestamp: formatLogTimestamp(new Date().toISOString()),
         username: p.username,
         userName: p.userName,
         docType: p.docType,
@@ -1242,6 +1339,11 @@
     buildNavTabs();
   }
 
+  function updateCompanyCardsUI() {
+    document.getElementById("cardDCNK").classList.toggle("locked", !hasCompanyAccess("DCNK"));
+    document.getElementById("cardUDC").classList.toggle("locked", !hasCompanyAccess("UDC"));
+  }
+
   function goHomeToCompanySelect(skipConfirm = false) {
     if (!skipConfirm && currentView === "docRaktari") {
       if (!confirm("Biztosan vissza akarsz lépni a cégválasztáshoz? A nem mentett módosítások elveszhetnek.")) {
@@ -1255,10 +1357,15 @@
     navLogo.src = COMPANIES.DCNK.logo;
     navLogo.onerror = () => { navLogo.src = FALLBACK_DCNK_LOGO; };
     document.getElementById("navCompanyPill").classList.add("hidden");
+    updateCompanyCardsUI();
     showOnlySection("companySelectView", "companySelect");
   }
 
   function selectCompany(code) {
+    if (!hasCompanyAccess(code)) {
+      showToast("Nincs hozzáférésed ehhez a céghez!", "error");
+      return;
+    }
     selectedCompany = COMPANIES[code];
     customLogoOverride = null;
     document.body.className = selectedCompany.themeClass;
@@ -1371,24 +1478,21 @@
         <div class="mini-note-h">MEGJEGYZÉS</div>
         <div class="mini-note-b"></div>
       </div>
-      <div class="mini-sign">
-        <span style="font-size:8px;">Debrecen, 2025. 04. 08.</span>
-        <div>ÁTADÓ</div>
-        <div>ÁTVEVŐ</div>
+      <div class="mini-date-line">Debrecen, 2025. 04. 08.</div>
+      <div class="mini-sign-zone">
+        <div class="mini-sign-cols">
+          <div>ÁTADÓ</div>
+          <div>ÁTVEVŐ</div>
+        </div>
       </div>
     `;
   }
 
   function openSelectedDocument() {
-    if (!selectedCompany) {
-      showToast("Előbb válassz céget!", "error");
-      return;
-    }
+    if (!selectedCompany) { showToast("Előbb válassz céget!", "error"); return; }
     const docId = document.getElementById("docTypeDropdown").value;
-    if (!docId) {
-      showToast("Nincs kiválasztott nyomtatvány!", "error");
-      return;
-    }
+    if (!docId) { showToast("Nincs kiválasztott nyomtatvány!", "error"); return; }
+
     if (docId === "raktari_atadolap") {
       showOnlySection("docRaktariView", "docRaktari");
       if (activeItems.length === 0) loadSampleData();
@@ -1743,15 +1847,18 @@
             <tr><td>${escapeHtml(docNote)}</td></tr>
           </table>
 
-          <div class="sign-row">
-            <div style="padding-bottom:6mm;">Debrecen, ${escapeHtml(spacedDate)}</div>
-            <div class="sign-col">
-              <div class="sign-label">ÁTADÓ</div>
-              <div class="sign-line">${escapeHtml(sndSign)}</div>
-            </div>
-            <div class="sign-col">
-              <div class="sign-label">ÁTVEVŐ</div>
-              <div class="sign-line">${escapeHtml(recSign)}</div>
+          <div class="doc-date-line">Debrecen, ${escapeHtml(spacedDate)}</div>
+
+          <div class="sign-zone">
+            <div class="sign-row">
+              <div class="sign-col">
+                <div class="sign-label">ÁTADÓ</div>
+                <div class="sign-line">${escapeHtml(sndSign)}</div>
+              </div>
+              <div class="sign-col">
+                <div class="sign-label">ÁTVEVŐ</div>
+                <div class="sign-line">${escapeHtml(recSign)}</div>
+              </div>
             </div>
           </div>
         `;
@@ -1824,6 +1931,7 @@
     const password = document.getElementById("newPassword").value.trim();
     const role = document.getElementById("newRole").value;
     const permissions = [...document.querySelectorAll(".new-perm:checked")].map(c => c.value);
+    const companies = [...document.querySelectorAll(".new-comp:checked")].map(c => c.value);
 
     if (!username || !password) {
       showToast("A felhasználónév és a jelszó megadása kötelező!", "error");
@@ -1831,7 +1939,16 @@
     }
 
     try {
-      const res = await apiCall({ action: "addUser", username, password, fullName: fullName || username, name: fullName || username, role, permissions });
+      const res = await apiCall({
+        action: "addUser",
+        username,
+        password,
+        fullName: fullName || username,
+        name: fullName || username,
+        role,
+        permissions,
+        companies
+      });
       if (res && (res.ok || res.success)) {
         showToast("Felhasználó sikeresen létrehozva!", "success");
         document.getElementById("newFullName").value = "";
@@ -1862,15 +1979,22 @@
     cachedUsers.forEach((u, i) => {
       const isSelf = currentUser && u.username.toLowerCase() === currentUser.username.toLowerCase();
       const perms = u.permissions || [];
+      const comps = Array.isArray(u.companies) && u.companies.length > 0 ? u.companies : ["DCNK", "UDC"];
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><strong>${escapeHtml(u.fullName || u.name || "")}</strong></td>
         <td><code>${escapeHtml(u.username)}</code></td>
         <td>
-          <select id="role_${i}" class="form-control" style="padding:5px 8px; width:130px;">
+          <select id="role_${i}" class="form-control" style="padding:5px 8px; width:125px;">
             <option value="user" ${u.role !== "admin" ? "selected" : ""}>Felhasználó</option>
             <option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option>
           </select>
+        </td>
+        <td>
+          <div class="perm-checks">
+            <label><input type="checkbox" class="u-comp-${i}" value="DCNK" ${comps.includes("DCNK") ? "checked" : ""} /> DCNK</label>
+            <label><input type="checkbox" class="u-comp-${i}" value="UDC" ${comps.includes("UDC") ? "checked" : ""} /> UDC</label>
+          </div>
         </td>
         <td>
           <div class="perm-checks">
@@ -1893,10 +2017,21 @@
   async function saveUser(idx, username) {
     const role = document.getElementById("role_" + idx).value;
     const permissions = [...document.querySelectorAll(".u-perm-" + idx + ":checked")].map(c => c.value);
+    const companies = [...document.querySelectorAll(".u-comp-" + idx + ":checked")].map(c => c.value);
     try {
-      const res = await apiCall({ action: "updateUser", username, role, permissions });
-      if (res && (res.ok || res.success)) showToast("Módosítások elmentve!", "success");
-      else showToast((res && res.error) || "Hiba mentéskor!", "error");
+      const res = await apiCall({ action: "updateUser", username, role, permissions, companies });
+      if (res && (res.ok || res.success)) {
+        showToast("Módosítások elmentve!", "success");
+        // Ha saját magát módosította az admin, frissítsük a sessiont is
+        if (currentUser && currentUser.username.toLowerCase() === username.toLowerCase()) {
+          currentUser.role = role;
+          currentUser.permissions = permissions;
+          currentUser.companies = companies;
+          sessionStorage.setItem("campus_session", JSON.stringify(currentUser));
+        }
+      } else {
+        showToast((res && res.error) || "Hiba mentéskor!", "error");
+      }
     } catch (e) { showToast("Hálózati hiba!", "error"); }
   }
 
@@ -1931,7 +2066,7 @@
     filtered.forEach(l => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td style="white-space:nowrap;">${escapeHtml(l.timestamp || l.date || "")}</td>
+        <td style="white-space:nowrap;">${escapeHtml(formatLogTimestamp(l.timestamp || l.date || ""))}</td>
         <td><strong>${escapeHtml(l.userName || l.fullName || "")}</strong> <span style="color:var(--muted);">(${escapeHtml(l.username || "")})</span></td>
         <td>${escapeHtml(l.docType || l.type || "")}</td>
         <td>${escapeHtml(l.details || "")}</td>
