@@ -6,7 +6,6 @@
   <title>Campus Dokumentum Generátor</title>
   <style>
     :root {
-      /* Alapértelmezett (DCNK narancs/sárga) téma */
       --primary: #e86c1f;
       --primary-dark: #c95812;
       --primary-light: #fff3eb;
@@ -21,7 +20,6 @@
       --success: #16a34a;
     }
 
-    /* UDC - UD Campus zöld téma */
     body.theme-udc {
       --primary: #0b5d36;
       --primary-dark: #073f24;
@@ -62,6 +60,80 @@
     #toast.success { background: var(--success); }
     #toast.error { background: var(--danger); }
     #toast.info { background: #2563eb; }
+
+    /* ===== MODAL ===== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #fff;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 { margin: 0; font-size: 16px; }
+    .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f8fafc;
+    }
+
+    /* ===== UNIT PICKER GRID ===== */
+    .unit-picker-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .unit-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px;
+      background: #f8fafc;
+    }
+    .unit-picker-grid.tall { max-height: 360px; }
+    .unit-check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 12px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 5px 7px;
+      cursor: pointer;
+    }
+    .unit-check-item:hover { border-color: var(--primary); background: var(--primary-light); }
+    .unit-check-item input { margin-top: 2px; }
 
     /* ===== LOGIN SCREEN ===== */
     #loginView {
@@ -616,15 +688,13 @@
       white-space: pre-wrap;
     }
 
-    /* Dátum közvetlenül a megjegyzés alatt */
     .doc-date-line {
       font-family: "Times New Roman", Times, serif;
       font-size: 11pt;
       margin-bottom: 4mm;
     }
 
-    /* Dinamikusan teret kitöltő aláírási zóna jobb oldalon */
-.sign-zone {
+    .sign-zone {
       flex: 1;
       display: flex;
       align-items: center;
@@ -711,7 +781,7 @@
     @page { size: A4 portrait; margin: 0; }
     @media print {
       body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #companySelectView, #docSelectView, #adminView, #comingSoonView, #toast {
+      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #companySelectView, #docSelectView, #adminView, #comingSoonView, #toast, .modal-backdrop {
         display: none !important;
       }
       .app-container { padding: 0; max-width: none; }
@@ -732,6 +802,28 @@
 <body>
 
 <div id="toast"></div>
+
+<!-- ==================== UNIT ACCESS MODAL (ADMIN) ==================== -->
+<div id="unitModal" class="modal-backdrop hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="unitModalTitle">Egységek szerkesztése</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeUnitModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="unit-picker-toolbar">
+        <input id="modalUnitSearch" class="form-control" style="flex:1; min-width:180px; padding:6px 10px;" placeholder="Keresés kódra vagy egységnévre..." oninput="filterUnitGrid('modalUnitGrid', this.value)" />
+        <button type="button" class="btn btn-outline btn-sm" onclick="setAllUnitChecks('modalUnitGrid', true)">Mindent kijelöl</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="setAllUnitChecks('modalUnitGrid', false)">Egyik sem</button>
+      </div>
+      <div id="modalUnitGrid" class="unit-picker-grid tall"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeUnitModal()">Mégse</button>
+      <button class="btn btn-primary" onclick="applyUnitModal()">Kijelölés alkalmazása</button>
+    </div>
+  </div>
+</div>
 
 <!-- ==================== LOGIN VIEW ==================== -->
 <div id="loginView">
@@ -842,8 +934,8 @@
 
     <!-- ===== 3. RAKTÁRI ÁTADÓLAP GENERATOR ===== -->
     <section id="docRaktariView" class="hidden">
+      <datalist id="allowedUnitsDatalist"></datalist>
       <div class="gen-grid">
-        <!-- Bal oldali vezérlőpanel -->
         <div class="left-controls no-print">
           <div style="margin-bottom:12px;">
             <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
@@ -871,17 +963,17 @@
             <div class="row-2">
               <div class="form-group">
                 <label>Átvevő egység kódja</label>
-                <input id="recCode" class="form-control" value="5120" oninput="renderDocument()" />
+                <input id="recCode" list="allowedUnitsDatalist" class="form-control" value="5120" placeholder="Kód vagy választás..." oninput="handleUnitInput('rec')" />
               </div>
               <div class="form-group">
                 <label>Átvevő egység neve</label>
-                <input id="recName" class="form-control" value="Raktár" oninput="renderDocument()" />
+                <input id="recName" class="form-control" value="Levéltár, raktár" oninput="renderDocument()" />
               </div>
             </div>
             <div class="row-2">
               <div class="form-group">
                 <label>Átadó egység kódja</label>
-                <input id="sndCode" class="form-control" value="3101" oninput="renderDocument()" />
+                <input id="sndCode" list="allowedUnitsDatalist" class="form-control" value="3101" placeholder="Kód vagy választás..." oninput="handleUnitInput('snd')" />
               </div>
               <div class="form-group">
                 <label>Átadó egység neve</label>
@@ -891,7 +983,7 @@
             <div class="row-2">
               <div class="form-group">
                 <label>Átadó aláíró</label>
-                <input id="sndSign" class="form-control" value="(név)" oninput="renderDocument()" />
+                <input id="sndSign" class="form-control" value="Tóth Zoli" oninput="renderDocument()" />
               </div>
               <div class="form-group">
                 <label>Átvevő aláíró</label>
@@ -934,7 +1026,6 @@
           </div>
         </div>
 
-        <!-- Jobb oldali A4 előnézet -->
         <div>
           <div class="preview-toolbar no-print">
             <div>
@@ -964,7 +1055,6 @@
         <button class="sub-tab" id="tabLogsBtn" onclick="switchAdminTab('logs')">Dokumentum Napló</button>
       </div>
 
-      <!-- Felhasználók kezelése -->
       <div id="adminUsersPane">
         <div class="panel">
           <h3>Új felhasználó létrehozása</h3>
@@ -998,7 +1088,7 @@
           </div>
 
           <div class="perm-row">
-            <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; flex-direction:column; gap:10px; width:100%;">
               <div class="perm-checks">
                 <strong>Cég hozzáférés:</strong>
                 <label><input type="checkbox" class="new-comp" value="DCNK" checked /> DCNK</label>
@@ -1010,8 +1100,19 @@
                 <label><input type="checkbox" class="new-perm" value="egysegek_kozotti" /> Egységek közötti átadás</label>
                 <label><input type="checkbox" class="new-perm" value="selejtezes" /> Selejtezési jegyzőkönyv</label>
               </div>
+              <div>
+                <div class="unit-picker-toolbar">
+                  <strong style="font-size:13px;">Engedélyezett egységek:</strong>
+                  <input id="newUnitSearch" class="form-control" style="max-width:240px; padding:5px 10px; font-size:12px;" placeholder="Keresés kódra / névre..." oninput="filterUnitGrid('newUserUnitGrid', this.value)" />
+                  <button type="button" class="btn btn-outline btn-sm" onclick="setAllUnitChecks('newUserUnitGrid', true)">Mindent kijelöl</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="setAllUnitChecks('newUserUnitGrid', false)">Egyik sem</button>
+                </div>
+                <div id="newUserUnitGrid" class="unit-picker-grid"></div>
+              </div>
+              <div style="display:flex; justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="createUser()">+ Felhasználó létrehozása</button>
+              </div>
             </div>
-            <button class="btn btn-primary" onclick="createUser()">+ Felhasználó létrehozása</button>
           </div>
         </div>
 
@@ -1028,6 +1129,7 @@
                   <th>Felhasználónév</th>
                   <th>Szerepkör</th>
                   <th>Cégek</th>
+                  <th>Egységek</th>
                   <th>Jogosultságok</th>
                   <th>Műveletek</th>
                 </tr>
@@ -1038,7 +1140,6 @@
         </div>
       </div>
 
-      <!-- Dokumentum Napló -->
       <div id="adminLogsPane" class="hidden">
         <div class="panel">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
@@ -1071,6 +1172,85 @@
 <script>
   // Google Apps Script API URL
   const API_URL = "https://script.google.com/macros/s/AKfycbxg1CE40fEftdrzepOQB4jN4dzXj_boAmFdXa-7hwH0HZSFV0t_1hRlTh1aBCbTAS_Rxw/exec";
+
+  // ===== EGYSÉG ADATBÁZIS =====
+  const UNITS_LIST = [
+    { code: "1010", name: "Ügyvezetés, adminisztráció", leader: "Soltész Timi" },
+    { code: "1022", name: "Heineken", leader: "Pocsai Tamás - Popovics Péter" },
+    { code: "1033", name: "Futball krónika", leader: "" },
+    { code: "1136", name: "DETAMOP-HSZK", leader: "" },
+    { code: "1137", name: "DETAMOP-MPF", leader: "" },
+    { code: "1501", name: "GINOP-5.1.9.", leader: "Dr. Fenyves Veronika, Pocsai Tamás" },
+    { code: "1800", name: "AGORA 2019", leader: "" },
+    { code: "2000", name: "Konténer", leader: "" },
+    { code: "2101", name: "Általános marketing, cégarculat", leader: "Dajka Zoli, Baráth Ancsa" },
+    { code: "3101", name: "Központi raktár", leader: "Tóth Zoli" },
+    { code: "3102", name: "Arany János Általános iskola", leader: "Petróczki Gábor / Nótin Anikó" },
+    { code: "3103", name: "KLTE Általános Iskola menza", leader: "Petróczki Gábor / Nótin Anikó" },
+    { code: "3104", name: "HPFK étterem + óvoda", leader: "Petróczki Gábor, Ősz-Varga Ildikó" },
+    { code: "3105", name: "Lovarda konyha", leader: "Petróczki Gábor" },
+    { code: "3106", name: "Agrár étterem", leader: "Nánási Lajos" },
+    { code: "3107", name: "Pallag menza", leader: "Petróczki Gábor" },
+    { code: "3109", name: "Campus Hotel Étterem", leader: "Petróczki Gábor" },
+    { code: "3111", name: "Nagyerdei étterem", leader: "Tóth Zoli" },
+    { code: "3112", name: "Menza kiszállítás", leader: "Tóth Zoli" },
+    { code: "3114", name: "Smart Bisztró", leader: "Petróczki Gábor, Bagány Ádám" },
+    { code: "3115", name: "Pallag Büfé", leader: "Petróczki Gábor, Pap Edina" },
+    { code: "3116", name: "DoseUp", leader: "Pap Edina" },
+    { code: "3121", name: "Speedy-Fapuma", leader: "" },
+    { code: "3122", name: "Főépület Büfé", leader: "Petróczki Gábor, Pap Edina" },
+    { code: "3123", name: "Kémia Büfé", leader: "Petróczki Gábor, Pap Edina" },
+    { code: "3124", name: "Galéria Kávézó", leader: "Petróczki Gábor" },
+    { code: "3125", name: "Agrár Büfé GVK", leader: "Petróczki Gábor, Pap Edina" },
+    { code: "3126", name: "Agrár Aula büfé", leader: "Petróczki Gábor, Pap Edina" },
+    { code: "3127", name: "GYFK büfé", leader: "Petróczki Gábor, Ősz-Varga Ildikó" },
+    { code: "3128", name: "Arany büfé", leader: "Petróczki Gábor / Nótin Anikó" },
+    { code: "3129", name: "Kossuth Ált. Iskola büfé", leader: "Petróczki Gábor / Nótin Anikó" },
+    { code: "3131", name: "Pizzéria", leader: "Petróczki Gábor, Tóth Zoli" },
+    { code: "3141", name: "Menza szállítás", leader: "Petróczki Gábor, Tóth Zoli" },
+    { code: "3151", name: "Kossuth Gimi menza", leader: "Petróczki Gábor" },
+    { code: "3152", name: "MFK menza", leader: "Petróczki Gábor" },
+    { code: "3153", name: "Kossuth Gimi büfé", leader: "Petróczki Gábor, Pap Edina" },
+    { code: "3154", name: "MFK menza-büfé", leader: "Petróczki Gábor, Pap Edina" },
+    { code: "3155", name: "Közgáz büfé", leader: "Petróczki Gábor, Pap Edina" },
+    { code: "3156", name: "Info-kar büfé", leader: "Petróczki Gábor, Pap Edina" },
+    { code: "3161", name: "Kenézy beteg étkeztetés", leader: "Petróczki Gábor" },
+    { code: "3162", name: "KLINIKA betegétkeztetés", leader: "Petróczki Gábor, Miltényi Klára" },
+    { code: "3163", name: "Gróf Tisza István Campus konyha", leader: "Petróczki Gábor" },
+    { code: "3164", name: "Auguszta menza", leader: "Petróczki Gábor, Tóth Zoli" },
+    { code: "3165", name: "Elméleti tömb menza", leader: "Petróczki Gábor, Tóth Zoli" },
+    { code: "3165B", name: "UD Elméleti tömb MAED Bi", leader: "" },
+    { code: "3171", name: "Forest Food and Café", leader: "Nagy Mátyás" },
+    { code: "3199", name: "NÉ Hálózati Központ", leader: "Petróczki Gábor, Tóth Zoli" },
+    { code: "3201", name: "Lovarda Klub", leader: "Kálmánczhey Balázs, Steiger Áron" },
+    { code: "3202", name: "Kazánház Klub", leader: "Tóth Anna Lili" },
+    { code: "3203", name: "Klinika Klub", leader: "Dékány Kolos, Deák Máté" },
+    { code: "3204", name: "HALL", leader: "Antal Arnold, Velegi Sándor" },
+    { code: "3205", name: "Koli Klub Kávéház", leader: "Talmácsi Zsolt" },
+    { code: "3206", name: "Lovarda büfé", leader: "Kálmánczhey Balázs, Steiger Áron" },
+    { code: "3207", name: "MFK koli-büfé", leader: "" },
+    { code: "3209", name: "Víztorony", leader: "Kálmánczhey Balázs, Csoki (Galambosi Tibor), Pocsai Tamás" },
+    { code: "3211", name: "KLK MARKET", leader: "Nagyerdei étterem" },
+    { code: "3212", name: "LOKI CLUB&CAFE", leader: "Szilágyi Péter" },
+    { code: "3213", name: "Campus Bowling", leader: "Pinczés Péter Petesz" },
+    { code: "3301", name: "PEPSI VENDING", leader: "" },
+    { code: "3304", name: "Ajándékbolt", leader: "Vígh Marcell" },
+    { code: "3401", name: "CAMPUS Fesztivál", leader: "Süli András, Pogácsás Balázs, Hegedűs Tibor" },
+    { code: "3404", name: "Ügynökség", leader: "" },
+    { code: "3406", name: "Debrecen Drive", leader: "" },
+    { code: "3407", name: "Stadion vendéglátás", leader: "Jeles Vilmos" },
+    { code: "3502", name: "Esküvőszervezés", leader: "" },
+    { code: "4100", name: "Mádi Bor Akadémia - Rendezvények", leader: "" },
+    { code: "5103", name: "Technikusok", leader: "Buzsik Laci, Karsai Krisztián" },
+    { code: "5104", name: "Személyszállítás", leader: "Bihari István (Szeszes)" },
+    { code: "5106", name: "Dekor Műhely", leader: "Dékány Zoltán" },
+    { code: "5107", name: "Szállítás, fuvarozás", leader: "Bihari István (Szeszes)" },
+    { code: "5109", name: "Eszköz bérbeadás", leader: "Pocsai Tomi" },
+    { code: "5113", name: "Mercedes Viano", leader: "Bihari István (Szeszes)" },
+    { code: "5120", name: "Levéltár, raktár", leader: "Kovács László" },
+    { code: "7102", name: "Egyetemi Élet", leader: "Ölveti Laci (Cice)" },
+    { code: "8000", name: "Számviteli szolgáltatás", leader: "" }
+  ];
 
   const FALLBACK_DCNK_LOGO = 'data:image/svg+xml;utf8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 56">' +
@@ -1138,6 +1318,7 @@
   let activeDateFilter = "";
   let cachedUsers = [];
   let cachedLogs = [];
+  let modalEditingUserIdx = null;
 
   // ===== TOAST & HELPERS =====
   function showToast(msg, type = "info") {
@@ -1151,7 +1332,6 @@
   function formatLogTimestamp(val) {
     if (!val) return "";
     const str = String(val).trim();
-    // Ha ISO formátumú (pl. 2026-11-20T08:49:48.000Z), alakítsuk magyar helyi időre
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) {
       const d = new Date(str);
       if (!isNaN(d.getTime())) {
@@ -1175,6 +1355,40 @@
     return comps.includes(code);
   }
 
+  function getAllowedUnitsForCurrentUser() {
+    if (!currentUser) return UNITS_LIST;
+    if (currentUser.role === "admin") return UNITS_LIST;
+    const uList = currentUser.units;
+    if (!Array.isArray(uList) || uList.length === 0 || uList.includes("ALL")) return UNITS_LIST;
+    return UNITS_LIST.filter(u => uList.includes(u.code));
+  }
+
+  function populateAllowedUnitsDatalist() {
+    const dl = document.getElementById("allowedUnitsDatalist");
+    dl.innerHTML = "";
+    const allowed = getAllowedUnitsForCurrentUser();
+    allowed.forEach(u => {
+      const opt = document.createElement("option");
+      opt.value = u.code;
+      opt.label = `${u.code} - ${u.name}` + (u.leader ? ` (${u.leader})` : "");
+      dl.appendChild(opt);
+    });
+  }
+
+  function handleUnitInput(side) {
+    const codeEl = document.getElementById(side === "rec" ? "recCode" : "sndCode");
+    const nameEl = document.getElementById(side === "rec" ? "recName" : "sndName");
+    const signEl = document.getElementById(side === "rec" ? "recSign" : "sndSign");
+
+    const typed = codeEl.value.trim();
+    const match = UNITS_LIST.find(u => u.code.toLowerCase() === typed.toLowerCase());
+    if (match) {
+      nameEl.value = match.name;
+      signEl.value = match.leader || "";
+    }
+    renderDocument();
+  }
+
   function togglePasswordVisibility(btn) {
     const input = btn.previousElementSibling;
     if (input.type === "password") {
@@ -1187,14 +1401,72 @@
   }
 
   function isDemoMode() { return !API_URL || !API_URL.trim(); }
+  function getActiveLogoSrc() { return customLogoOverride || (selectedCompany ? selectedCompany.logo : COMPANIES.DCNK.logo); }
+  function getActiveFallbackLogo() { return selectedCompany ? selectedCompany.fallbackLogo : FALLBACK_DCNK_LOGO; }
 
-  function getActiveLogoSrc() {
-    if (customLogoOverride) return customLogoOverride;
-    return selectedCompany ? selectedCompany.logo : COMPANIES.DCNK.logo;
+  // ===== UNIT PICKER HELPERS (ADMIN) =====
+  function renderUnitCheckboxGrid(containerId, selectedUnits) {
+    const grid = document.getElementById(containerId);
+    const selectAll = !Array.isArray(selectedUnits) || selectedUnits.includes("ALL");
+    grid.innerHTML = UNITS_LIST.map(u => {
+      const checked = selectAll || selectedUnits.includes(u.code);
+      return `
+        <label class="unit-check-item" data-search="${escapeHtml((u.code + ' ' + u.name + ' ' + u.leader).toLowerCase())}">
+          <input type="checkbox" value="${escapeHtml(u.code)}" ${checked ? "checked" : ""} />
+          <span><strong>${escapeHtml(u.code)}</strong> – ${escapeHtml(u.name)}</span>
+        </label>
+      `;
+    }).join("");
   }
 
-  function getActiveFallbackLogo() {
-    return selectedCompany ? selectedCompany.fallbackLogo : FALLBACK_DCNK_LOGO;
+  function filterUnitGrid(containerId, query) {
+    const q = (query || "").trim().toLowerCase();
+    document.querySelectorAll(`#${containerId} .unit-check-item`).forEach(el => {
+      el.classList.toggle("hidden", q !== "" && !el.dataset.search.includes(q));
+    });
+  }
+
+  function setAllUnitChecks(containerId, checked) {
+    document.querySelectorAll(`#${containerId} .unit-check-item:not(.hidden) input[type="checkbox"]`).forEach(cb => {
+      cb.checked = checked;
+    });
+  }
+
+  function getSelectedUnitsFromGrid(containerId) {
+    const allCbs = [...document.querySelectorAll(`#${containerId} input[type="checkbox"]`)];
+    const checked = allCbs.filter(c => c.checked).map(c => c.value);
+    if (checked.length === allCbs.length) return ["ALL"];
+    return checked;
+  }
+
+  function openUnitModal(userIdx) {
+    modalEditingUserIdx = userIdx;
+    const u = cachedUsers[userIdx];
+    document.getElementById("unitModalTitle").textContent = `Egységek beállítása — ${u.fullName || u.username}`;
+    document.getElementById("modalUnitSearch").value = "";
+    renderUnitCheckboxGrid("modalUnitGrid", u.units || ["ALL"]);
+    document.getElementById("unitModal").classList.remove("hidden");
+  }
+
+  function closeUnitModal() {
+    document.getElementById("unitModal").classList.add("hidden");
+    modalEditingUserIdx = null;
+  }
+
+  function applyUnitModal() {
+    if (modalEditingUserIdx === null) return;
+    const selected = getSelectedUnitsFromGrid("modalUnitGrid");
+    cachedUsers[modalEditingUserIdx].units = selected;
+    const btn = document.getElementById("u_units_btn_" + modalEditingUserIdx);
+    if (btn) btn.textContent = formatUnitsBadge(selected);
+    closeUnitModal();
+    showToast("Egységek kijelölve — kattints a sor végén a Mentés gombra!", "info");
+  }
+
+  function formatUnitsBadge(units) {
+    if (!Array.isArray(units) || units.includes("ALL")) return "Összes egység";
+    if (units.length === 0) return "0 egység";
+    return `${units.length} egység`;
   }
 
   // ===== LOCAL DEMO STORAGE =====
@@ -1207,7 +1479,8 @@
       fullName: "Rendszeradminisztrátor (Demó)",
       role: "admin",
       permissions: ["raktari_atadolap", "egysegek_kozotti", "selejtezes"],
-      companies: ["DCNK", "UDC"]
+      companies: ["DCNK", "UDC"],
+      units: ["ALL"]
     }];
     localStorage.setItem("campus_demo_users", JSON.stringify(def));
     return def;
@@ -1237,13 +1510,13 @@
     if (p.action === "login") {
       const u = users.find(x => x.username.toLowerCase() === String(p.username).toLowerCase() && x.password === p.password);
       if (!u) return { ok: false, success: false, error: "Hibás felhasználónév vagy jelszó!" };
-      return { ok: true, success: true, user: { username: u.username, fullName: u.fullName, name: u.fullName, role: u.role, permissions: u.permissions, companies: u.companies || ["DCNK", "UDC"] } };
+      return { ok: true, success: true, user: { username: u.username, fullName: u.fullName, name: u.fullName, role: u.role, permissions: u.permissions, companies: u.companies || ["DCNK", "UDC"], units: u.units || ["ALL"] } };
     }
     if (p.action === "getUsers") return { ok: true, success: true, users };
     if (p.action === "addUser") {
       if (!p.username || !p.password) return { ok: false, error: "A felhasználónév és a jelszó megadása kötelező!" };
       if (users.some(x => x.username.toLowerCase() === p.username.toLowerCase())) return { ok: false, error: "Ez a felhasználónév már létezik!" };
-      users.push({ username: p.username, password: p.password, fullName: p.fullName || p.name || p.username, role: p.role, permissions: p.permissions, companies: p.companies || ["DCNK", "UDC"] });
+      users.push({ username: p.username, password: p.password, fullName: p.fullName || p.name || p.username, role: p.role, permissions: p.permissions, companies: p.companies || ["DCNK", "UDC"], units: p.units || ["ALL"] });
       saveDemoUsers(users);
       return { ok: true, success: true };
     }
@@ -1253,6 +1526,7 @@
       users[idx].role = p.role;
       users[idx].permissions = p.permissions;
       if (p.companies) users[idx].companies = p.companies;
+      if (p.units) users[idx].units = p.units;
       saveDemoUsers(users);
       return { ok: true, success: true };
     }
@@ -1327,6 +1601,8 @@
     document.getElementById("appView").classList.remove("hidden");
     const displayName = currentUser.fullName || currentUser.name || currentUser.username;
     document.getElementById("navUserBadge").textContent = displayName + (currentUser.role === "admin" ? " (Admin)" : "");
+    populateAllowedUnitsDatalist();
+    renderUnitCheckboxGrid("newUserUnitGrid", ["ALL"]);
     goHomeToCompanySelect(true);
   }
 
@@ -1453,12 +1729,12 @@
         <div class="mini-box">
           <div class="mini-box-h">ÁTVEVŐ</div>
           <div class="mini-box-r">Egység kódja: 5120</div>
-          <div class="mini-box-r">Egység neve: Raktár</div>
+          <div class="mini-box-r">Egység neve: Levéltár, raktár</div>
         </div>
         <div class="mini-box">
           <div class="mini-box-h">ÁTADÓ</div>
           <div class="mini-box-r">Egység kódja: 3101</div>
-          <div class="mini-box-r">Egység neve: Központi</div>
+          <div class="mini-box-r">Egység neve: Központi raktár</div>
         </div>
       </div>
       <table class="mini-tbl">
@@ -1494,6 +1770,7 @@
     if (!docId) { showToast("Nincs kiválasztott nyomtatvány!", "error"); return; }
 
     if (docId === "raktari_atadolap") {
+      populateAllowedUnitsDatalist();
       showOnlySection("docRaktariView", "docRaktari");
       if (activeItems.length === 0) loadSampleData();
       else renderDocument();
@@ -1512,7 +1789,7 @@
     renderMiniPreview();
   }
 
-  // ===== CSV / GOOGLE SHEETS PARSER (TÖBBBLOKKOS) =====
+  // ===== CSV / GOOGLE SHEETS PARSER =====
   const dropzone = document.getElementById("dropzone");
   dropzone.addEventListener("dragover", e => { e.preventDefault(); dropzone.classList.add("dragover"); });
   dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
@@ -1932,6 +2209,7 @@
     const role = document.getElementById("newRole").value;
     const permissions = [...document.querySelectorAll(".new-perm:checked")].map(c => c.value);
     const companies = [...document.querySelectorAll(".new-comp:checked")].map(c => c.value);
+    const units = getSelectedUnitsFromGrid("newUserUnitGrid");
 
     if (!username || !password) {
       showToast("A felhasználónév és a jelszó megadása kötelező!", "error");
@@ -1947,7 +2225,8 @@
         name: fullName || username,
         role,
         permissions,
-        companies
+        companies,
+        units
       });
       if (res && (res.ok || res.success)) {
         showToast("Felhasználó sikeresen létrehozva!", "success");
@@ -1980,12 +2259,14 @@
       const isSelf = currentUser && u.username.toLowerCase() === currentUser.username.toLowerCase();
       const perms = u.permissions || [];
       const comps = Array.isArray(u.companies) && u.companies.length > 0 ? u.companies : ["DCNK", "UDC"];
+      if (!Array.isArray(u.units)) u.units = ["ALL"];
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td><strong>${escapeHtml(u.fullName || u.name || "")}</strong></td>
         <td><code>${escapeHtml(u.username)}</code></td>
         <td>
-          <select id="role_${i}" class="form-control" style="padding:5px 8px; width:125px;">
+          <select id="role_${i}" class="form-control" style="padding:5px 8px; width:120px;">
             <option value="user" ${u.role !== "admin" ? "selected" : ""}>Felhasználó</option>
             <option value="admin" ${u.role === "admin" ? "selected" : ""}>Admin</option>
           </select>
@@ -1995,6 +2276,9 @@
             <label><input type="checkbox" class="u-comp-${i}" value="DCNK" ${comps.includes("DCNK") ? "checked" : ""} /> DCNK</label>
             <label><input type="checkbox" class="u-comp-${i}" value="UDC" ${comps.includes("UDC") ? "checked" : ""} /> UDC</label>
           </div>
+        </td>
+        <td>
+          <button type="button" id="u_units_btn_${i}" class="btn btn-outline btn-sm" onclick="openUnitModal(${i})">${formatUnitsBadge(u.units)}</button>
         </td>
         <td>
           <div class="perm-checks">
@@ -2018,16 +2302,18 @@
     const role = document.getElementById("role_" + idx).value;
     const permissions = [...document.querySelectorAll(".u-perm-" + idx + ":checked")].map(c => c.value);
     const companies = [...document.querySelectorAll(".u-comp-" + idx + ":checked")].map(c => c.value);
+    const units = cachedUsers[idx].units || ["ALL"];
     try {
-      const res = await apiCall({ action: "updateUser", username, role, permissions, companies });
+      const res = await apiCall({ action: "updateUser", username, role, permissions, companies, units });
       if (res && (res.ok || res.success)) {
         showToast("Módosítások elmentve!", "success");
-        // Ha saját magát módosította az admin, frissítsük a sessiont is
         if (currentUser && currentUser.username.toLowerCase() === username.toLowerCase()) {
           currentUser.role = role;
           currentUser.permissions = permissions;
           currentUser.companies = companies;
+          currentUser.units = units;
           sessionStorage.setItem("campus_session", JSON.stringify(currentUser));
+          populateAllowedUnitsDatalist();
         }
       } else {
         showToast((res && res.error) || "Hiba mentéskor!", "error");
