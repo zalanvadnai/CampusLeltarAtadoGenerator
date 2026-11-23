@@ -1,0 +1,471 @@
+<div class="gen-grid">
+  <div class="left-controls no-print">
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
+    </div>
+
+    <div class="panel">
+      <h3>1. Beszerző, Felhasználás helye és Dátum</h3>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Beszerző egység kódja</label>
+          <div class="unit-combo">
+            <input id="avBeszCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="AllomanybaMod.openUnitDropdown('besz')" oninput="AllomanybaMod.handleUnitInput('besz')" />
+            <span class="unit-combo-arrow">▼</span>
+            <div id="avBeszDropdown" class="unit-dropdown-menu hidden"></div>
+          </div>
+          <div id="avBeszCodeError" class="field-error-msg hidden">Nincs hozzáférésed ehhez az egységhez!</div>
+        </div>
+        <div class="form-group">
+          <label>Beszerző egység neve</label>
+          <input id="avBeszName" class="form-control" oninput="AllomanybaMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Felhasználás helye kód</label>
+          <div class="unit-combo">
+            <input id="avFelhCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="AllomanybaMod.openUnitDropdown('felh')" oninput="AllomanybaMod.handleUnitInput('felh')" />
+            <span class="unit-combo-arrow">▼</span>
+            <div id="avFelhDropdown" class="unit-dropdown-menu hidden"></div>
+          </div>
+          <div id="avFelhCodeError" class="field-error-msg hidden">Nincs hozzáférésed ehhez az egységhez!</div>
+        </div>
+        <div class="form-group">
+          <label>Felhasználás helye neve</label>
+          <input id="avFelhName" class="form-control" oninput="AllomanybaMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Beszerzés dátuma</label>
+          <input id="avDate" type="date" class="form-control" oninput="AllomanybaMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Keltezés helye</label>
+          <input id="avCity" class="form-control" value="Debrecen" oninput="AllomanybaMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Átvevő neve (opcionális)</label>
+        <input id="avRecSign" class="form-control" placeholder="Felhasználás helyének vezetője" oninput="AllomanybaMod.renderDocument()" />
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Megjegyzés</label>
+        <textarea id="avNote" class="form-control" rows="2" oninput="AllomanybaMod.renderDocument()"></textarea>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>2. Eszközök / Tételek (<span id="avItemCountBadge">0</span> tétel)</h3>
+      <div style="max-height:360px; overflow:auto; display:flex; flex-direction:column; gap:10px;" id="avEditItemsList"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-primary btn-sm" onclick="AllomanybaMod.addEmptyItem()">+ Új tétel hozzáadása</button>
+        <button class="btn btn-outline btn-sm" onclick="AllomanybaMod.clearItems()">Tételek törlése</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="preview-toolbar no-print">
+      <div>
+        <strong>Élő A4 nyomtatási kép</strong>
+        <span id="avPageCountInfo" style="color:var(--muted); font-size:13px; margin-left:8px;"></span>
+      </div>
+      <button class="btn btn-primary" onclick="AllomanybaMod.printAndLog()">🖨️ Nyomtatás / Mentés PDF-ként</button>
+    </div>
+    <div class="pages-wrapper" id="avPagesContainer"></div>
+  </div>
+</div>
+
+<script>
+  window.AllomanybaMod = (function () {
+    const STORAGE_COLS = [
+      [
+        ["KÖZPONTI IRODÁK", 11], ["DE.-HÖKÖK", 12], ["NÉ - PINCE", 13], ["NÉ - FÖLDSZINT", 14], ["NÉ - EMELET", 15],
+        ["NÉ – „PIZZÉRIA”", 16], ["ARANY ÁLT. ISK.", 17], ["KISKOSSUTH", 18], ["H.BÖSZÖRMÉNY", 19], ["AGRÁR ÉTTEREM", 20],
+        ["AGRÁR É. VIP", 21], ["PALLAG MENZA", 22], ["CAMPUS H. ÉTTEREM", 23], ["SMART BISZTRÓ", 24], ["CAMPUS BISZTRÓ", 25]
+      ],
+      [
+        ["KÉMIA BÜFÉ", 26], ["FŐÉPÜLET BÜFÉ", 27], ["GALÉRIA KÁVÉZÓ", 28], ["GVK BÜFÉ", 29], ["AGRÁR AULA BÜFÉ", 30],
+        ["KOSSUTH GIMI", 31], ["MFK MENZA", 32], ["JOG BÜFÉ", 33], ["INFO KAR BÜFÉ", 34], ["KLINIKA BETEGÉTK.", 35],
+        ["F. OFFICE MENZA", 36], ["F. OFFICE BÜFÉ", 37], ["AUGUSZTA ÉTTEREM", 38], ["E.TÖMB ÉTTEREM", 39], ["AJÁNDÉKBOLT", 40]
+      ],
+      [
+        ["KAZÁNHÁZ", 41], ["KLINIKA MOZI", 42], ["KOLI KLUB", 43], ["CAMPUS BOWLING", 44], ["HALL", 45],
+        ["RED & WHITE", 46], ["VÍZTORONY", 47], ["STADION 73-AS", 48], ["STADION 94-ES", 49], ["STADION „GYOMOR”", 50],
+        ["STADION PULTOK", 51], ["STADION PULTRAKTÁR", 52], ["STADION DEKORMŰHELY", 53], ["STADION SKYBOX", 54], ["LOVI RENDEZVÉNYTÉR", 55]
+      ],
+      [
+        ["LOVI „BACKSTAGE”", 56], ["LOVI 60-AS", 57], ["LOVI 62-ES", 58], ["LOVI LEMEZES", 59], ["LOVI KÜLSŐ", 60],
+        ["", 61], ["", 62], ["", 63], ["", 64], ["", 65],
+        ["", 66], ["", 67], ["", 68], ["", 69], ["", 70]
+      ]
+    ];
+
+    let activeItems = [];
+    let unitValidationState = { besz: true, felh: true };
+    let docClickBound = false;
+
+    function emptyRow() {
+      return { name: "", type: "", serial: "", spec: "", invoice: "" };
+    }
+
+    function init() {
+      unitValidationState = { besz: true, felh: true };
+
+      const dateEl = document.getElementById("avDate");
+      if (dateEl && !dateEl.value) {
+        const now = new Date();
+        dateEl.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      }
+
+      if (!docClickBound) {
+        document.addEventListener("click", e => {
+          if (!e.target.closest(".unit-combo")) {
+            document.getElementById("avBeszDropdown")?.classList.add("hidden");
+            document.getElementById("avFelhDropdown")?.classList.add("hidden");
+          }
+        });
+        docClickBound = true;
+      }
+
+      document.getElementById("avBeszCode").value = "";
+      document.getElementById("avFelhCode").value = "";
+      handleUnitInput("besz", false);
+      handleUnitInput("felh", false);
+
+      if (activeItems.length === 0) activeItems = [emptyRow()];
+      renderEditList();
+      renderDocument();
+    }
+
+    function openUnitDropdown(side) {
+      document.getElementById(side === "besz" ? "avFelhDropdown" : "avBeszDropdown").classList.add("hidden");
+      const val = document.getElementById(side === "besz" ? "avBeszCode" : "avFelhCode").value;
+      renderUnitDropdownList(side, val);
+      document.getElementById(side === "besz" ? "avBeszDropdown" : "avFelhDropdown").classList.remove("hidden");
+    }
+
+    function renderUnitDropdownList(side, query = "") {
+      const menu = document.getElementById(side === "besz" ? "avBeszDropdown" : "avFelhDropdown");
+      const allowed = getAllowedUnitsForCurrentUser();
+      const q = (query || "").trim().toLowerCase();
+      const filtered = allowed.filter(u =>
+        !q || u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || (u.leader || "").toLowerCase().includes(q)
+      );
+
+      if (filtered.length === 0) {
+        menu.innerHTML = `<div class="unit-dropdown-empty">Nincs találat az engedélyezett egységek között.</div>`;
+        return;
+      }
+
+      menu.innerHTML = filtered.map(u => `
+        <div class="unit-dropdown-item" onmousedown="AllomanybaMod.pickUnitFromDropdown('${side}', '${escapeHtml(u.code)}')">
+          <div><span class="u-code">${escapeHtml(u.code)}</span> – ${escapeHtml(u.name)}</div>
+          ${u.leader ? `<div class="u-leader">Vezető: ${escapeHtml(u.leader)}</div>` : ""}
+        </div>
+      `).join("");
+    }
+
+    function pickUnitFromDropdown(side, code) {
+      document.getElementById(side === "besz" ? "avBeszCode" : "avFelhCode").value = code;
+      document.getElementById(side === "besz" ? "avBeszDropdown" : "avFelhDropdown").classList.add("hidden");
+      handleUnitInput(side, false);
+    }
+
+    function handleUnitInput(side, keepMenuOpen = true) {
+      const codeEl = document.getElementById(side === "besz" ? "avBeszCode" : "avFelhCode");
+      const nameEl = document.getElementById(side === "besz" ? "avBeszName" : "avFelhName");
+      const errEl = document.getElementById(side === "besz" ? "avBeszCodeError" : "avFelhCodeError");
+      const recSignEl = document.getElementById("avRecSign");
+
+      const typed = codeEl.value.trim();
+      if (keepMenuOpen) {
+        renderUnitDropdownList(side, typed);
+        document.getElementById(side === "besz" ? "avBeszDropdown" : "avFelhDropdown").classList.remove("hidden");
+      }
+
+      if (!typed) {
+        codeEl.classList.remove("input-error");
+        errEl.classList.add("hidden");
+        nameEl.value = "";
+        if (side === "felh") recSignEl.value = "";
+        unitValidationState[side] = true;
+        renderDocument();
+        return;
+      }
+
+      const allowed = getAllowedUnitsForCurrentUser();
+      const matchAllowed = allowed.find(u => u.code.toLowerCase() === typed.toLowerCase());
+
+      if (matchAllowed) {
+        codeEl.classList.remove("input-error");
+        errEl.classList.add("hidden");
+        nameEl.value = matchAllowed.name;
+        if (side === "felh") recSignEl.value = matchAllowed.leader || "";
+        unitValidationState[side] = true;
+      } else {
+        codeEl.classList.add("input-error");
+        errEl.classList.remove("hidden");
+        nameEl.value = "";
+        if (side === "felh") recSignEl.value = "";
+        unitValidationState[side] = false;
+      }
+      renderDocument();
+    }
+
+    function renderEditList() {
+      const container = document.getElementById("avEditItemsList");
+      document.getElementById("avItemCountBadge").textContent = activeItems.length;
+      container.innerHTML = activeItems.map((it, idx) => `
+        <div style="border:1.5px solid #e2e8f0; border-radius:8px; padding:10px; background:#f8fafc;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:12.5px; color:var(--primary-dark);">${idx + 1}. tétel</strong>
+            <button class="btn btn-danger btn-sm" style="padding:2px 7px;" onclick="AllomanybaMod.removeItem(${idx})">×</button>
+          </div>
+          <input class="form-control" style="padding:6px 8px; font-size:12.5px; margin-bottom:6px;" placeholder="Megnevezés" value="${escapeHtml(it.name)}" oninput="AllomanybaMod.updateItem(${idx},'name',this.value)" />
+          <div class="row-2" style="margin-bottom:6px;">
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Típus" value="${escapeHtml(it.type)}" oninput="AllomanybaMod.updateItem(${idx},'type',this.value)" />
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Gyári szám" value="${escapeHtml(it.serial)}" oninput="AllomanybaMod.updateItem(${idx},'serial',this.value)" />
+          </div>
+          <div class="row-2">
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Specifikáció (szín, méret)" value="${escapeHtml(it.spec)}" oninput="AllomanybaMod.updateItem(${idx},'spec',this.value)" />
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Számla száma" value="${escapeHtml(it.invoice)}" oninput="AllomanybaMod.updateItem(${idx},'invoice',this.value)" />
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function updateItem(idx, field, val) { activeItems[idx][field] = val; renderDocument(); }
+    function addEmptyItem() { activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function removeItem(idx) { activeItems.splice(idx, 1); if (activeItems.length === 0) activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function clearItems() { activeItems = [emptyRow()]; renderEditList(); renderDocument(); }
+
+    function formatHuYearMonthDay(isoDate) {
+      if (!isoDate) return "20____ év ______ hó ____ nap";
+      const parts = isoDate.split("-");
+      if (parts.length !== 3) return isoDate;
+      return `${parts[0]}. év ${parts[1]}. hó ${parts[2]}. nap`;
+    }
+
+    function buildStorageCodeBox() {
+      return `
+        <div style="border:1px solid #666; background:#e5e7eb; padding:3mm; margin-top:3mm;">
+          <div style="font-family:Arial, sans-serif; font-size:8.5pt; font-weight:700; font-style:italic; margin-bottom:2mm;">
+            Az üzemeltetési, vagy az eszközgazdálkodási vezető tölti ki.
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:2mm;">
+            ${STORAGE_COLS.map(col => `
+              <table style="width:100%; border-collapse:collapse; font-family:Arial, sans-serif; font-size:5.8pt; background:#fff;">
+                <thead>
+                  <tr>
+                    <th style="border:1px solid #000; padding:1.5px 2px; background:#d1d5db; text-align:left;">RAKTÁRHELY</th>
+                    <th style="border:1px solid #000; padding:1.5px 2px; background:#d1d5db; text-align:center; width:16px;">KÓD</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${col.map(([label, code]) => `
+                    <tr>
+                      <td style="border:1px solid #000; padding:1px 2px; height:3.3mm;">${label}</td>
+                      <td style="border:1px solid #000; padding:1px 2px; text-align:center; font-weight:600;">${code}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderDocument() {
+      const container = document.getElementById("avPagesContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const beszCode = unitValidationState.besz ? document.getElementById("avBeszCode").value.trim() : "";
+      const beszName = document.getElementById("avBeszName").value.trim();
+      const felhCode = unitValidationState.felh ? document.getElementById("avFelhCode").value.trim() : "";
+      const felhName = document.getElementById("avFelhName").value.trim();
+      const dateStr = formatHuYearMonthDay(document.getElementById("avDate").value);
+      const city = document.getElementById("avCity").value.trim() || "Debrecen";
+      const recSign = document.getElementById("avRecSign").value.trim();
+      const note = document.getElementById("avNote").value;
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const displayItems = activeItems;
+
+      const pages = [];
+      let idx = 0, pageNum = 1;
+      while (idx < displayItems.length) {
+        const isFirst = (pageNum === 1);
+        const remaining = displayItems.length - idx;
+        const maxWithClosing = isFirst ? 7 : 12;
+        const maxWithoutClosing = isFirst ? 26 : 34;
+
+        if (remaining <= maxWithClosing) {
+          pages.push({ pageNum, items: displayItems.slice(idx), isFirst, isLast: true });
+          idx = displayItems.length;
+        } else {
+          const take = Math.min(remaining, maxWithoutClosing);
+          pages.push({ pageNum, items: displayItems.slice(idx, idx + take), isFirst, isLast: false });
+          idx += take;
+          pageNum++;
+          if (idx === displayItems.length) pages.push({ pageNum, items: [], isFirst: false, isLast: true });
+        }
+      }
+
+      const filledCount = activeItems.filter(i => i.name.trim() || i.type.trim() || i.serial.trim()).length;
+      document.getElementById("avPageCountInfo").textContent = `(${pages.length} oldal • ${filledCount} kitöltött tétel)`;
+
+      pages.forEach(p => {
+        const pageEl = document.createElement("div");
+        pageEl.className = "a4-page";
+
+        let html = `
+          <div class="doc-top-bar" style="margin-bottom:4mm;">
+            <img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />
+            <div class="doc-top-title" style="font-size:8.5pt;">ÁLLOMÁNYBA VÉTELI ADATLAP</div>
+          </div>
+        `;
+
+        if (p.isFirst) {
+          html += `
+            <div class="doc-main-title" style="font-size:15pt; margin:0 0 5mm;">
+              TÁRGYI ESZKÖZÖK ÁLLOMÁNYBA VÉTELI ADATLAPJA
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 0.9fr; gap:5mm; margin-bottom:5mm;">
+              <table class="party-table" style="font-size:8.5pt;">
+                <tr><th colspan="2">BESZERZŐ</th></tr>
+                <tr><td>Egység kód</td><td>${escapeHtml(beszCode)}</td></tr>
+                <tr><td>Egység neve</td><td>${escapeHtml(beszName)}</td></tr>
+              </table>
+              <table class="party-table" style="font-size:8.5pt;">
+                <tr><th colspan="2">FELHASZNÁLÁS HELYE</th></tr>
+                <tr><td>Egység kód</td><td>${escapeHtml(felhCode)}</td></tr>
+                <tr><td>Egység neve</td><td>${escapeHtml(felhName)}</td></tr>
+              </table>
+              <table class="party-table" style="font-size:8.5pt;">
+                <tr><th>BESZERZÉS DÁTUMA</th></tr>
+                <tr><td style="text-align:center; height:12mm; vertical-align:middle; background:#fff; font-weight:600;">${escapeHtml(dateStr)}</td></tr>
+              </table>
+            </div>
+          `;
+        }
+
+        if (p.items.length > 0 || p.isFirst) {
+          html += `
+            <table class="items-table" style="font-size:8.5pt; margin-bottom:4mm;">
+              <thead>
+                <tr>
+                  <th style="width:27%;">MEGNEVEZÉS</th>
+                  <th style="width:16%;">TÍPUS</th>
+                  <th style="width:16%;">GYÁRI SZÁM</th>
+                  <th style="width:25%;">SPECIFIKÁCIÓ (PL. SZÍN, MÉRET)</th>
+                  <th style="width:16%;">SZÁMLA SZÁMA</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${p.items.map(it => `
+                  <tr style="height:6.5mm;">
+                    <td>${escapeHtml(it.name)}</td>
+                    <td>${escapeHtml(it.type)}</td>
+                    <td>${escapeHtml(it.serial)}</td>
+                    <td>${escapeHtml(it.spec)}</td>
+                    <td class="c-center">${escapeHtml(it.invoice)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        }
+
+        if (p.isLast) {
+          html += `
+            <table class="note-box" style="margin-bottom:4mm;">
+              <tr><th>MEGJEGYZÉS</th></tr>
+              <tr><td style="height:16mm;">${escapeHtml(note)}</td></tr>
+            </table>
+
+            <table style="width:100%; border-collapse:collapse; margin-bottom:4mm;">
+              <tr>
+                <th style="background:var(--primary-dark); color:#fff; border:1px solid #000; padding:3px; font-family:Arial, sans-serif; font-size:9pt;">
+                  ÁTVÉTEL ELISMERÉSE
+                </th>
+              </tr>
+              <tr>
+                <td style="border:1px solid #000; padding:3.5mm 5mm; font-family:Arial, sans-serif; font-size:9pt; line-height:1.45;">
+                  <div style="margin-bottom:4mm;">
+                    Alulírott Átvevő jelen átvételi elismervény aláírásával kijelentem és igazolom, hogy a fent részletezett tárgyi eszköz(öke)t a mai napon átvettem.
+                  </div>
+                  <div style="font-family:'Times New Roman', Times, serif; font-size:10pt; margin-bottom:8mm;">
+                    Kelt.: ${escapeHtml(city)}, ${escapeHtml(dateStr)}
+                  </div>
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14mm; width:74%; margin-left:auto; text-align:center; font-family:'Times New Roman', Times, serif;">
+                    <div>
+                      <div style="min-height:4.5mm; font-size:9.5pt;">${escapeHtml(recSign)}</div>
+                      <div style="border-top:1px dotted #000; padding-top:2px; font-size:9.5pt;">Átvevő neve</div>
+                    </div>
+                    <div>
+                      <div style="min-height:4.5mm;"></div>
+                      <div style="border-top:1px dotted #000; padding-top:2px; font-size:9.5pt;">Átvevő aláírása</div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <div style="border-top:1.5px solid #000; width:82%; margin:2mm auto;"></div>
+
+            ${buildStorageCodeBox()}
+          `;
+        }
+
+        html += `
+          <div class="doc-footer">
+            ${p.pageNum}. oldal — ${escapeHtml(comp.fullName)} — Tárgyi eszközök állományba vételi adatlapja
+          </div>
+        `;
+
+        pageEl.innerHTML = html;
+        container.appendChild(pageEl);
+      });
+    }
+
+    async function printAndLog() {
+      if (!unitValidationState.besz || !unitValidationState.felh) {
+        showToast("Hibás vagy nem engedélyezett egységkód szerepel a nyomtatványon!", "error");
+        return;
+      }
+      window.print();
+      if (!currentUser) return;
+      const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
+      const besz = `${document.getElementById("avBeszCode").value} ${document.getElementById("avBeszName").value}`.trim();
+      const felh = `${document.getElementById("avFelhCode").value} ${document.getElementById("avFelhName").value}`.trim();
+      const filledCount = activeItems.filter(i => i.name.trim() || i.type.trim() || i.serial.trim()).length;
+      const details = `${compTag}Beszerző: ${besz || "—"} → Felhasználás: ${felh || "—"} | Dátum: ${document.getElementById("avDate").value} | ${filledCount} tétel`;
+
+      try {
+        await apiCall({
+          action: "logDocument",
+          username: currentUser.username,
+          userName: currentUser.fullName || currentUser.name || currentUser.username,
+          docType: "Tárgyi eszközök állományba vételi adatlapja",
+          details
+        });
+      } catch (e) {}
+    }
+
+    return {
+      init, openUnitDropdown, pickUnitFromDropdown, handleUnitInput,
+      updateItem, addEmptyItem, removeItem, clearItems, renderDocument, printAndLog
+    };
+  })();
+
+  window.TemplateModules["allomanyba_vetel"] = window.AllomanybaMod;
+</script>
