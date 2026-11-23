@@ -275,7 +275,7 @@
     .mini-doc-paper { width: 100%; max-width: 440px; aspect-ratio: 210 / 297; background: #fff; border-radius: 4px; box-shadow: 0 12px 30px rgba(15,23,42,0.18); padding: 22px; display: flex; flex-direction: column; font-family: Arial, sans-serif; color: #111; }
     .mini-doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .mini-doc-header img { height: 22px; }
-    .mini-doc-title { text-align: center; font-weight: 800; font-size: 14px; margin: 6px 0 14px; letter-spacing: 0.4px; }
+    .mini-doc-title { text-align: center; font-weight: 800; font-size: 13px; margin: 6px 0 14px; letter-spacing: 0.4px; }
     .mini-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
     .mini-box { border: 1px solid #333; font-size: 8px; }
     .mini-box-h { background: var(--primary-dark); color: #fff; text-align: center; font-weight: 700; padding: 2px; }
@@ -515,7 +515,7 @@
       </div>
     </section>
 
-    <!-- ===== 3. DINAMIKUS SABLON TARTÓ (IDE TÖLTŐDNEK BE A templates/*.html FÁJLOK) ===== -->
+    <!-- ===== 3. DINAMIKUS SABLON TARTÓ ===== -->
     <section id="docHostView" class="hidden"></section>
 
     <!-- ===== COMING SOON PLACEHOLDER ===== -->
@@ -644,11 +644,8 @@
                 <label><input type="checkbox" class="new-comp" value="DCNK" checked /> DCNK</label>
                 <label><input type="checkbox" class="new-comp" value="UDC" checked /> UDC (UD Campus)</label>
               </div>
-              <div class="perm-checks">
+              <div class="perm-checks" id="newUserPermsContainer">
                 <strong>Dokumentum jogosultságok:</strong>
-                <label><input type="checkbox" class="new-perm" value="raktari_atadolap" checked /> Raktári átadólap</label>
-                <label><input type="checkbox" class="new-perm" value="egysegek_kozotti" /> Egységek közötti átadás</label>
-                <label><input type="checkbox" class="new-perm" value="selejtezes" /> Selejtezési jegyzőkönyv</label>
               </div>
               <div>
                 <div class="unit-picker-toolbar">
@@ -765,7 +762,7 @@
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbxg1CE40fEftdrzepOQB4jN4dzXj_boAmFdXa-7hwH0HZSFV0t_1hRlTh1aBCbTAS_Rxw/exec";
 
-  // ===== SABLONOK REGISZTRÁCIÓJA (IDE KERÜLNEK A JÖVŐBELI ÚJ NYOMTATVÁNYOK IS) =====
+  // ===== SABLONOK REGISZTRÁCIÓJA =====
   const DOC_TYPES = [
     {
       id: "raktari_atadolap",
@@ -777,9 +774,44 @@
     {
       id: "egysegek_kozotti",
       label: "Egységek közötti átadás",
-      title: "EGYSÉGEK KÖZÖTTI ÁTADÁSI LAP",
-      file: null,
-      desc: "Eszközök és készletek belső egységek közötti mozgatásának hivatalos bizonylata (hamarosan elérhető)."
+      title: "EGYSÉGEK KÖZÖTTI ÁTADÓ LAP",
+      file: "templates/egysegek_kozotti.html",
+      desc: "Eszközök és készletek belső egységek közötti mozgatásának hivatalos bizonylata."
+    },
+    {
+      id: "hasznositasi_jegyzek",
+      label: "Hasznosítási jegyzék",
+      title: "FELESLEGESSÉ VÁLT TÁRGYI ESZKÖZÖK HASZNOSÍTÁSI JEGYZÉKE",
+      file: "templates/hasznositasi_jegyzek.html",
+      desc: "Feleslegessé vált tárgyi eszközök értékesítési és selejtezési hasznosítási jegyzéke."
+    },
+    {
+      id: "felesleges_eszk_jegyzek",
+      label: "Feleslegessé vált eszközök jegyzéke",
+      title: "FELESLEGESSÉ VÁLT TÁRGYI ESZKÖZÖK JEGYZÉKE",
+      file: "templates/felesleges_eszk_jegyzek.html",
+      desc: "Feleslegessé vált tárgyi eszközök selejtezési okkódokkal ellátott jegyzéke bizottsági és egység aláírásokkal."
+    },
+    {
+      id: "hasznositando_eszk_jegyzek",
+      label: "Hasznosítandó eszközök jegyzéke",
+      title: "HASZNOSÍTANDÓ TÁRGYI ESZKÖZÖK JEGYZÉKE",
+      file: "templates/hasznositando_eszk_jegyzek.html",
+      desc: "Hasznosítandó tárgyi eszközök jegyzéke hasznosítási mód kódokkal, bizottsági és részleg aláírásokkal."
+    },
+    {
+      id: "hulladek_tetelek",
+      label: "Hulladéknak minősített tételek",
+      title: "HULLADÉKNAK MINŐSÍTETT TÉTELEK",
+      file: "templates/hulladek_tetelek.html",
+      desc: "Hulladéknak minősített tételek elszállításának és bizonylatolásának igazolólapja."
+    },
+    {
+      id: "eszkoz_megvasarlas",
+      label: "Kérelem raktári eszköz megvásárlására",
+      title: "KÉRELEM RAKTÁRI ESZKÖZ MEGVÁSÁRLÁSÁRA",
+      file: "templates/eszkoz_megvasarlas.html",
+      desc: "Kérelem a Központi Raktár készletéből történő eszközvásárlásra, automatikus összegszámítással és engedélyezéssel."
     },
     {
       id: "selejtezes",
@@ -905,7 +937,7 @@
   let pendingReportsCount = 0;
   let modalEditingUserIdx = null;
 
-  // ===== SHARED HELPERS (A SABLONOK IS HASZNÁLJÁK) =====
+  // ===== SHARED HELPERS =====
   function showToast(msg, type = "info") {
     const t = document.getElementById("toast");
     t.textContent = msg;
@@ -999,6 +1031,14 @@
     } catch (e) {}
   }
 
+  function renderNewUserPermsCheckboxes() {
+    const box = document.getElementById("newUserPermsContainer");
+    if (!box) return;
+    box.innerHTML = `<strong>Dokumentum jogosultságok:</strong>` + DOC_TYPES.map((dt, idx) => `
+      <label><input type="checkbox" class="new-perm" value="${dt.id}" ${idx === 0 ? "checked" : ""} /> ${escapeHtml(dt.label)}</label>
+    `).join("");
+  }
+
   // ===== DINAMIKUS SABLONBETÖLTŐ (templates/*.html) =====
   async function loadAndOpenTemplate(dt) {
     const host = document.getElementById("docHostView");
@@ -1013,7 +1053,6 @@
         templateHtmlCache[dt.id] = rawHtml;
       }
 
-      // HTML és <script> részek szétválasztása
       const temp = document.createElement("div");
       temp.innerHTML = rawHtml;
       const scripts = [...temp.querySelectorAll("script")];
@@ -1021,7 +1060,6 @@
 
       host.innerHTML = temp.innerHTML;
 
-      // Script futtatása csak első betöltéskor
       if (!window.TemplateModules[dt.id]) {
         scripts.forEach(oldScript => {
           const newScript = document.createElement("script");
@@ -1096,6 +1134,7 @@
     const displayName = currentUser.fullName || currentUser.name || currentUser.username;
     document.getElementById("navUserBadge").textContent = displayName + (currentUser.role === "admin" ? " (Admin)" : "");
     await loadServerUnits();
+    renderNewUserPermsCheckboxes();
     renderUnitCheckboxGrid("newUserUnitGrid", ["ALL"]);
     if (currentUser.role === "admin") await loadAdminReports(true);
 
@@ -1239,39 +1278,39 @@
     box.innerHTML = `
       <div class="mini-doc-header">
         <img src="${selectedCompany.logo}" alt="${selectedCompany.code}" onerror="this.src='${selectedCompany.fallbackLogo}'" />
-        <div style="font-size:8px; font-weight:700;">${dt.title}</div>
+        <div style="font-size:7.5px; font-weight:700;">${dt.label.toUpperCase()}</div>
       </div>
       <div class="mini-doc-title">${dt.title}</div>
       <div class="mini-boxes">
         <div class="mini-box">
-          <div class="mini-box-h">ÁTVEVŐ</div>
+          <div class="mini-box-h">ÁTADÓ / RÉSZLEG</div>
           <div class="mini-box-r">Egység kódja: ${escapeHtml(sampleUnit.code)}</div>
           <div class="mini-box-r">Egység neve: ${escapeHtml(sampleUnit.name)}</div>
         </div>
         <div class="mini-box">
-          <div class="mini-box-h">ÁTADÓ</div>
-          <div class="mini-box-r">Egység kódja: ${escapeHtml(sampleUnit.code)}</div>
-          <div class="mini-box-r">Egység neve: ${escapeHtml(sampleUnit.name)}</div>
+          <div class="mini-box-h">ÁTVEVŐ / DÁTUM</div>
+          <div class="mini-box-r">Dátum: 2026. év</div>
+          <div class="mini-box-r">Cég: ${selectedCompany.code}</div>
         </div>
       </div>
       <table class="mini-tbl">
-        <thead><tr><th>#</th><th>NYTSZ</th><th>Megnevezés</th><th>Db</th><th>Megjegyzés</th></tr></thead>
+        <thead><tr><th>#</th><th>NYTSZ</th><th>Megnevezés</th><th>Db / Érték</th><th>Megjegyzés</th></tr></thead>
         <tbody>
-          <tr><td>1</td><td>140041</td><td>Bankett asztal</td><td>1</td><td></td></tr>
-          <tr><td>2</td><td>300294</td><td>Fotel</td><td>1</td><td></td></tr>
-          <tr><td>3</td><td>300148</td><td>Kiszolgáló pult</td><td>4</td><td></td></tr>
+          <tr><td>1</td><td>140041</td><td>Minta tétel 1</td><td>1</td><td></td></tr>
+          <tr><td>2</td><td>300294</td><td>Minta tétel 2</td><td>1</td><td></td></tr>
+          <tr><td>3</td><td>300148</td><td>Minta tétel 3</td><td>2</td><td></td></tr>
         </tbody>
       </table>
       <div style="font-size:7px; color:#333; line-height:1.3;">
-        A fenti táblázatban szereplő eszközök a(z) <strong>${selectedCompany.fullName}</strong> tulajdonát képezik.
+        ${escapeHtml(selectedCompany.fullName)} — hivatalos formanyomtatvány előnézet.
       </div>
       <div class="mini-note">
         <div class="mini-note-h">MEGJEGYZÉS</div>
         <div class="mini-note-b"></div>
       </div>
-      <div class="mini-date-line">Debrecen, 2025. 04. 08.</div>
+      <div class="mini-date-line">Debrecen, 2026.</div>
       <div class="mini-sign-zone">
-        <div class="mini-sign-cols"><div>ÁTADÓ</div><div>ÁTVEVŐ</div></div>
+        <div class="mini-sign-cols"><div>ALÁÍRÁS 1</div><div>ALÁÍRÁS 2</div></div>
       </div>
     `;
   }
