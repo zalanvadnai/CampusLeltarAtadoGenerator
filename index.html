@@ -1474,18 +1474,12 @@
     renderDocument();
   }
 
-  function initDefaultUnitsForUser() {
-    const allowed = getAllowedUnitsForCurrentUser();
-    const recEl = document.getElementById("recCode");
-    const sndEl = document.getElementById("sndCode");
-
-    if (allowed.length === 0) {
-      recEl.value = "";
-      sndEl.value = "";
-      handleUnitInput("rec", false);
-      handleUnitInput("snd", false);
-      return;
-    }
+function initDefaultUnitsForUser() {
+    document.getElementById("recCode").value = "";
+    document.getElementById("sndCode").value = "";
+    handleUnitInput("rec", false);
+    handleUnitInput("snd", false);
+  }
 
     const has5120 = allowed.find(u => u.code === "5120");
     const has3101 = allowed.find(u => u.code === "3101");
