@@ -243,11 +243,7 @@
       const egy2 = document.getElementById("feEgy2").value.trim();
 
       const comp = selectedCompany || COMPANIES.DCNK;
-
-      // Alapértelmezett minimum 18 sor az 1. oldalon (mint a sablonon)
-      const displayItems = activeItems.length >= 18
-        ? activeItems
-        : [...activeItems, ...Array.from({ length: 18 - activeItems.length }, () => emptyRow())];
+      const displayItems = activeItems;
 
       const pages = [];
       let idx = 0, pageNum = 1;
