@@ -110,14 +110,10 @@
     function init() {
       unitValidationState = { rec: true, snd: true };
 
-      // Mai dátum alapértelmezettként
       const dateEl = document.getElementById("ekDate");
       if (dateEl && !dateEl.value) {
         const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, "0");
-        const dd = String(now.getDate()).padStart(2, "0");
-        dateEl.value = `${yyyy}-${mm}-${dd}`;
+        dateEl.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       }
 
       if (!docClickBound) {
@@ -130,7 +126,6 @@
         docClickBound = true;
       }
 
-      // Egységmezők üresen indulnak
       document.getElementById("ekRecCode").value = "";
       document.getElementById("ekSndCode").value = "";
       handleUnitInput("rec", false);
@@ -237,7 +232,7 @@
 
     function updateItem(idx, field, val) { activeItems[idx][field] = val; renderDocument(); }
     function addEmptyItem() { activeItems.push({ name: "", type: "", serial: "", spec: "" }); renderEditTable(); renderDocument(); }
-    function removeItem(idx) { activeItems.splice(idx, 1); renderEditTable(); renderDocument(); }
+    function removeItem(idx) { activeItems.splice(idx, 1); if (activeItems.length === 0) activeItems.push({ name: "", type: "", serial: "", spec: "" }); renderEditTable(); renderDocument(); }
     function clearItems() { activeItems = [{ name: "", type: "", serial: "", spec: "" }]; renderEditTable(); renderDocument(); }
 
     function formatHuYearMonthDay(isoDate) {
@@ -263,11 +258,7 @@
       const note = document.getElementById("ekNote").value;
 
       const comp = selectedCompany || COMPANIES.DCNK;
-
-      // Ha kevesebb mint 13 sor van, minimum 13 soros szép táblázatot mutat (mint a sablonon), ha több, dinamikusan tördeli
-      const displayItems = activeItems.length >= 13
-        ? activeItems
-        : [...activeItems, ...Array.from({ length: 13 - activeItems.length }, () => ({ name: "", type: "", serial: "", spec: "" }))];
+      const displayItems = activeItems;
 
       const pages = [];
       let idx = 0, pageNum = 1;
