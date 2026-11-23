@@ -1,0 +1,212 @@
+<div class="gen-grid">
+  <div class="left-controls no-print">
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
+    </div>
+
+    <div class="panel">
+      <h3>1. Tételek szerkesztése (<span id="hjItemCountBadge">0</span> tétel)</h3>
+      <p style="font-size:12px; color:var(--muted); margin-top:0;">
+        Add meg a feleslegessé vált eszközöket. A táblázat alapértelmezetten 25 sorig kitölti az A4-es lapot, 25 tétel felett pedig automatikusan új oldalt nyit.
+      </p>
+      <div style="max-height:480px; overflow:auto; display:flex; flex-direction:column; gap:10px;" id="hjEditItemsList"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-primary btn-sm" onclick="HasznositasMod.addEmptyItem()">+ Új tétel hozzáadása</button>
+        <button class="btn btn-outline btn-sm" onclick="HasznositasMod.clearItems()">Tételek törlése</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="preview-toolbar no-print">
+      <div>
+        <strong>Élő A4 nyomtatási kép</strong>
+        <span id="hjPageCountInfo" style="color:var(--muted); font-size:13px; margin-left:8px;"></span>
+      </div>
+      <button class="btn btn-primary" onclick="HasznositasMod.printAndLog()">🖨️ Nyomtatás / Mentés PDF-ként</button>
+    </div>
+    <div class="pages-wrapper" id="hjPagesContainer"></div>
+  </div>
+</div>
+
+<script>
+  window.HasznositasMod = (function () {
+    let activeItems = [];
+
+    function init() {
+      if (activeItems.length === 0) {
+        activeItems = [emptyRow()];
+      }
+      renderEditList();
+      renderDocument();
+    }
+
+    function emptyRow() {
+      return {
+        name: "",
+        nytsz: "",
+        proposal: "",
+        estValue: "",
+        sold: "",
+        income: "",
+        receipt: ""
+      };
+    }
+
+    function renderEditList() {
+      const container = document.getElementById("hjEditItemsList");
+      document.getElementById("hjItemCountBadge").textContent = activeItems.length;
+      container.innerHTML = activeItems.map((it, idx) => `
+        <div style="border:1.5px solid #e2e8f0; border-radius:8px; padding:10px; background:#f8fafc;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:12.5px; color:var(--primary-dark);">${idx + 1}. tétel</strong>
+            <button class="btn btn-danger btn-sm" style="padding:2px 7px;" onclick="HasznositasMod.removeItem(${idx})">×</button>
+          </div>
+          <div class="row-2" style="margin-bottom:6px;">
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Megnevezés" value="${escapeHtml(it.name)}" oninput="HasznositasMod.updateItem(${idx},'name',this.value)" />
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Nyilv.tart. szám" value="${escapeHtml(it.nytsz)}" oninput="HasznositasMod.updateItem(${idx},'nytsz',this.value)" />
+          </div>
+          <div class="row-2" style="margin-bottom:6px;">
+            <select class="form-control" style="padding:6px 8px; font-size:12.5px;" onchange="HasznositasMod.updateItem(${idx},'proposal',this.value)">
+              <option value="" ${it.proposal === "" ? "selected" : ""}>Javaslat...</option>
+              <option value="Értékesítés" ${it.proposal === "Értékesítés" ? "selected" : ""}>Értékesítés</option>
+              <option value="Selejtezés" ${it.proposal === "Selejtezés" ? "selected" : ""}>Selejtezés</option>
+            </select>
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Becsült érték (Ft)" value="${escapeHtml(it.estValue)}" oninput="HasznositasMod.updateItem(${idx},'estValue',this.value)" />
+          </div>
+          <div class="row-2" style="margin-bottom:6px;">
+            <select class="form-control" style="padding:6px 8px; font-size:12.5px;" onchange="HasznositasMod.updateItem(${idx},'sold',this.value)">
+              <option value="" ${it.sold === "" ? "selected" : ""}>Sikerült értékesíteni?</option>
+              <option value="Igen" ${it.sold === "Igen" ? "selected" : ""}>Igen</option>
+              <option value="Nem" ${it.sold === "Nem" ? "selected" : ""}>Nem</option>
+            </select>
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Befolyt összeg (Ft)" value="${escapeHtml(it.income)}" oninput="HasznositasMod.updateItem(${idx},'income',this.value)" />
+          </div>
+          <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Befizetési bizonylat" value="${escapeHtml(it.receipt)}" oninput="HasznositasMod.updateItem(${idx},'receipt',this.value)" />
+        </div>
+      `).join("");
+    }
+
+    function updateItem(idx, field, val) { activeItems[idx][field] = val; renderDocument(); }
+    function addEmptyItem() { activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function removeItem(idx) { activeItems.splice(idx, 1); if (activeItems.length === 0) activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function clearItems() { activeItems = [emptyRow()]; renderEditList(); renderDocument(); }
+
+    function renderDocument() {
+      const container = document.getElementById("hjPagesContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const rowsPerPage = 25;
+
+      // Minimum 25 sor az 1. oldalon, mint a sablonon
+      const totalRows = Math.max(rowsPerPage, activeItems.length);
+      const displayItems = Array.from({ length: totalRows }, (_, i) => activeItems[i] || emptyRow());
+
+      const pages = [];
+      for (let idx = 0; idx < displayItems.length; idx += rowsPerPage) {
+        pages.push({
+          pageNum: pages.length + 1,
+          startIndex: idx,
+          items: displayItems.slice(idx, idx + rowsPerPage),
+          isFirst: idx === 0,
+          isLast: idx + rowsPerPage >= displayItems.length
+        });
+      }
+
+      const filledCount = activeItems.filter(i => i.name.trim() || i.nytsz.trim()).length;
+      document.getElementById("hjPageCountInfo").textContent = `(${pages.length} oldal • ${filledCount} kitöltött tétel)`;
+
+      pages.forEach(p => {
+        const pageEl = document.createElement("div");
+        pageEl.className = "a4-page";
+
+        let html = `
+          <div class="doc-top-bar" style="margin-bottom:5mm;">
+            <img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />
+            <div class="doc-top-title" style="font-size:8.5pt;">HASZNOSÍTÁSI JEGYZÉK</div>
+          </div>
+        `;
+
+        if (p.isFirst) {
+          html += `
+            <div class="doc-main-title" style="font-size:15pt; margin:0 0 6mm;">
+              FELESLEGESSÉ VÁLT TÁRGYI ESZKÖZÖK HASZNOSÍTÁSI JEGYZÉKE
+            </div>
+          `;
+        }
+
+        html += `
+          <table class="items-table" style="font-size:8pt; margin-bottom:4mm;">
+            <thead>
+              <tr>
+                <th style="width:6%;">TÉTEL SZÁM</th>
+                <th style="width:24%;">MEGNEVEZÉS</th>
+                <th style="width:11%;">NYILV.TART. SZÁM</th>
+                <th style="width:13%;">HASZNOSÍTÁSI JAVASLAT<br><span style="font-weight:400; font-size:6.5pt;">ÉRTÉKESÍTÉS / SELEJTEZÉS</span></th>
+                <th style="width:11%;">BECSÜLT ÉRTÉK (FT)</th>
+                <th style="width:10%;">SIKERÜLT ÉRTÉKESÍTENI?</th>
+                <th style="width:12%;">ÉRTÉKESÍTÉSBŐL BEFOLYT ÖSSZEG</th>
+                <th style="width:13%;">BEFIZETÉSI BIZONYLAT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${p.items.map((it, i) => `
+                <tr style="height:7.6mm;">
+                  <td class="c-center">${p.startIndex + i + 1}</td>
+                  <td>${escapeHtml(it.name)}</td>
+                  <td class="c-center">${escapeHtml(it.nytsz)}</td>
+                  <td class="c-center">${escapeHtml(it.proposal)}</td>
+                  <td class="c-right">${escapeHtml(it.estValue)}</td>
+                  <td class="c-center">${escapeHtml(it.sold)}</td>
+                  <td class="c-right">${escapeHtml(it.income)}</td>
+                  <td class="c-center">${escapeHtml(it.receipt)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `;
+
+        if (p.isLast) {
+          html += `
+            <div style="font-family:Arial, sans-serif; font-size:9pt; margin-top:4mm;">
+              A nem értékesített tételek selejtezésre kerülnek
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="doc-footer">
+            ${p.pageNum}. oldal — ${escapeHtml(comp.fullName)} — Feleslegessé vált tárgyi eszközök hasznosítási jegyzéke
+          </div>
+        `;
+
+        pageEl.innerHTML = html;
+        container.appendChild(pageEl);
+      });
+    }
+
+    async function printAndLog() {
+      window.print();
+      if (!currentUser) return;
+      const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
+      const filledCount = activeItems.filter(i => i.name.trim() || i.nytsz.trim()).length;
+      const details = `${compTag}${filledCount} tétel rögzítve`;
+
+      try {
+        await apiCall({
+          action: "logDocument",
+          username: currentUser.username,
+          userName: currentUser.fullName || currentUser.name || currentUser.username,
+          docType: "Hasznosítási jegyzék",
+          details
+        });
+      } catch (e) {}
+    }
+
+    return { init, updateItem, addEmptyItem, removeItem, clearItems, renderDocument, printAndLog };
+  })();
+
+  window.TemplateModules["hasznositasi_jegyzek"] = window.HasznositasMod;
+</script>
