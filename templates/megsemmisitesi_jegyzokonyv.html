@@ -1,0 +1,253 @@
+<div class="gen-grid">
+  <div class="left-controls no-print">
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
+    </div>
+
+    <div class="panel">
+      <h3>1. Keltezés és aláírók</h3>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Keltezés helye</label>
+          <input id="mjCity" class="form-control" value="Debrecen" oninput="MegsemmisitesMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Dátum</label>
+          <input id="mjDate" type="date" class="form-control" oninput="MegsemmisitesMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>1. megsemmisítő neve (opc.)</label>
+          <input id="mjDest1" class="form-control" placeholder="Ha üres, vonal jelenik meg" oninput="MegsemmisitesMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>2. megsemmisítő neve (opc.)</label>
+          <input id="mjDest2" class="form-control" placeholder="Ha üres, vonal jelenik meg" oninput="MegsemmisitesMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Selejtezési Bizottság elnöke (opc.)</label>
+        <input id="mjChairman" class="form-control" placeholder="Hitelesítő neve (opcionális)" oninput="MegsemmisitesMod.renderDocument()" />
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>2. Megsemmisített eszközök (<span id="mjItemCountBadge">0</span> tétel)</h3>
+      <div style="max-height:380px; overflow:auto; display:flex; flex-direction:column; gap:10px;" id="mjEditItemsList"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-primary btn-sm" onclick="MegsemmisitesMod.addEmptyItem()">+ Új tétel hozzáadása</button>
+        <button class="btn btn-outline btn-sm" onclick="MegsemmisitesMod.clearItems()">Tételek törlése</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="preview-toolbar no-print">
+      <div>
+        <strong>Élő A4 nyomtatási kép</strong>
+        <span id="mjPageCountInfo" style="color:var(--muted); font-size:13px; margin-left:8px;"></span>
+      </div>
+      <button class="btn btn-primary" onclick="MegsemmisitesMod.printAndLog()">🖨️ Nyomtatás / Mentés PDF-ként</button>
+    </div>
+    <div class="pages-wrapper" id="mjPagesContainer"></div>
+  </div>
+</div>
+
+<script>
+  window.MegsemmisitesMod = (function () {
+    let activeItems = [];
+
+    function emptyRow() {
+      return { name: "", qty: "", method: "" };
+    }
+
+    function init() {
+      const dateEl = document.getElementById("mjDate");
+      if (dateEl && !dateEl.value) {
+        const now = new Date();
+        dateEl.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      }
+      if (activeItems.length === 0) activeItems = [emptyRow()];
+      renderEditList();
+      renderDocument();
+    }
+
+    function renderEditList() {
+      const container = document.getElementById("mjEditItemsList");
+      document.getElementById("mjItemCountBadge").textContent = activeItems.length;
+      container.innerHTML = activeItems.map((it, idx) => `
+        <div style="border:1.5px solid #e2e8f0; border-radius:8px; padding:10px; background:#f8fafc;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:12.5px; color:var(--primary-dark);">${idx + 1}. tétel</strong>
+            <button class="btn btn-danger btn-sm" style="padding:2px 7px;" onclick="MegsemmisitesMod.removeItem(${idx})">×</button>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 90px; gap:8px; margin-bottom:6px;">
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Megnevezés" value="${escapeHtml(it.name)}" oninput="MegsemmisitesMod.updateItem(${idx},'name',this.value)" />
+            <input type="number" min="1" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Db" value="${escapeHtml(it.qty)}" oninput="MegsemmisitesMod.updateItem(${idx},'qty',this.value)" />
+          </div>
+          <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Megsemmisítés módja (pl. összezúzás, darálás...)" value="${escapeHtml(it.method)}" oninput="MegsemmisitesMod.updateItem(${idx},'method',this.value)" />
+        </div>
+      `).join("");
+    }
+
+    function updateItem(idx, field, val) { activeItems[idx][field] = val; renderDocument(); }
+    function addEmptyItem() { activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function removeItem(idx) { activeItems.splice(idx, 1); if (activeItems.length === 0) activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function clearItems() { activeItems = [emptyRow()]; renderEditList(); renderDocument(); }
+
+    function formatHuDateBlankable(isoDate) {
+      if (!isoDate) return "20______ év ______________ hó _______ nap";
+      const parts = isoDate.split("-");
+      if (parts.length !== 3) return isoDate;
+      return `${parts[0]}. év ${parts[1]}. hó ${parts[2]}. nap`;
+    }
+
+    function renderDocument() {
+      const container = document.getElementById("mjPagesContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const city = document.getElementById("mjCity").value.trim() || "Debrecen";
+      const dateStr = formatHuDateBlankable(document.getElementById("mjDate").value);
+      const dest1 = document.getElementById("mjDest1").value.trim();
+      const dest2 = document.getElementById("mjDest2").value.trim();
+      const chairman = document.getElementById("mjChairman").value.trim();
+
+      const displayItems = activeItems;
+
+      const pages = [];
+      let idx = 0, pageNum = 1;
+      while (idx < displayItems.length) {
+        const isFirst = (pageNum === 1);
+        const remaining = displayItems.length - idx;
+        const maxWithClosing = isFirst ? 20 : 25;
+        const maxWithoutClosing = isFirst ? 28 : 34;
+
+        if (remaining <= maxWithClosing) {
+          pages.push({ pageNum, items: displayItems.slice(idx), startIndex: idx, isFirst, isLast: true });
+          idx = displayItems.length;
+        } else {
+          const take = Math.min(remaining, maxWithoutClosing);
+          pages.push({ pageNum, items: displayItems.slice(idx, idx + take), startIndex: idx, isFirst, isLast: false });
+          idx += take;
+          pageNum++;
+          if (idx === displayItems.length) pages.push({ pageNum, items: [], startIndex: idx, isFirst: false, isLast: true });
+        }
+      }
+
+      const filledCount = activeItems.filter(i => i.name.trim() || i.method.trim()).length;
+      document.getElementById("mjPageCountInfo").textContent = `(${pages.length} oldal • ${filledCount} kitöltött tétel)`;
+
+      pages.forEach(p => {
+        const pageEl = document.createElement("div");
+        pageEl.className = "a4-page";
+
+        let html = `
+          <div class="doc-top-bar" style="margin-bottom:5mm;">
+            <img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />
+            <div class="doc-top-title" style="font-size:8.5pt;">MEGSEMMISÍTÉSI JEGYZŐKÖNYV</div>
+          </div>
+        `;
+
+        if (p.isFirst) {
+          html += `
+            <div class="doc-main-title" style="font-size:16pt; margin:0 0 5mm;">
+              MEGSEMMISÍTÉSI JEGYZŐKÖNYV
+            </div>
+            <div style="font-family:'Times New Roman', Times, serif; font-size:10.5pt; line-height:1.45; text-align:justify; margin-bottom:6mm;">
+              A jelen jegyzőkönyvet aláírók kijelentik, hogy a jegyzőkönyvben szereplő alábbi sorszámú eszközöket, amelyeket sem haszonanyagként, sem hulladék anyagként felhasználni, sem más módon hasznosítani vagy értékesíteni nem lehet, vagy nem szabad, jelenlétükben megsemmisítették.
+            </div>
+          `;
+        }
+
+        if (p.items.length > 0 || p.isFirst) {
+          html += `
+            <table class="items-table" style="font-size:8.5pt; margin-bottom:6mm;">
+              <thead>
+                <tr>
+                  <th style="width:9%;">TÉTEL SZÁM</th>
+                  <th style="width:36%;">MEGNEVEZÉS</th>
+                  <th style="width:13%;">DARABSZÁM</th>
+                  <th style="width:42%;">MEGSEMMISÍTÉS MÓDJA</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${p.items.map((it, i) => `
+                  <tr style="height:6.6mm;">
+                    <td class="c-center">${(p.startIndex || 0) + i + 1}</td>
+                    <td>${escapeHtml(it.name)}</td>
+                    <td class="c-center">${escapeHtml(it.qty)}</td>
+                    <td>${escapeHtml(it.method)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        }
+
+        if (p.isLast) {
+          html += `
+            <div style="font-family:'Times New Roman', Times, serif; font-size:11pt; margin:4mm 0 10mm;">
+              ${escapeHtml(city)}, ${escapeHtml(dateStr)}
+            </div>
+
+            <div style="display:flex; align-items:flex-end; gap:8mm; margin-bottom:12mm; font-family:'Times New Roman', Times, serif; font-size:10.5pt;">
+              <div style="white-space:nowrap;">Megsemmisítő(k) aláírása:</div>
+              <div style="flex:1; text-align:center;">
+                <div style="min-height:4.5mm; font-size:9.5pt;">${escapeHtml(dest1)}</div>
+                <div style="border-top:1px solid #000;"></div>
+              </div>
+              <div style="flex:1; text-align:center;">
+                <div style="min-height:4.5mm; font-size:9.5pt;">${escapeHtml(dest2)}</div>
+                <div style="border-top:1px solid #000;"></div>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; align-items:flex-start; gap:10mm; font-family:'Times New Roman', Times, serif; font-size:10.5pt;">
+              <div style="padding-top:2mm;">Hitelesítő aláírása</div>
+              <div style="width:72mm; text-align:center;">
+                <div style="min-height:6mm; font-size:9.5pt;">${escapeHtml(chairman)}</div>
+                <div style="border-top:1px solid #000; padding-top:3px; font-size:9.5pt;">Selejtezési Bizottság elnöke</div>
+              </div>
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="doc-footer">
+            ${p.pageNum}. oldal — ${escapeHtml(comp.fullName)} — Megsemmisítési jegyzőkönyv
+          </div>
+        `;
+
+        pageEl.innerHTML = html;
+        container.appendChild(pageEl);
+      });
+    }
+
+    async function printAndLog() {
+      window.print();
+      if (!currentUser) return;
+      const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
+      const filledCount = activeItems.filter(i => i.name.trim() || i.method.trim()).length;
+      const details = `${compTag}Dátum: ${document.getElementById("mjDate").value || "—"} | ${filledCount} tétel`;
+
+      try {
+        await apiCall({
+          action: "logDocument",
+          username: currentUser.username,
+          userName: currentUser.fullName || currentUser.name || currentUser.username,
+          docType: "Megsemmisítési jegyzőkönyv",
+          details
+        });
+      } catch (e) {}
+    }
+
+    return { init, updateItem, addEmptyItem, removeItem, clearItems, renderDocument, printAndLog };
+  })();
+
+  window.TemplateModules["megsemmisitesi_jegyzokonyv"] = window.MegsemmisitesMod;
+</script>
