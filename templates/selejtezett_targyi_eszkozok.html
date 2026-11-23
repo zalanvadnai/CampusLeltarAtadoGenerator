@@ -1,0 +1,448 @@
+<div class="gen-grid">
+  <div class="left-controls no-print">
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
+    </div>
+
+    <div class="panel">
+      <h3>1. Átadó egység, Dátum és Aláírók</h3>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Átadó egység kódja</label>
+          <div class="unit-combo">
+            <input id="steSndCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="SelejtezettTargyiMod.openUnitDropdown()" oninput="SelejtezettTargyiMod.handleUnitInput()" />
+            <span class="unit-combo-arrow">▼</span>
+            <div id="steSndDropdown" class="unit-dropdown-menu hidden"></div>
+          </div>
+          <div id="steSndCodeError" class="field-error-msg hidden">Nincs hozzáférésed ehhez az egységhez!</div>
+        </div>
+        <div class="form-group">
+          <label>Átadó egység neve</label>
+          <input id="steSndName" class="form-control" oninput="SelejtezettTargyiMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Átadás dátuma</label>
+          <input id="steDate" type="date" class="form-control" oninput="SelejtezettTargyiMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Keltezés helye</label>
+          <input id="steCity" class="form-control" value="Debrecen" oninput="SelejtezettTargyiMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Bizottság részéről (opcionális)</label>
+          <input id="steBiz1" class="form-control" style="margin-bottom:6px;" placeholder="1. bizottsági tag neve" oninput="SelejtezettTargyiMod.renderDocument()" />
+          <input id="steBiz2" class="form-control" placeholder="2. bizottsági tag neve" oninput="SelejtezettTargyiMod.renderDocument()" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Egység részéről (opcionális)</label>
+          <input id="steEgy1" class="form-control" style="margin-bottom:6px;" placeholder="1. egység aláíró neve" oninput="SelejtezettTargyiMod.renderDocument()" />
+          <input id="steEgy2" class="form-control" placeholder="2. egység aláíró neve" oninput="SelejtezettTargyiMod.renderDocument()" />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>2. Selejtezett tárgyi eszközök (<span id="steItemCountBadge">0</span> tétel)</h3>
+      <div style="max-height:360px; overflow:auto; display:flex; flex-direction:column; gap:10px;" id="steEditItemsList"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-primary btn-sm" onclick="SelejtezettTargyiMod.addEmptyItem()">+ Új tétel hozzáadása</button>
+        <button class="btn btn-outline btn-sm" onclick="SelejtezettTargyiMod.clearItems()">Tételek törlése</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="preview-toolbar no-print">
+      <div>
+        <strong>Élő A4 nyomtatási kép</strong>
+        <span id="stePageCountInfo" style="color:var(--muted); font-size:13px; margin-left:8px;"></span>
+      </div>
+      <button class="btn btn-primary" onclick="SelejtezettTargyiMod.printAndLog()">🖨️ Nyomtatás / Mentés PDF-ként</button>
+    </div>
+    <div class="pages-wrapper" id="stePagesContainer"></div>
+  </div>
+</div>
+
+<script>
+  window.SelejtezettTargyiMod = (function () {
+    const REASON_CODES = [
+      { code: "01", text: "Eredeti rendeltetésének nem felel meg" },
+      { code: "02", text: "Feladatcsökkenés miatt" },
+      { code: "03", text: "Átszervezés miatt" },
+      { code: "04", text: "Megszűnés miatt" },
+      { code: "05", text: "Normát meghaladó készlet" },
+      { code: "06", text: "Rongálódás miatt" },
+      { code: "07", text: "Természetes elhasználódás miatt" },
+      { code: "08", text: "Erkölcsi avulás miatt" },
+      { code: "09", text: "Szavatossága lejárt" },
+      { code: "10", text: "Egyéb ok" }
+    ];
+
+    let activeItems = [];
+    let unitValid = true;
+    let docClickBound = false;
+
+    function emptyRow() {
+      return { inv: "", nytsz: "", name: "", reason: "", recoverable: "" };
+    }
+
+    function init() {
+      unitValid = true;
+
+      const dateEl = document.getElementById("steDate");
+      if (dateEl && !dateEl.value) {
+        const now = new Date();
+        dateEl.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      }
+
+      if (!docClickBound) {
+        document.addEventListener("click", e => {
+          if (!e.target.closest(".unit-combo")) {
+            document.getElementById("steSndDropdown")?.classList.add("hidden");
+          }
+        });
+        docClickBound = true;
+      }
+
+      document.getElementById("steSndCode").value = "";
+      handleUnitInput(false);
+
+      if (activeItems.length === 0) activeItems = [emptyRow()];
+      renderEditList();
+      renderDocument();
+    }
+
+    function openUnitDropdown() {
+      renderUnitDropdownList(document.getElementById("steSndCode").value);
+      document.getElementById("steSndDropdown").classList.remove("hidden");
+    }
+
+    function renderUnitDropdownList(query = "") {
+      const menu = document.getElementById("steSndDropdown");
+      const allowed = getAllowedUnitsForCurrentUser();
+      const q = (query || "").trim().toLowerCase();
+      const filtered = allowed.filter(u =>
+        !q || u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || (u.leader || "").toLowerCase().includes(q)
+      );
+
+      if (filtered.length === 0) {
+        menu.innerHTML = `<div class="unit-dropdown-empty">Nincs találat az engedélyezett egységek között.</div>`;
+        return;
+      }
+
+      menu.innerHTML = filtered.map(u => `
+        <div class="unit-dropdown-item" onmousedown="SelejtezettTargyiMod.pickUnitFromDropdown('${escapeHtml(u.code)}')">
+          <div><span class="u-code">${escapeHtml(u.code)}</span> – ${escapeHtml(u.name)}</div>
+          ${u.leader ? `<div class="u-leader">Vezető: ${escapeHtml(u.leader)}</div>` : ""}
+        </div>
+      `).join("");
+    }
+
+    function pickUnitFromDropdown(code) {
+      document.getElementById("steSndCode").value = code;
+      document.getElementById("steSndDropdown").classList.add("hidden");
+      handleUnitInput(false);
+    }
+
+    function handleUnitInput(keepMenuOpen = true) {
+      const codeEl = document.getElementById("steSndCode");
+      const nameEl = document.getElementById("steSndName");
+      const egy1El = document.getElementById("steEgy1");
+      const errEl = document.getElementById("steSndCodeError");
+
+      const typed = codeEl.value.trim();
+      if (keepMenuOpen) {
+        renderUnitDropdownList(typed);
+        document.getElementById("steSndDropdown").classList.remove("hidden");
+      }
+
+      if (!typed) {
+        codeEl.classList.remove("input-error");
+        errEl.classList.add("hidden");
+        nameEl.value = "";
+        egy1El.value = "";
+        unitValid = true;
+        renderDocument();
+        return;
+      }
+
+      const allowed = getAllowedUnitsForCurrentUser();
+      const matchAllowed = allowed.find(u => u.code.toLowerCase() === typed.toLowerCase());
+
+      if (matchAllowed) {
+        codeEl.classList.remove("input-error");
+        errEl.classList.add("hidden");
+        nameEl.value = matchAllowed.name;
+        egy1El.value = matchAllowed.leader || "";
+        unitValid = true;
+      } else {
+        codeEl.classList.add("input-error");
+        errEl.classList.remove("hidden");
+        nameEl.value = "";
+        egy1El.value = "";
+        unitValid = false;
+      }
+      renderDocument();
+    }
+
+    function renderEditList() {
+      const container = document.getElementById("steEditItemsList");
+      document.getElementById("steItemCountBadge").textContent = activeItems.length;
+      container.innerHTML = activeItems.map((it, idx) => `
+        <div style="border:1.5px solid #e2e8f0; border-radius:8px; padding:10px; background:#f8fafc;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:12.5px; color:var(--primary-dark);">${idx + 1}. tétel</strong>
+            <button class="btn btn-danger btn-sm" style="padding:2px 7px;" onclick="SelejtezettTargyiMod.removeItem(${idx})">×</button>
+          </div>
+          <div class="row-2" style="margin-bottom:6px;">
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Leltárszám" value="${escapeHtml(it.inv)}" oninput="SelejtezettTargyiMod.updateItem(${idx},'inv',this.value)" />
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="NYTSZ szám" value="${escapeHtml(it.nytsz)}" oninput="SelejtezettTargyiMod.updateItem(${idx},'nytsz',this.value)" />
+          </div>
+          <input class="form-control" style="padding:6px 8px; font-size:12.5px; margin-bottom:6px;" placeholder="Megnevezés" value="${escapeHtml(it.name)}" oninput="SelejtezettTargyiMod.updateItem(${idx},'name',this.value)" />
+          <div class="row-2">
+            <select class="form-control" style="padding:6px 8px; font-size:12.5px;" onchange="SelejtezettTargyiMod.updateItem(${idx},'reason',this.value)">
+              <option value="" ${it.reason === "" ? "selected" : ""}>Selejtezés oka...</option>
+              ${REASON_CODES.map(r => `<option value="${r.code}" ${it.reason === r.code ? "selected" : ""}>${r.code} – ${r.text}</option>`).join("")}
+            </select>
+            <select class="form-control" style="padding:6px 8px; font-size:12.5px;" onchange="SelejtezettTargyiMod.updateItem(${idx},'recoverable',this.value)">
+              <option value="" ${it.recoverable === "" ? "selected" : ""}>Visszanyerhető haszonanyag?</option>
+              <option value="Igen" ${it.recoverable === "Igen" ? "selected" : ""}>Igen</option>
+              <option value="Nem" ${it.recoverable === "Nem" ? "selected" : ""}>Nem</option>
+            </select>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function updateItem(idx, field, val) { activeItems[idx][field] = val; renderDocument(); }
+    function addEmptyItem() { activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function removeItem(idx) { activeItems.splice(idx, 1); if (activeItems.length === 0) activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function clearItems() { activeItems = [emptyRow()]; renderEditList(); renderDocument(); }
+
+    function formatHuYearMonthDay(isoDate) {
+      if (!isoDate) return "20____ év ____ hó ____ nap";
+      const parts = isoDate.split("-");
+      if (parts.length !== 3) return isoDate;
+      return `${parts[0]}. év ${parts[1]}. hó ${parts[2]}. nap`;
+    }
+
+    function renderDocument() {
+      const container = document.getElementById("stePagesContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const sndCode = unitValid ? document.getElementById("steSndCode").value.trim() : "";
+      const sndName = document.getElementById("steSndName").value.trim();
+      const dateStr = formatHuYearMonthDay(document.getElementById("steDate").value);
+      const city = document.getElementById("steCity").value.trim() || "Debrecen";
+      const biz1 = document.getElementById("steBiz1").value.trim();
+      const biz2 = document.getElementById("steBiz2").value.trim();
+      const egy1 = document.getElementById("steEgy1").value.trim();
+      const egy2 = document.getElementById("steEgy2").value.trim();
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const displayItems = activeItems;
+
+      const pages = [];
+      let idx = 0, pageNum = 1;
+      while (idx < displayItems.length) {
+        const isFirst = (pageNum === 1);
+        const remaining = displayItems.length - idx;
+        const maxWithClosing = isFirst ? 20 : 25;
+        const maxWithoutClosing = isFirst ? 27 : 34;
+
+        if (remaining <= maxWithClosing) {
+          pages.push({ pageNum, items: displayItems.slice(idx), startIndex: idx, isFirst, isLast: true });
+          idx = displayItems.length;
+        } else {
+          const take = Math.min(remaining, maxWithoutClosing);
+          pages.push({ pageNum, items: displayItems.slice(idx, idx + take), startIndex: idx, isFirst, isLast: false });
+          idx += take;
+          pageNum++;
+          if (idx === displayItems.length) pages.push({ pageNum, items: [], startIndex: idx, isFirst: false, isLast: true });
+        }
+      }
+
+      const filledCount = activeItems.filter(i => i.name.trim() || i.nytsz.trim() || i.inv.trim()).length;
+      document.getElementById("stePageCountInfo").textContent = `(${pages.length} oldal • ${filledCount} kitöltött tétel)`;
+
+      pages.forEach(p => {
+        const pageEl = document.createElement("div");
+        pageEl.className = "a4-page";
+
+        let html = `
+          <div class="doc-top-bar" style="margin-bottom:4mm;">
+            <img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />
+            <div class="doc-top-title" style="font-size:8.5pt;">SELEJTEZETT TÁRGYI ESZKÖZÖK</div>
+          </div>
+        `;
+
+        if (p.isFirst) {
+          html += `
+            <div class="doc-main-title" style="font-size:15pt; margin:0 0 5mm; text-align:left;">
+              SELEJTEZETT TÁRGYI ESZKÖZÖK JEGYZÉKE
+            </div>
+            <div style="display:grid; grid-template-columns: 1.28fr 0.72fr; gap:5mm; align-items:stretch; margin-bottom:5mm;">
+              <table style="width:100%; border-collapse:collapse; font-family:Arial, sans-serif; font-size:7pt;">
+                <thead>
+                  <tr>
+                    <th colspan="4" style="background:var(--primary-dark); color:#fff; border:1px solid #000; padding:3px; text-align:center;">
+                      KÓDJEGYZÉK A SELEJTNEK MINŐSÍTÉS OKAIRÓL
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style="border:1px solid #000; padding:2px 4px;">Eredeti rendeltetésének nem felel meg</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">01</td>
+                    <td style="border:1px solid #000; padding:2px 4px;">Rongálódás miatt</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">06</td>
+                  </tr>
+                  <tr>
+                    <td style="border:1px solid #000; padding:2px 4px;">Feladatcsökkenés miatt</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">02</td>
+                    <td style="border:1px solid #000; padding:2px 4px;">Természetes elhasználódás miatt</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">07</td>
+                  </tr>
+                  <tr>
+                    <td style="border:1px solid #000; padding:2px 4px;">Átszervezés miatt</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">03</td>
+                    <td style="border:1px solid #000; padding:2px 4px;">Erkölcsi avulás miatt</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">08</td>
+                  </tr>
+                  <tr>
+                    <td style="border:1px solid #000; padding:2px 4px;">Megszűnés miatt</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">04</td>
+                    <td style="border:1px solid #000; padding:2px 4px;">Szavatossága lejárt</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">09</td>
+                  </tr>
+                  <tr>
+                    <td style="border:1px solid #000; padding:2px 4px;">Normát meghaladó készlet</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">05</td>
+                    <td style="border:1px solid #000; padding:2px 4px;">Egyéb ok</td>
+                    <td style="border:1px solid #000; padding:2px 4px; text-align:center; font-weight:700;">10</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style="display:flex; flex-direction:column; gap:3mm;">
+                <table class="party-table" style="font-size:8.5pt;">
+                  <tr><th colspan="2">ÁTADÓ</th></tr>
+                  <tr><td style="width:46%;">Egység kódja</td><td>${escapeHtml(sndCode)}</td></tr>
+                  <tr><td>Egység neve</td><td>${escapeHtml(sndName)}</td></tr>
+                </table>
+                <table class="party-table" style="font-size:8.5pt;">
+                  <tr><th>ÁTADÁS DÁTUMA</th></tr>
+                  <tr><td style="text-align:center; background:#fff; font-weight:600; padding:5px;">${escapeHtml(dateStr)}</td></tr>
+                </table>
+              </div>
+            </div>
+          `;
+        }
+
+        if (p.items.length > 0 || p.isFirst) {
+          html += `
+            <table class="items-table" style="font-size:8.5pt; margin-bottom:5mm;">
+              <thead>
+                <tr>
+                  <th style="width:7%;">TÉTEL SZÁM</th>
+                  <th style="width:14%;">LELTÁRSZÁM</th>
+                  <th style="width:14%;">NYTSZ SZÁM</th>
+                  <th style="width:36%;">MEGNEVEZÉS</th>
+                  <th style="width:11%;">SELEJTEZÉS OKA</th>
+                  <th style="width:18%;">VISSZANYERHETŐ HASZONANYAG?</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${p.items.map((it, i) => `
+                  <tr style="height:6.4mm;">
+                    <td class="c-center">${(p.startIndex || 0) + i + 1}</td>
+                    <td class="c-center">${escapeHtml(it.inv)}</td>
+                    <td class="c-center">${escapeHtml(it.nytsz)}</td>
+                    <td>${escapeHtml(it.name)}</td>
+                    <td class="c-center" style="font-weight:700;">${escapeHtml(it.reason)}</td>
+                    <td class="c-center">${escapeHtml(it.recoverable)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `;
+        }
+
+        if (p.isLast) {
+          html += `
+            <div style="font-family:'Times New Roman', Times, serif; font-size:10.5pt; margin:4mm 0 4mm;">
+              Kelt.: ${escapeHtml(city)}, ${escapeHtml(dateStr)}
+            </div>
+
+            <div style="font-family:Arial, sans-serif; font-weight:700; font-size:10pt; margin-bottom:4mm;">
+              Aláírások:
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18mm; font-family:Arial, sans-serif; text-align:center;">
+              <div>
+                <div style="font-weight:700; font-size:10pt; margin-bottom:8mm;">Bizottság részéről</div>
+                <div style="min-height:4.5mm; font-size:9pt;">${escapeHtml(biz1)}</div>
+                <div class="sign-line" style="font-size:8.5pt; margin-bottom:9mm;">név / aláírás</div>
+                <div style="min-height:4.5mm; font-size:9pt;">${escapeHtml(biz2)}</div>
+                <div class="sign-line" style="font-size:8.5pt;">név / aláírás</div>
+              </div>
+              <div>
+                <div style="font-weight:700; font-size:10pt; margin-bottom:8mm;">Egység részéről</div>
+                <div style="min-height:4.5mm; font-size:9pt;">${escapeHtml(egy1)}</div>
+                <div class="sign-line" style="font-size:8.5pt; margin-bottom:9mm;">név / aláírás</div>
+                <div style="min-height:4.5mm; font-size:9pt;">${escapeHtml(egy2)}</div>
+                <div class="sign-line" style="font-size:8.5pt;">név / aláírás</div>
+              </div>
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="doc-footer">
+            ${p.pageNum}. oldal — ${escapeHtml(comp.fullName)} — Selejtezett tárgyi eszközök jegyzéke
+          </div>
+        `;
+
+        pageEl.innerHTML = html;
+        container.appendChild(pageEl);
+      });
+    }
+
+    async function printAndLog() {
+      if (!unitValid) {
+        showToast("Hibás vagy nem engedélyezett egységkód szerepel a nyomtatványon!", "error");
+        return;
+      }
+      window.print();
+      if (!currentUser) return;
+      const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
+      const snd = `${document.getElementById("steSndCode").value} ${document.getElementById("steSndName").value}`;
+      const filledCount = activeItems.filter(i => i.name.trim() || i.nytsz.trim() || i.inv.trim()).length;
+      const details = `${compTag}Átadó: ${snd} | Dátum: ${document.getElementById("steDate").value} | ${filledCount} tétel`;
+
+      try {
+        await apiCall({
+          action: "logDocument",
+          username: currentUser.username,
+          userName: currentUser.fullName || currentUser.name || currentUser.username,
+          docType: "Selejtezett tárgyi eszközök jegyzéke",
+          details
+        });
+      } catch (e) {}
+    }
+
+    return {
+      init, openUnitDropdown, pickUnitFromDropdown, handleUnitInput,
+      updateItem, addEmptyItem, removeItem, clearItems, renderDocument, printAndLog
+    };
+  })();
+
+  window.TemplateModules["selejtezett_targyi_eszkozok"] = window.SelejtezettTargyiMod;
+</script>
