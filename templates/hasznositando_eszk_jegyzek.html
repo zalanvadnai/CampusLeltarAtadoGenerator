@@ -241,11 +241,7 @@
       const resz3 = document.getElementById("heResz3").value.trim();
 
       const comp = selectedCompany || COMPANIES.DCNK;
-
-      // Minimum 18 sor az 1. oldalon (a sablon arányainak megfelelően)
-      const displayItems = activeItems.length >= 18
-        ? activeItems
-        : [...activeItems, ...Array.from({ length: 18 - activeItems.length }, () => emptyRow())];
+      const displayItems = activeItems;
 
       const pages = [];
       let idx = 0, pageNum = 1;
