@@ -1,0 +1,273 @@
+<div class="gen-grid">
+  <div class="left-controls no-print">
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
+    </div>
+
+    <div class="panel">
+      <h3>1. Vevő és keltezés adatai</h3>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Vevő neve</label>
+          <input id="emBuyerName" class="form-control" placeholder="pl. Kiss János" oninput="VasarloMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Adószám / Adóazonosító</label>
+          <input id="emBuyerTax" class="form-control" placeholder="pl. 8412345678" oninput="VasarloMod.renderDocument()" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Vevő lakcíme</label>
+        <input id="emBuyerAddress" class="form-control" placeholder="pl. 4032 Debrecen, Egyetem tér 1." oninput="VasarloMod.renderDocument()" />
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Kérelem dátuma</label>
+          <input id="emDate" type="date" class="form-control" oninput="VasarloMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Engedélyező neve</label>
+          <input id="emApprover" class="form-control" value="Páll László" oninput="VasarloMod.renderDocument()" />
+        </div>
+      </div>
+      <div class="row-2">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Keltezés helye</label>
+          <input id="emCity" class="form-control" value="Debrecen" oninput="VasarloMod.renderDocument()" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Engedélyezés dátuma (opc.)</label>
+          <input id="emApproveDate" type="date" class="form-control" oninput="VasarloMod.renderDocument()" />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>2. Megvásárolni kívánt eszközök (<span id="emItemCountBadge">0</span> tétel)</h3>
+      <div style="max-height:360px; overflow:auto; display:flex; flex-direction:column; gap:10px;" id="emEditItemsList"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-primary btn-sm" onclick="VasarloMod.addEmptyItem()">+ Új tétel</button>
+        <button class="btn btn-outline btn-sm" onclick="VasarloMod.clearItems()">Tételek törlése</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="preview-toolbar no-print">
+      <div>
+        <strong>Élő A4 nyomtatási kép</strong>
+        <span id="emPageCountInfo" style="color:var(--muted); font-size:13px; margin-left:8px;"></span>
+      </div>
+      <button class="btn btn-primary" onclick="VasarloMod.printAndLog()">🖨️ Nyomtatás / Mentés PDF-ként</button>
+    </div>
+    <div class="pages-wrapper" id="emPagesContainer"></div>
+  </div>
+</div>
+
+<script>
+  window.VasarloMod = (function () {
+    let activeItems = [];
+
+    function emptyRow() {
+      return { name: "", inv: "", nytsz: "", qty: "", price: "" };
+    }
+
+    function init() {
+      const dateEl = document.getElementById("emDate");
+      if (dateEl && !dateEl.value) {
+        const now = new Date();
+        dateEl.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      }
+      if (activeItems.length === 0) activeItems = [emptyRow()];
+      renderEditList();
+      renderDocument();
+    }
+
+    function renderEditList() {
+      const container = document.getElementById("emEditItemsList");
+      document.getElementById("emItemCountBadge").textContent = activeItems.length;
+      container.innerHTML = activeItems.map((it, idx) => `
+        <div style="border:1.5px solid #e2e8f0; border-radius:8px; padding:10px; background:#f8fafc;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:12.5px; color:var(--primary-dark);">${idx + 1}. tétel</strong>
+            <button class="btn btn-danger btn-sm" style="padding:2px 7px;" onclick="VasarloMod.removeItem(${idx})">×</button>
+          </div>
+          <input class="form-control" style="padding:6px 8px; font-size:12.5px; margin-bottom:6px;" placeholder="Megnevezés" value="${escapeHtml(it.name)}" oninput="VasarloMod.updateItem(${idx},'name',this.value)" />
+          <div class="row-2" style="margin-bottom:6px;">
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Leltárszám" value="${escapeHtml(it.inv)}" oninput="VasarloMod.updateItem(${idx},'inv',this.value)" />
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Nytsz. szám" value="${escapeHtml(it.nytsz)}" oninput="VasarloMod.updateItem(${idx},'nytsz',this.value)" />
+          </div>
+          <div class="row-2">
+            <input type="number" min="1" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Darabszám" value="${escapeHtml(it.qty)}" oninput="VasarloMod.updateItem(${idx},'qty',this.value)" />
+            <input type="number" min="0" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Bruttó egységár (Ft)" value="${escapeHtml(it.price)}" oninput="VasarloMod.updateItem(${idx},'price',this.value)" />
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function updateItem(idx, field, val) { activeItems[idx][field] = val; renderDocument(); }
+    function addEmptyItem() { activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function removeItem(idx) { activeItems.splice(idx, 1); if (activeItems.length === 0) activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function clearItems() { activeItems = [emptyRow()]; renderEditList(); renderDocument(); }
+
+    function formatHuDateBlankable(isoDate) {
+      if (!isoDate) return "20____ év ____________ hó ____ nap";
+      const parts = isoDate.split("-");
+      if (parts.length !== 3) return isoDate;
+      return `${parts[0]}. év ${parts[1]}. hó ${parts[2]}. nap`;
+    }
+
+    function formatHuf(num) {
+      if (!num && num !== 0) return "";
+      return Number(num).toLocaleString("hu-HU") + " Ft";
+    }
+
+    function renderDocument() {
+      const container = document.getElementById("emPagesContainer");
+      if (!container) return;
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const buyerName = document.getElementById("emBuyerName").value.trim();
+      const buyerAddress = document.getElementById("emBuyerAddress").value.trim();
+      const buyerTax = document.getElementById("emBuyerTax").value.trim();
+      const city = document.getElementById("emCity").value.trim() || "Debrecen";
+      const reqDate = formatHuDateBlankable(document.getElementById("emDate").value);
+      const approveDate = formatHuDateBlankable(document.getElementById("emApproveDate").value);
+      const approver = document.getElementById("emApprover").value.trim() || "Páll László";
+
+      const displayItems = activeItems.length >= 7
+        ? activeItems
+        : [...activeItems, ...Array.from({ length: 7 - activeItems.length }, () => emptyRow())];
+
+      let grandTotal = 0;
+      const rowsHtml = displayItems.map(it => {
+        const q = parseFloat(it.qty);
+        const p = parseFloat(it.price);
+        const rowSum = (!isNaN(q) && !isNaN(p)) ? q * p : null;
+        if (rowSum !== null) grandTotal += rowSum;
+        return `
+          <tr style="height:6.8mm;">
+            <td>${escapeHtml(it.name)}</td>
+            <td class="c-center">${escapeHtml(it.inv)}</td>
+            <td class="c-center">${escapeHtml(it.nytsz)}</td>
+            <td class="c-center">${escapeHtml(it.qty)}</td>
+            <td class="c-right">${!isNaN(p) && it.price !== "" ? formatHuf(p) : ""}</td>
+            <td class="c-right">${rowSum !== null ? formatHuf(rowSum) : ""}</td>
+          </tr>
+        `;
+      }).join("");
+
+      const filledCount = activeItems.filter(i => i.name.trim() || i.nytsz.trim() || i.inv.trim()).length;
+      document.getElementById("emPageCountInfo").textContent = `(1 oldal • ${filledCount} kitöltött tétel${grandTotal > 0 ? " • " + formatHuf(grandTotal) : ""})`;
+
+      const nameField = buyerName
+        ? `<span style="display:inline-block; min-width:45mm; border-bottom:1px solid #000; padding:0 4px; font-weight:600;">${escapeHtml(buyerName)}</span>`
+        : `<span style="display:inline-block; width:45mm; border-bottom:1px solid #000;">&nbsp;</span>`;
+
+      const addrField = buyerAddress
+        ? `<span style="display:inline-block; min-width:75mm; border-bottom:1px solid #000; padding:0 4px; font-weight:600;">${escapeHtml(buyerAddress)}</span>`
+        : `<span style="display:inline-block; width:75mm; border-bottom:1px solid #000;">&nbsp;</span>`;
+
+      const taxField = buyerTax
+        ? `<span style="display:inline-block; min-width:60mm; border-bottom:1px solid #000; padding:0 4px; font-weight:600;">${escapeHtml(buyerTax)}</span>`
+        : `<span style="display:inline-block; width:60mm; border-bottom:1px solid #000;">&nbsp;</span>`;
+
+      container.innerHTML = `
+        <div class="a4-page" style="font-family:Arial, sans-serif;">
+          <div class="doc-top-bar" style="margin-bottom:10mm;">
+            <img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />
+            <div class="doc-top-title" style="font-size:8.5pt;">ESZKÖZ MEGVÁSÁRLÁSI KÉRELEM</div>
+          </div>
+
+          <div style="font-size:10.5pt; margin-bottom:8mm;">
+            <strong>Tárgy:</strong> Kérelem raktári eszköz megvásárlására
+          </div>
+
+          <div style="font-size:10.5pt; margin-bottom:8mm;">
+            Tisztelt Ügyvezető Igazgató Úr!
+          </div>
+
+          <div style="font-size:10.5pt; line-height:1.5; margin-bottom:8mm;">
+            Kérem, szíveskedjen engedélyezni, hogy a Központi Raktár készletéből az alábbi eszköz(öke)t megvásárolhassam.
+          </div>
+
+          <table class="items-table" style="font-size:9pt; margin-bottom:0;">
+            <thead>
+              <tr>
+                <th style="width:27%;">Megnevezés</th>
+                <th style="width:15%;">Leltárszám</th>
+                <th style="width:14%;">Nytsz. szám</th>
+                <th style="width:11%;">Darabszám</th>
+                <th style="width:17%;">Bruttó egységár (HUF)</th>
+                <th style="width:16%;">Összesen</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+              <tr>
+                <td colspan="3" style="border:none;"></td>
+                <td colspan="2" style="border:1px solid #000; font-weight:700; background:#f8fafc;">Összesen:</td>
+                <td class="c-right" style="border:1px solid #000; font-weight:700; background:#f8fafc;">${grandTotal > 0 ? formatHuf(grandTotal) : ""}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="font-family:'Times New Roman', Times, serif; font-size:11pt; margin:12mm 0 10mm;">
+            ${escapeHtml(city)}, ${escapeHtml(reqDate)}
+          </div>
+
+          <div style="font-size:10pt; line-height:2.1; margin-bottom:14mm;">
+            <div>Vevő: ${nameField} (név) &nbsp; ${addrField} (lakcím)</div>
+            <div>Adószám (adóazonosító): ${taxField}</div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; margin-bottom:14mm;">
+            <div style="width:65mm; text-align:center;">
+              <div style="border-top:1px solid #000; padding-top:3px; font-family:'Times New Roman', Times, serif; font-size:10.5pt;">aláírás</div>
+            </div>
+          </div>
+
+          <div style="font-size:10.5pt; margin-bottom:10mm;">
+            Az értékesítést engedélyezem:
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:4mm;">
+            <div style="font-family:'Times New Roman', Times, serif; font-size:11pt;">
+              ${escapeHtml(city)}, ${escapeHtml(approveDate)}
+            </div>
+            <div style="width:65mm; text-align:center;">
+              <div style="border-top:1px solid #000; padding-top:3px; font-family:'Times New Roman', Times, serif; font-size:10.5pt; font-weight:600;">${escapeHtml(approver)}</div>
+            </div>
+          </div>
+
+          <div class="doc-footer">
+            1. oldal — ${escapeHtml(comp.fullName)} — Kérelem raktári eszköz megvásárlására
+          </div>
+        </div>
+      `;
+    }
+
+    async function printAndLog() {
+      window.print();
+      if (!currentUser) return;
+      const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
+      const buyer = document.getElementById("emBuyerName").value.trim() || "—";
+      const filledCount = activeItems.filter(i => i.name.trim() || i.nytsz.trim() || i.inv.trim()).length;
+      const details = `${compTag}Vevő: ${buyer} | Dátum: ${document.getElementById("emDate").value || "—"} | ${filledCount} tétel`;
+
+      try {
+        await apiCall({
+          action: "logDocument",
+          username: currentUser.username,
+          userName: currentUser.fullName || currentUser.name || currentUser.username,
+          docType: "Kérelem raktári eszköz megvásárlására",
+          details
+        });
+      } catch (e) {}
+    }
+
+    return { init, updateItem, addEmptyItem, removeItem, clearItems, renderDocument, printAndLog };
+  })();
+
+  window.TemplateModules["eszkoz_megvasarlas"] = window.VasarloMod;
+</script>
