@@ -380,26 +380,53 @@
       z-index: 100;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-    .nav-left { display: flex; align-items: center; gap: 18px; }
-    .nav-brand {
+    .nav-left { display: flex; align-items: center; gap: 14px; }
+    .home-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1.5px solid #e2e8f0;
+      background: #f8fafc;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .home-btn:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary-dark);
+    }
+    .nav-companies {
       display: flex;
       align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 8px;
-      transition: background 0.15s;
+      gap: 8px;
+      padding-right: 12px;
+      border-right: 1.5px solid #e2e8f0;
     }
-    .nav-brand:hover { background: #f1f5f9; }
-    .nav-brand img { height: 30px; display: block; }
-    .company-pill {
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
+    .nav-company-btn {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .nav-company-btn:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    .nav-company-btn.active {
       background: var(--primary-light);
-      color: var(--primary-dark);
-      border: 1px solid var(--table-head);
+      border-color: var(--primary);
+    }
+    .nav-company-btn img {
+      height: 24px;
+      display: block;
     }
     .nav-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
     .nav-tab {
@@ -806,10 +833,12 @@
 <div id="appView" class="hidden">
   <header class="navbar no-print">
     <div class="nav-left">
-      <div class="nav-brand" onclick="goHomeToCompanySelect()" title="Vissza a cégválasztáshoz (Kezdőlap)">
-        <img id="navLogoImg" src="campuslog.png" alt="Campus" onerror="this.src=FALLBACK_DCNK_LOGO" />
-        <span id="navCompanyPill" class="company-pill hidden"></span>
-      </div>
+      <button type="button" class="home-btn" onclick="goHomeToCompanySelect()" title="Kezdőlap (Cégválasztás)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"></path>
+        </svg>
+      </button>
+      <div class="nav-companies" id="navCompanyLogos"></div>
       <nav class="nav-tabs" id="mainNavTabs"></nav>
     </div>
     <div class="nav-right">
@@ -1266,7 +1295,6 @@
 <script>
   const API_URL = "https://script.google.com/macros/s/AKfycbxg1CE40fEftdrzepOQB4jN4dzXj_boAmFdXa-7hwH0HZSFV0t_1hRlTh1aBCbTAS_Rxw/exec";
 
-  // Alapértelmezett egységlista (a Google Sheets Egységek munkalapja felülírhatja / bővítheti)
   const DEFAULT_UNITS = [
     { code: "1010", name: "Ügyvezetés, adminisztráció", leader: "Soltész Timi" },
     { code: "1022", name: "Heineken", leader: "Pocsai Tamás - Popovics Péter" },
@@ -1703,10 +1731,6 @@
     selectedCompany = null;
     customLogoOverride = null;
     document.body.className = "";
-    const navLogo = document.getElementById("navLogoImg");
-    navLogo.src = COMPANIES.DCNK.logo;
-    navLogo.onerror = () => { navLogo.src = FALLBACK_DCNK_LOGO; };
-    document.getElementById("navCompanyPill").classList.add("hidden");
     updateCompanyCardsUI();
     showOnlySection("companySelectView", "companySelect");
   }
@@ -1716,17 +1740,12 @@
       showToast("Nincs hozzáférésed ehhez a céghez!", "error");
       return;
     }
+    if (currentView === "docRaktari" && selectedCompany && selectedCompany.code !== code) {
+      if (!confirm("Biztosan átváltasz a másik cégre? A nem mentett módosítások elveszhetnek.")) return;
+    }
     selectedCompany = COMPANIES[code];
     customLogoOverride = null;
     document.body.className = selectedCompany.themeClass;
-
-    const navLogo = document.getElementById("navLogoImg");
-    navLogo.src = selectedCompany.logo;
-    navLogo.onerror = () => { navLogo.src = selectedCompany.fallbackLogo; };
-
-    const pill = document.getElementById("navCompanyPill");
-    pill.textContent = selectedCompany.code;
-    pill.classList.remove("hidden");
 
     document.getElementById("selectorCompanyName").textContent = `${selectedCompany.code} — ${selectedCompany.fullName}`;
     populateDocDropdown();
@@ -1734,7 +1753,25 @@
     renderMiniPreview();
   }
 
+  function renderNavCompanyLogos() {
+    const box = document.getElementById("navCompanyLogos");
+    if (!box) return;
+    box.innerHTML = "";
+    ["DCNK", "UDC"].forEach(code => {
+      if (!hasCompanyAccess(code)) return;
+      const comp = COMPANIES[code];
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "nav-company-btn" + (selectedCompany && selectedCompany.code === code ? " active" : "");
+      btn.title = `${comp.code} — ${comp.fullName} nyomtatványok`;
+      btn.onclick = () => selectCompany(code);
+      btn.innerHTML = `<img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />`;
+      box.appendChild(btn);
+    });
+  }
+
   function buildNavTabs() {
+    renderNavCompanyLogos();
     const nav = document.getElementById("mainNavTabs");
     nav.innerHTML = "";
 
@@ -2414,6 +2451,7 @@
         if (currentUser && currentUser.username.toLowerCase() === username.toLowerCase()) {
           currentUser.role = role; currentUser.permissions = permissions; currentUser.companies = companies; currentUser.units = units;
           sessionStorage.setItem("campus_session", JSON.stringify(currentUser));
+          renderNavCompanyLogos();
         }
       } else showToast((res && res.error) || "Hiba mentéskor!", "error");
     } catch (e) { showToast("Hálózati hiba!", "error"); }
