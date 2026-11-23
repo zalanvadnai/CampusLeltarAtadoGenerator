@@ -131,7 +131,7 @@
     .modal-body { padding: 16px 20px; overflow-y: auto; flex: 1; }
     .modal-footer { padding: 12px 20px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; }
 
-    /* ===== UNIT PICKER GRID (ADMIN) ===== */
+    /* ===== PICKER GRID (ADMIN MODALS & NEW USER) ===== */
     .unit-picker-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
     .unit-picker-grid {
       display: grid;
@@ -264,7 +264,7 @@
     .company-card h3 { margin: 0 0 6px; font-size: 18px; }
     .company-card span { font-size: 13px; color: var(--muted); }
 
-    /* ===== DOCUMENT SELECTOR + PREVIEW VIEW ===== */
+    /* ===== DOCUMENT SELECTOR + FULL A4 PREVIEW VIEW ===== */
     .doc-selector-grid { display: grid; grid-template-columns: 430px 1fr; gap: 28px; align-items: start; max-width: 1120px; margin: 16px auto; }
     @media (max-width: 900px) { .doc-selector-grid { grid-template-columns: 1fr; } }
     .styled-select-wrap { position: relative; }
@@ -272,24 +272,27 @@
     .styled-select-wrap select:focus { border-color: var(--primary); }
     .styled-select-wrap::after { content: "▼"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--primary); pointer-events: none; }
     .preview-stage { background: #e2e8f0; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; align-items: center; min-height: 480px; }
-    .mini-doc-paper { width: 100%; max-width: 440px; aspect-ratio: 210 / 297; background: #fff; border-radius: 4px; box-shadow: 0 12px 30px rgba(15,23,42,0.18); padding: 22px; display: flex; flex-direction: column; font-family: Arial, sans-serif; color: #111; }
-    .mini-doc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    .mini-doc-header img { height: 22px; }
-    .mini-doc-title { text-align: center; font-weight: 800; font-size: 13px; margin: 6px 0 14px; letter-spacing: 0.4px; }
-    .mini-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-    .mini-box { border: 1px solid #333; font-size: 8px; }
-    .mini-box-h { background: var(--primary-dark); color: #fff; text-align: center; font-weight: 700; padding: 2px; }
-    .mini-box-r { padding: 3px 5px; border-top: 1px solid #999; background: #f8fafc; }
-    .mini-tbl { width: 100%; border-collapse: collapse; font-size: 7.5px; margin-bottom: 12px; }
-    .mini-tbl th { background: var(--table-head); border: 1px solid #333; padding: 3px; }
-    .mini-tbl td { border: 1px solid #333; padding: 4px; }
-    .mini-note { border: 1px solid #333; margin-top: 8px; }
-    .mini-note-h { background: var(--primary-dark); color: #fff; text-align: center; font-size: 7.5px; font-weight: 700; padding: 2px; }
-    .mini-note-b { height: 28px; }
-    .mini-date-line { margin-top: 10px; font-size: 8.5px; font-family: "Times New Roman", Times, serif; }
-    .mini-sign-zone { flex: 1; display: flex; align-items: center; justify-content: flex-end; padding-top: 12px; }
-    .mini-sign-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 66%; font-size: 8px; text-align: center; }
-    .mini-sign-cols div { border-top: 1px solid #666; padding-top: 3px; }
+
+    .mini-doc-paper {
+      width: 416px;
+      height: 588px;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 12px 30px rgba(15,23,42,0.18);
+      overflow: hidden;
+      position: relative;
+    }
+    .mini-a4-scale {
+      width: 210mm;
+      height: 297mm;
+      transform: scale(0.524);
+      transform-origin: top left;
+      pointer-events: none;
+    }
+    .mini-a4-scale .a4-page {
+      box-shadow: none !important;
+      margin: 0 !important;
+    }
 
     /* ===== GENERATOR SPLIT LAYOUT & A4 ===== */
     .gen-grid { display: grid; grid-template-columns: 430px 1fr; gap: 24px; align-items: start; }
@@ -367,7 +370,7 @@
     @page { size: A4 portrait; margin: 0; }
     @media print {
       body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #companySelectView, #docSelectView, #adminView, #settingsView, #comingSoonView, #toast, .modal-backdrop, #loadingOverlay {
+      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #companySelectView, #docSelectView, #adminView, #settingsView, #comingSoonView, #toast, .modal-backdrop, #loadingOverlay, #previewRenderHost {
         display: none !important;
       }
       .app-container { padding: 0; max-width: none; }
@@ -405,6 +408,28 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeUnitModal()">Mégse</button>
       <button class="btn btn-primary" onclick="applyUnitModal()">Kijelölés alkalmazása</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PERMISSIONS MODAL (ADMIN) ==================== -->
+<div id="permModal" class="modal-backdrop hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="permModalTitle">Nyomtatvány jogosultságok szerkesztése</h3>
+      <button class="btn btn-outline btn-sm" onclick="closePermModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="unit-picker-toolbar">
+        <input id="modalPermSearch" class="form-control" style="flex:1; min-width:180px; padding:6px 10px;" placeholder="Keresés nyomtatvány nevére..." oninput="filterUnitGrid('modalPermGrid', this.value)" />
+        <button type="button" class="btn btn-outline btn-sm" onclick="setAllUnitChecks('modalPermGrid', true)">Mindent kijelöl</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="setAllUnitChecks('modalPermGrid', false)">Egyik sem</button>
+      </div>
+      <div id="modalPermGrid" class="unit-picker-grid tall"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closePermModal()">Mégse</button>
+      <button class="btn btn-primary" onclick="applyPermModal()">Kijelölés alkalmazása</button>
     </div>
   </div>
 </div>
@@ -485,7 +510,7 @@
       </div>
     </section>
 
-    <!-- ===== 2. NYOMTATVÁNYVÁLASZTÓ + PREVIEW ===== -->
+    <!-- ===== 2. NYOMTATVÁNYVÁLASZTÓ + FULL A4 PREVIEW ===== -->
     <section id="docSelectView" class="hidden">
       <div class="doc-selector-grid">
         <div class="panel">
@@ -517,12 +542,13 @@
 
     <!-- ===== 3. DINAMIKUS SABLON TARTÓ ===== -->
     <section id="docHostView" class="hidden"></section>
+    <div id="previewRenderHost" style="position:fixed; left:-99999px; top:0; visibility:hidden; pointer-events:none;"></div>
 
     <!-- ===== COMING SOON PLACEHOLDER ===== -->
     <section id="comingSoonView" class="hidden">
       <div class="coming-soon">
         <h2 id="comingSoonTitle" style="margin-top:0;">Fejlesztés alatt</h2>
-        <p style="color:var(--muted); max-width:480px; margin:0 auto 20px;">Ez a dokumentumtípus már elő van készítve a jogosultságkezelőben, a szerkeszthető sablonja a következő frissítésben kerül be.</p>
+        <p style="color:var(--muted); max-width:480px; margin:0 auto 20px;">Ez a dokumentumtípus már elő van készítve a jogosultságkezelőben, a szerkeszthető sablonja hamarosan elérhető lesz.</p>
         <button class="btn btn-outline" onclick="backToDocSelector(true)">← Vissza a nyomtatványválasztóhoz</button>
       </div>
     </section>
@@ -638,15 +664,23 @@
           </div>
 
           <div class="perm-row">
-            <div style="display:flex; flex-direction:column; gap:10px; width:100%;">
+            <div style="display:flex; flex-direction:column; gap:12px; width:100%;">
               <div class="perm-checks">
                 <strong>Cég hozzáférés:</strong>
                 <label><input type="checkbox" class="new-comp" value="DCNK" checked /> DCNK</label>
                 <label><input type="checkbox" class="new-comp" value="UDC" checked /> UDC (UD Campus)</label>
               </div>
-              <div class="perm-checks" id="newUserPermsContainer">
-                <strong>Dokumentum jogosultságok:</strong>
+
+              <div>
+                <div class="unit-picker-toolbar">
+                  <strong style="font-size:13px;">Dokumentum jogosultságok:</strong>
+                  <input id="newPermSearch" class="form-control" style="max-width:240px; padding:5px 10px; font-size:12px;" placeholder="Keresés nyomtatványra..." oninput="filterUnitGrid('newUserPermsContainer', this.value)" />
+                  <button type="button" class="btn btn-outline btn-sm" onclick="setAllUnitChecks('newUserPermsContainer', true)">Mindent kijelöl</button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="setAllUnitChecks('newUserPermsContainer', false)">Egyik sem</button>
+                </div>
+                <div id="newUserPermsContainer" class="unit-picker-grid"></div>
               </div>
+
               <div>
                 <div class="unit-picker-toolbar">
                   <strong style="font-size:13px;">Engedélyezett egységek:</strong>
@@ -656,6 +690,7 @@
                 </div>
                 <div id="newUserUnitGrid" class="unit-picker-grid"></div>
               </div>
+
               <div style="display:flex; justify-content:flex-end;">
                 <button class="btn btn-primary" onclick="createUser()">+ Felhasználó létrehozása</button>
               </div>
@@ -671,7 +706,7 @@
           <div style="overflow-x:auto;">
             <table class="data-table">
               <thead>
-                <tr><th>Teljes név</th><th>Felhasználónév</th><th>Szerepkör</th><th>Cégek</th><th>Egységek</th><th>Jogosultságok</th><th>Műveletek</th></tr>
+                <tr><th>Teljes név</th><th>Felhasználónév</th><th>Szerepkör</th><th>Cégek</th><th>Egységek</th><th>Nyomtatványok</th><th>Műveletek</th></tr>
               </thead>
               <tbody id="usersTableBody"></tbody>
             </table>
@@ -814,11 +849,67 @@
       desc: "Kérelem a Központi Raktár készletéből történő eszközvásárlásra, automatikus összegszámítással és engedélyezéssel."
     },
     {
-      id: "selejtezes",
-      label: "Selejtezési jegyzőkönyv",
-      title: "SELEJTEZÉSI JEGYZŐKÖNYV",
-      file: null,
-      desc: "Használhatatlanná vált eszközök bizottsági selejtezésének hivatalos jegyzőkönyve (hamarosan elérhető)."
+      id: "megsemmisitesi_jegyzokonyv",
+      label: "Megsemmisítési jegyzőkönyv",
+      title: "MEGSEMMISÍTÉSI JEGYZŐKÖNYV",
+      file: "templates/megsemmisitesi_jegyzokonyv.html",
+      desc: "Hasznosításra vagy értékesítésre nem alkalmas eszközök megsemmisítésének jegyzőkönyve."
+    },
+    {
+      id: "visszanyert_anyagok",
+      label: "Selejtezésből visszanyert anyagok",
+      title: "SELEJTEZÉSBŐL VISSZANYERT TARTOZÉKOK, ALKATRÉSZEK, HULLADÉKANYAGOK JEGYZÉKE",
+      file: "templates/visszanyert_anyagok.html",
+      desc: "Selejtezésből visszanyert tartozékok, alkatrészek és hulladékanyagok jegyzéke."
+    },
+    {
+      id: "megbizolevel",
+      label: "Megbízólevél",
+      title: "Megbízólevél",
+      file: "templates/megbizolevel.html",
+      desc: "Megbízólevél a selejtezési eljárásban vagy Selejtezési Bizottsági tagként való közreműködéshez."
+    },
+    {
+      id: "selejtezesre_javasolt",
+      label: "Selejtezésre javasolt eszközök jegyzéke",
+      title: "SELEJTEZÉSRE JAVASOLT TÁRGYI ESZKÖZÖK JEGYZÉKE",
+      file: "templates/selejtezesre_javasolt.html",
+      desc: "Selejtezésre javasolt tárgyi eszközök jegyzéke selejtezési okkódokkal és haszonanyag-jelöléssel."
+    },
+    {
+      id: "selejtezett_javak",
+      label: "Selejtezett immateriális javak és tárgyi eszközök",
+      title: "SELEJTEZETT IMMATERIÁLIS JAVAK ÉS TÁRGYI ESZKÖZÖK JEGYZÉKE",
+      file: "templates/selejtezett_javak.html",
+      desc: "Selejtezett immateriális javak és tárgyi eszközök hivatalos jegyzéke."
+    },
+    {
+      id: "selejtezett_targyi_eszkozok",
+      label: "Selejtezett tárgyi eszközök jegyzéke",
+      title: "SELEJTEZETT TÁRGYI ESZKÖZÖK JEGYZÉKE",
+      file: "templates/selejtezett_targyi_eszkozok.html",
+      desc: "Selejtezett tárgyi eszközök jegyzéke selejtezési okkódokkal és aláírásblokkal."
+    },
+    {
+      id: "allomanyba_vetel",
+      label: "Állományba vételi adatlap",
+      title: "TÁRGYI ESZKÖZÖK ÁLLOMÁNYBA VÉTELI ADATLAPJA",
+      file: "templates/allomanyba_vetel.html",
+      desc: "Tárgyi eszközök állományba vételi adatlapja átvétel elismeréssel és raktárhely-kódjegyzékkel."
+    },
+    {
+      id: "atveteli_lap",
+      label: "Tárgyi eszközök átvételi lapja",
+      title: "TÁRGYI ESZKÖZÖK ÁTVÉTELI LAPJA",
+      file: "templates/atveteli_lap.html",
+      desc: "Egységek részére kiállított tárgyi eszköz átvételi lap felelősségvállalással és átvétel elismeréssel."
+    },
+    {
+      id: "atveteli_lap_dolgozoi",
+      label: "Tárgyi eszközök átvételi lapja (dolgozói)",
+      title: "TÁRGYI ESZKÖZÖK ÁTVÉTELI LAPJA",
+      file: "templates/atveteli_lap_dolgozoi.html",
+      desc: "Dolgozóknak visszaszolgáltatási kötelezettséggel átadott tárgyi eszközök átvételi lapja."
     }
   ];
 
@@ -936,6 +1027,7 @@
   let cachedUserReports = [];
   let pendingReportsCount = 0;
   let modalEditingUserIdx = null;
+  let modalEditingPermUserIdx = null;
 
   // ===== SHARED HELPERS =====
   function showToast(msg, type = "info") {
@@ -1034,14 +1126,18 @@
   function renderNewUserPermsCheckboxes() {
     const box = document.getElementById("newUserPermsContainer");
     if (!box) return;
-    box.innerHTML = `<strong>Dokumentum jogosultságok:</strong>` + DOC_TYPES.map((dt, idx) => `
-      <label><input type="checkbox" class="new-perm" value="${dt.id}" ${idx === 0 ? "checked" : ""} /> ${escapeHtml(dt.label)}</label>
+    box.innerHTML = DOC_TYPES.map((dt, idx) => `
+      <label class="unit-check-item" data-search="${escapeHtml((dt.label + ' ' + dt.title).toLowerCase())}">
+        <input type="checkbox" class="new-perm" value="${dt.id}" ${idx === 0 ? "checked" : ""} />
+        <span>${escapeHtml(dt.label)}</span>
+      </label>
     `).join("");
   }
 
   // ===== DINAMIKUS SABLONBETÖLTŐ (templates/*.html) =====
   async function loadAndOpenTemplate(dt) {
     const host = document.getElementById("docHostView");
+    document.getElementById("previewRenderHost").innerHTML = "";
     document.getElementById("loadingOverlay").classList.remove("hidden");
 
     try {
@@ -1161,6 +1257,8 @@
     if (!skipConfirm && currentView === "docActive") {
       if (!confirm("Biztosan vissza akarsz lépni a cégválasztáshoz? A nem mentett módosítások elveszhetnek.")) return;
     }
+    document.getElementById("docHostView").innerHTML = "";
+    document.getElementById("previewRenderHost").innerHTML = "";
     selectedCompany = null;
     document.body.className = "";
     updateCompanyCardsUI();
@@ -1175,6 +1273,7 @@
     if (currentView === "docActive" && selectedCompany && selectedCompany.code !== code) {
       if (!confirm("Biztosan átváltasz a másik cégre? A nem mentett módosítások elveszhetnek.")) return;
     }
+    document.getElementById("docHostView").innerHTML = "";
     selectedCompany = COMPANIES[code];
     document.body.className = selectedCompany.themeClass;
 
@@ -1222,6 +1321,7 @@
     bSettings.textContent = "Beállítások";
     bSettings.onclick = () => {
       if (currentView === "docActive" && !confirm("Biztosan elhagyod a szerkesztőt a Beállításokhoz?")) return;
+      document.getElementById("docHostView").innerHTML = "";
       showOnlySection("settingsView", "settings");
       loadUserReports();
     };
@@ -1233,6 +1333,7 @@
       bAdmin.innerHTML = `Admin Panel ${pendingReportsCount > 0 ? `<span class="notif-badge">${pendingReportsCount}</span>` : ""}`;
       bAdmin.onclick = () => {
         if (currentView === "docActive" && !confirm("Biztosan elhagyod a szerkesztőt az Admin Panelhez?")) return;
+        document.getElementById("docHostView").innerHTML = "";
         showOnlySection("adminView", "admin");
         loadUsers();
         loadAdminReports();
@@ -1264,7 +1365,7 @@
     });
   }
 
-  function renderMiniPreview() {
+  async function renderMiniPreview() {
     const docId = document.getElementById("docTypeDropdown").value;
     const dt = DOC_TYPES.find(x => x.id === docId);
     document.getElementById("docTypeDesc").textContent = dt ? dt.desc : "";
@@ -1272,47 +1373,63 @@
     const box = document.getElementById("miniPreviewContainer");
     if (!dt || !selectedCompany) { box.innerHTML = ""; return; }
 
-    const allowed = getAllowedUnitsForCurrentUser();
-    const sampleUnit = allowed[0] || { code: "—", name: "—" };
+    if (!dt.file) {
+      box.innerHTML = `
+        <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; text-align:center; color:#64748b;">
+          <strong style="font-size:15px; color:#1e293b; margin-bottom:8px;">${escapeHtml(dt.title)}</strong>
+          <span style="font-size:13px;">Ez a nyomtatvány jelenleg fejlesztés alatt áll.</span>
+        </div>
+      `;
+      return;
+    }
 
     box.innerHTML = `
-      <div class="mini-doc-header">
-        <img src="${selectedCompany.logo}" alt="${selectedCompany.code}" onerror="this.src='${selectedCompany.fallbackLogo}'" />
-        <div style="font-size:7.5px; font-weight:700;">${dt.label.toUpperCase()}</div>
-      </div>
-      <div class="mini-doc-title">${dt.title}</div>
-      <div class="mini-boxes">
-        <div class="mini-box">
-          <div class="mini-box-h">ÁTADÓ / RÉSZLEG</div>
-          <div class="mini-box-r">Egység kódja: ${escapeHtml(sampleUnit.code)}</div>
-          <div class="mini-box-r">Egység neve: ${escapeHtml(sampleUnit.name)}</div>
-        </div>
-        <div class="mini-box">
-          <div class="mini-box-h">ÁTVEVŐ / DÁTUM</div>
-          <div class="mini-box-r">Dátum: 2026. év</div>
-          <div class="mini-box-r">Cég: ${selectedCompany.code}</div>
-        </div>
-      </div>
-      <table class="mini-tbl">
-        <thead><tr><th>#</th><th>NYTSZ</th><th>Megnevezés</th><th>Db / Érték</th><th>Megjegyzés</th></tr></thead>
-        <tbody>
-          <tr><td>1</td><td>140041</td><td>Minta tétel 1</td><td>1</td><td></td></tr>
-          <tr><td>2</td><td>300294</td><td>Minta tétel 2</td><td>1</td><td></td></tr>
-          <tr><td>3</td><td>300148</td><td>Minta tétel 3</td><td>2</td><td></td></tr>
-        </tbody>
-      </table>
-      <div style="font-size:7px; color:#333; line-height:1.3;">
-        ${escapeHtml(selectedCompany.fullName)} — hivatalos formanyomtatvány előnézet.
-      </div>
-      <div class="mini-note">
-        <div class="mini-note-h">MEGJEGYZÉS</div>
-        <div class="mini-note-b"></div>
-      </div>
-      <div class="mini-date-line">Debrecen, 2026.</div>
-      <div class="mini-sign-zone">
-        <div class="mini-sign-cols"><div>ALÁÍRÁS 1</div><div>ALÁÍRÁS 2</div></div>
+      <div style="height:100%; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:13px;">
+        Előnézet betöltése...
       </div>
     `;
+
+    try {
+      let rawHtml = templateHtmlCache[dt.id];
+      if (!rawHtml) {
+        const res = await fetch(dt.file + "?v=" + Date.now());
+        if (!res.ok) throw new Error("Sablon nem található");
+        rawHtml = await res.text();
+        templateHtmlCache[dt.id] = rawHtml;
+      }
+
+      document.getElementById("docHostView").innerHTML = "";
+      const previewHost = document.getElementById("previewRenderHost");
+      const temp = document.createElement("div");
+      temp.innerHTML = rawHtml;
+      const scripts = [...temp.querySelectorAll("script")];
+      scripts.forEach(s => s.remove());
+
+      previewHost.innerHTML = temp.innerHTML;
+
+      if (!window.TemplateModules[dt.id]) {
+        scripts.forEach(oldScript => {
+          const newScript = document.createElement("script");
+          newScript.textContent = oldScript.textContent;
+          document.body.appendChild(newScript);
+        });
+      }
+
+      if (window.TemplateModules[dt.id] && typeof window.TemplateModules[dt.id].init === "function") {
+        window.TemplateModules[dt.id].init();
+      }
+
+      const firstPage = previewHost.querySelector(".a4-page");
+      if (firstPage) {
+        box.innerHTML = `<div class="mini-a4-scale">${firstPage.outerHTML}</div>`;
+      } else {
+        box.innerHTML = `<div style="padding:20px; color:#64748b; font-size:13px;">Előnézet nem elérhető.</div>`;
+      }
+
+      previewHost.innerHTML = "";
+    } catch (err) {
+      box.innerHTML = `<div style="padding:20px; color:#dc2626; font-size:13px;">Hiba az előnézet betöltésekor.</div>`;
+    }
   }
 
   function openSelectedDocument() {
@@ -1331,11 +1448,12 @@
 
   function backToDocSelector(skipConfirm = false) {
     if (!skipConfirm && !confirm("Biztosan vissza akarsz lépni a nyomtatványválasztóhoz?")) return;
+    document.getElementById("docHostView").innerHTML = "";
     showOnlySection("docSelectView", "docSelect");
     renderMiniPreview();
   }
 
-  // ===== UNIT PICKER HELPERS (ADMIN) =====
+  // ===== PICKER HELPERS (UNITS & PERMISSIONS MODALS) =====
   function renderUnitCheckboxGrid(containerId, selectedUnits) {
     const grid = document.getElementById(containerId);
     const selectAll = !Array.isArray(selectedUnits) || selectedUnits.includes("ALL");
@@ -1398,6 +1516,42 @@
     if (!Array.isArray(units) || units.includes("ALL")) return "Összes egység";
     if (units.length === 0) return "0 egység";
     return `${units.length} egység`;
+  }
+
+  function formatPermsBadge(perms) {
+    if (!Array.isArray(perms) || perms.length === 0) return "0 nyomtatvány";
+    if (perms.length >= DOC_TYPES.length) return "Összes nyomtatvány";
+    return `${perms.length} nyomtatvány`;
+  }
+
+  function openPermModal(userIdx) {
+    modalEditingPermUserIdx = userIdx;
+    const u = cachedUsers[userIdx];
+    const currentPerms = Array.isArray(u.permissions) ? u.permissions : [];
+    document.getElementById("permModalTitle").textContent = `Nyomtatványok beállítása — ${u.fullName || u.username}`;
+    document.getElementById("modalPermSearch").value = "";
+    document.getElementById("modalPermGrid").innerHTML = DOC_TYPES.map(dt => `
+      <label class="unit-check-item" data-search="${escapeHtml((dt.label + ' ' + dt.title).toLowerCase())}">
+        <input type="checkbox" value="${escapeHtml(dt.id)}" ${currentPerms.includes(dt.id) ? "checked" : ""} />
+        <span>${escapeHtml(dt.label)}</span>
+      </label>
+    `).join("");
+    document.getElementById("permModal").classList.remove("hidden");
+  }
+
+  function closePermModal() {
+    document.getElementById("permModal").classList.add("hidden");
+    modalEditingPermUserIdx = null;
+  }
+
+  function applyPermModal() {
+    if (modalEditingPermUserIdx === null) return;
+    const selected = [...document.querySelectorAll("#modalPermGrid input[type='checkbox']:checked")].map(c => c.value);
+    cachedUsers[modalEditingPermUserIdx].permissions = selected;
+    const btn = document.getElementById("u_perms_btn_" + modalEditingPermUserIdx);
+    if (btn) btn.textContent = formatPermsBadge(selected);
+    closePermModal();
+    showToast("Jogosultságok kijelölve — kattints a sor végén a Mentés gombra!", "info");
   }
 
   // ===== SETTINGS (PASSWORD & USER REPORTS) =====
@@ -1526,7 +1680,7 @@
     tbody.innerHTML = "";
     cachedUsers.forEach((u, i) => {
       const isSelf = currentUser && u.username.toLowerCase() === currentUser.username.toLowerCase();
-      const perms = u.permissions || [];
+      const perms = Array.isArray(u.permissions) ? u.permissions : [];
       const comps = Array.isArray(u.companies) && u.companies.length > 0 ? u.companies : ["DCNK", "UDC"];
       if (!Array.isArray(u.units)) u.units = ["ALL"];
 
@@ -1547,11 +1701,7 @@
           </div>
         </td>
         <td><button type="button" id="u_units_btn_${i}" class="btn btn-outline btn-sm" onclick="openUnitModal(${i})">${formatUnitsBadge(u.units)}</button></td>
-        <td>
-          <div class="perm-checks">
-            ${DOC_TYPES.map(dt => `<label><input type="checkbox" class="u-perm-${i}" value="${dt.id}" ${perms.includes(dt.id) ? "checked" : ""} /> ${dt.label}</label>`).join("")}
-          </div>
-        </td>
+        <td><button type="button" id="u_perms_btn_${i}" class="btn btn-outline btn-sm" onclick="openPermModal(${i})">${formatPermsBadge(perms)}</button></td>
         <td>
           <div style="display:flex; gap:6px; align-items:center;">
             <button class="btn btn-success btn-sm" onclick="saveUser(${i}, '${escapeHtml(u.username)}')">Mentés</button>
@@ -1565,7 +1715,7 @@
 
   async function saveUser(idx, username) {
     const role = document.getElementById("role_" + idx).value;
-    const permissions = [...document.querySelectorAll(".u-perm-" + idx + ":checked")].map(c => c.value);
+    const permissions = cachedUsers[idx].permissions || [];
     const companies = [...document.querySelectorAll(".u-comp-" + idx + ":checked")].map(c => c.value);
     const units = cachedUsers[idx].units || ["ALL"];
     try {
