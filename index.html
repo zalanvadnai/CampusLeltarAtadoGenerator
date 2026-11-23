@@ -1642,9 +1642,19 @@
     document.getElementById("loginPassword").value = "";
   }
 
-  async function enterApp() {
+async function enterApp() {
     document.getElementById("loginView").classList.add("hidden");
     document.getElementById("appView").classList.remove("hidden");
+
+    // Mindig frissítsük a felhasználó jogosultságait a Google Táblázatból
+    try {
+      const fresh = await apiCall({ action: "refreshUser", username: currentUser.username });
+      if (fresh && (fresh.ok || fresh.success) && fresh.user) {
+        currentUser = fresh.user;
+        sessionStorage.setItem("campus_session", JSON.stringify(currentUser));
+      }
+    } catch (e) {}
+
     const displayName = currentUser.fullName || currentUser.name || currentUser.username;
     document.getElementById("navUserBadge").textContent = displayName + (currentUser.role === "admin" ? " (Admin)" : "");
     await loadServerUnits();
