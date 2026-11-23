@@ -1,0 +1,166 @@
+<div class="gen-grid">
+  <div class="left-controls no-print">
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
+    </div>
+
+    <div class="panel">
+      <h3>1. Visszanyert tételek szerkesztése (<span id="vaItemCountBadge">0</span> tétel)</h3>
+      <div style="max-height:480px; overflow:auto; display:flex; flex-direction:column; gap:10px;" id="vaEditItemsList"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn btn-primary btn-sm" onclick="VisszanyertMod.addEmptyItem()">+ Új tétel hozzáadása</button>
+        <button class="btn btn-outline btn-sm" onclick="VisszanyertMod.clearItems()">Tételek törlése</button>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="preview-toolbar no-print">
+      <div>
+        <strong>Élő A4 nyomtatási kép</strong>
+        <span id="vaPageCountInfo" style="color:var(--muted); font-size:13px; margin-left:8px;"></span>
+      </div>
+      <button class="btn btn-primary" onclick="VisszanyertMod.printAndLog()">🖨️ Nyomtatás / Mentés PDF-ként</button>
+    </div>
+    <div class="pages-wrapper" id="vaPagesContainer"></div>
+  </div>
+</div>
+
+<script>
+  window.VisszanyertMod = (function () {
+    let activeItems = [];
+
+    function emptyRow() {
+      return { name: "", qty: "", spec: "", estValue: "" };
+    }
+
+    function init() {
+      if (activeItems.length === 0) activeItems = [emptyRow()];
+      renderEditList();
+      renderDocument();
+    }
+
+    function renderEditList() {
+      const container = document.getElementById("vaEditItemsList");
+      document.getElementById("vaItemCountBadge").textContent = activeItems.length;
+      container.innerHTML = activeItems.map((it, idx) => `
+        <div style="border:1.5px solid #e2e8f0; border-radius:8px; padding:10px; background:#f8fafc;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <strong style="font-size:12.5px; color:var(--primary-dark);">${idx + 1}. tétel</strong>
+            <button class="btn btn-danger btn-sm" style="padding:2px 7px;" onclick="VisszanyertMod.removeItem(${idx})">×</button>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 90px; gap:8px; margin-bottom:6px;">
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Megnevezés" value="${escapeHtml(it.name)}" oninput="VisszanyertMod.updateItem(${idx},'name',this.value)" />
+            <input type="number" min="1" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Db" value="${escapeHtml(it.qty)}" oninput="VisszanyertMod.updateItem(${idx},'qty',this.value)" />
+          </div>
+          <div class="row-2">
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Típus, anyag, specifikáció" value="${escapeHtml(it.spec)}" oninput="VisszanyertMod.updateItem(${idx},'spec',this.value)" />
+            <input class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Becsült érték (Ft)" value="${escapeHtml(it.estValue)}" oninput="VisszanyertMod.updateItem(${idx},'estValue',this.value)" />
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function updateItem(idx, field, val) { activeItems[idx][field] = val; renderDocument(); }
+    function addEmptyItem() { activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function removeItem(idx) { activeItems.splice(idx, 1); if (activeItems.length === 0) activeItems.push(emptyRow()); renderEditList(); renderDocument(); }
+    function clearItems() { activeItems = [emptyRow()]; renderEditList(); renderDocument(); }
+
+    function renderDocument() {
+      const container = document.getElementById("vaPagesContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const rowsPerPage = 30;
+      const displayItems = activeItems;
+
+      const pages = [];
+      for (let idx = 0; idx < displayItems.length; idx += rowsPerPage) {
+        pages.push({
+          pageNum: pages.length + 1,
+          startIndex: idx,
+          items: displayItems.slice(idx, idx + rowsPerPage),
+          isFirst: idx === 0
+        });
+      }
+
+      const filledCount = activeItems.filter(i => i.name.trim() || i.spec.trim()).length;
+      document.getElementById("vaPageCountInfo").textContent = `(${pages.length} oldal • ${filledCount} kitöltött tétel)`;
+
+      pages.forEach(p => {
+        const pageEl = document.createElement("div");
+        pageEl.className = "a4-page";
+
+        let html = `
+          <div class="doc-top-bar" style="margin-bottom:5mm;">
+            <img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />
+            <div class="doc-top-title" style="font-size:8.5pt;">VISSZANYERT ANYAGOK JEGYZÉKE</div>
+          </div>
+        `;
+
+        if (p.isFirst) {
+          html += `
+            <div class="doc-main-title" style="font-size:14.5pt; text-align:left; margin:0 0 6mm; line-height:1.3;">
+              SELEJTEZÉSBŐL VISSZANYERT TARTOZÉKOK, ALKATRÉSZEK,<br>HULLADÉKANYAGOK JEGYZÉKE
+            </div>
+          `;
+        }
+
+        html += `
+          <table class="items-table" style="font-size:8.5pt; margin-bottom:4mm;">
+            <thead>
+              <tr>
+                <th style="width:8%;">TÉTEL SZÁM</th>
+                <th style="width:28%;">MEGNEVEZÉS</th>
+                <th style="width:12%;">DARABSZÁM</th>
+                <th style="width:36%;">TÍPUS, ANYAG, SPECIFIKÁCIÓ</th>
+                <th style="width:16%;">BECSÜLT ÉRTÉK</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${p.items.map((it, i) => `
+                <tr style="height:6.8mm;">
+                  <td class="c-center">${p.startIndex + i + 1}</td>
+                  <td>${escapeHtml(it.name)}</td>
+                  <td class="c-center">${escapeHtml(it.qty)}</td>
+                  <td>${escapeHtml(it.spec)}</td>
+                  <td class="c-right">${escapeHtml(it.estValue)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+
+          <div class="doc-footer">
+            ${p.pageNum}. oldal — ${escapeHtml(comp.fullName)} — Selejtezésből visszanyert tartozékok, alkatrészek, hulladékanyagok jegyzéke
+          </div>
+        `;
+
+        pageEl.innerHTML = html;
+        container.appendChild(pageEl);
+      });
+    }
+
+    async function printAndLog() {
+      window.print();
+      if (!currentUser) return;
+      const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
+      const filledCount = activeItems.filter(i => i.name.trim() || i.spec.trim()).length;
+      const details = `${compTag}${filledCount} tétel rögzítve`;
+
+      try {
+        await apiCall({
+          action: "logDocument",
+          username: currentUser.username,
+          userName: currentUser.fullName || currentUser.name || currentUser.username,
+          docType: "Selejtezésből visszanyert anyagok jegyzéke",
+          details
+        });
+      } catch (e) {}
+    }
+
+    return { init, updateItem, addEmptyItem, removeItem, clearItems, renderDocument, printAndLog };
+  })();
+
+  window.TemplateModules["visszanyert_anyagok"] = window.VisszanyertMod;
+</script>
