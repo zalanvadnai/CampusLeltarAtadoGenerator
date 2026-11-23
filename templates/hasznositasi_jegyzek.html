@@ -6,9 +6,6 @@
 
     <div class="panel">
       <h3>1. Tételek szerkesztése (<span id="hjItemCountBadge">0</span> tétel)</h3>
-      <p style="font-size:12px; color:var(--muted); margin-top:0;">
-        Add meg a feleslegessé vált eszközöket. A táblázat alapértelmezetten 25 sorig kitölti az A4-es lapot, 25 tétel felett pedig automatikusan új oldalt nyit.
-      </p>
       <div style="max-height:480px; overflow:auto; display:flex; flex-direction:column; gap:10px;" id="hjEditItemsList"></div>
       <div style="display:flex; gap:8px; margin-top:12px;">
         <button class="btn btn-primary btn-sm" onclick="HasznositasMod.addEmptyItem()">+ Új tétel hozzáadása</button>
@@ -34,23 +31,13 @@
     let activeItems = [];
 
     function init() {
-      if (activeItems.length === 0) {
-        activeItems = [emptyRow()];
-      }
+      if (activeItems.length === 0) activeItems = [emptyRow()];
       renderEditList();
       renderDocument();
     }
 
     function emptyRow() {
-      return {
-        name: "",
-        nytsz: "",
-        proposal: "",
-        estValue: "",
-        sold: "",
-        income: "",
-        receipt: ""
-      };
+      return { name: "", nytsz: "", proposal: "", estValue: "", sold: "", income: "", receipt: "" };
     }
 
     function renderEditList() {
@@ -99,10 +86,7 @@
 
       const comp = selectedCompany || COMPANIES.DCNK;
       const rowsPerPage = 25;
-
-      // Minimum 25 sor az 1. oldalon, mint a sablonon
-      const totalRows = Math.max(rowsPerPage, activeItems.length);
-      const displayItems = Array.from({ length: totalRows }, (_, i) => activeItems[i] || emptyRow());
+      const displayItems = activeItems;
 
       const pages = [];
       for (let idx = 0; idx < displayItems.length; idx += rowsPerPage) {
