@@ -123,7 +123,6 @@
       customLogoOverride = null;
       unitValidationState = { rec: true, snd: true };
 
-      // Eseménykezelők bekötése az újonnan betöltött DOM elemekre
       const dz = document.getElementById("raktariDropzone");
       dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("dragover"); });
       dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
@@ -155,14 +154,16 @@
         docClickBound = true;
       }
 
-      // Alapértelmezett mezők üresen indulnak
       document.getElementById("recCode").value = "";
       document.getElementById("sndCode").value = "";
       handleUnitInput("rec", false);
       handleUnitInput("snd", false);
 
-      if (activeItems.length === 0) loadSampleData();
-      else { renderEditTable(); renderDocument(); }
+      if (activeItems.length === 0) {
+        activeItems = [{ nytsz: "", name: "", qty: 1, note: "" }];
+      }
+      renderEditTable();
+      renderDocument();
     }
 
     function openUnitDropdown(side) {
@@ -372,7 +373,7 @@
 
     function updateItem(idx, field, val) { activeItems[idx][field] = field === "qty" ? (parseInt(val, 10) || 1) : val; renderDocument(); }
     function addEmptyItem() { activeItems.push({ nytsz: "", name: "", qty: 1, note: "" }); renderEditTable(); renderDocument(); }
-    function removeItem(idx) { activeItems.splice(idx, 1); renderEditTable(); renderDocument(); }
+    function removeItem(idx) { activeItems.splice(idx, 1); if (activeItems.length === 0) activeItems.push({ nytsz: "", name: "", qty: 1, note: "" }); renderEditTable(); renderDocument(); }
 
     function renderDocument() {
       const container = document.getElementById("pagesContainer");
@@ -467,7 +468,7 @@
               </thead>
               <tbody>
                 ${p.items.map((it, i) => `
-                  <tr>
+                  <tr style="height:6.5mm;">
                     <td class="c-center">${(p.startIndex || 0) + i + 1}</td>
                     <td class="c-right">${escapeHtml(it.nytsz)}</td>
                     <td>${escapeHtml(it.name)}</td>
