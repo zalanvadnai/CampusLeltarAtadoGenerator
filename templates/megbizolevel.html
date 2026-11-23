@@ -1,0 +1,271 @@
+<div class="gen-grid">
+  <div class="left-controls no-print">
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
+    </div>
+
+    <div class="panel">
+      <h3>1. Megbízott és szervezeti egység</h3>
+      <div class="form-group">
+        <label>Megbízott dolgozó neve (opcionális)</label>
+        <input id="mbPerson" class="form-control" placeholder="pl. Kovács László (üresen vonal jelenik meg)" oninput="MegbizoMod.renderDocument()" />
+      </div>
+
+      <div class="row-2">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Egység kódja</label>
+          <div class="unit-combo">
+            <input id="mbUnitCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="MegbizoMod.openUnitDropdown()" oninput="MegbizoMod.handleUnitInput()" />
+            <span class="unit-combo-arrow">▼</span>
+            <div id="mbUnitDropdown" class="unit-dropdown-menu hidden"></div>
+          </div>
+          <div id="mbUnitCodeError" class="field-error-msg hidden">Nincs hozzáférésed ehhez az egységhez!</div>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Szervezeti egység neve</label>
+          <input id="mbUnitName" class="form-control" oninput="MegbizoMod.renderDocument()" />
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>2. Selejtezés időpontja és keltezés</h3>
+      <div class="form-group">
+        <label>Egyszeri selejtezés dátuma (opcionális)</label>
+        <input id="mbSingleDate" type="date" class="form-control" oninput="MegbizoMod.renderDocument()" />
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Időtartam – tól (opc.)</label>
+          <input id="mbFromDate" type="date" class="form-control" oninput="MegbizoMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Időtartam – ig (opc.)</label>
+          <input id="mbToDate" type="date" class="form-control" oninput="MegbizoMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Keltezés helye</label>
+          <input id="mbCity" class="form-control" value="Debrecen" oninput="MegbizoMod.renderDocument()" />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label>Keltezés dátuma</label>
+          <input id="mbDate" type="date" class="form-control" oninput="MegbizoMod.renderDocument()" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="preview-toolbar no-print">
+      <div>
+        <strong>Élő A4 nyomtatási kép</strong>
+        <span style="color:var(--muted); font-size:13px; margin-left:8px;">(1 oldal)</span>
+      </div>
+      <button class="btn btn-primary" onclick="MegbizoMod.printAndLog()">🖨️ Nyomtatás / Mentés PDF-ként</button>
+    </div>
+    <div class="pages-wrapper" id="mbPagesContainer"></div>
+  </div>
+</div>
+
+<script>
+  window.MegbizoMod = (function () {
+    let unitValid = true;
+    let docClickBound = false;
+
+    function init() {
+      unitValid = true;
+
+      const dateEl = document.getElementById("mbDate");
+      if (dateEl && !dateEl.value) {
+        const now = new Date();
+        dateEl.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      }
+
+      if (!docClickBound) {
+        document.addEventListener("click", e => {
+          if (!e.target.closest(".unit-combo")) {
+            document.getElementById("mbUnitDropdown")?.classList.add("hidden");
+          }
+        });
+        docClickBound = true;
+      }
+
+      document.getElementById("mbUnitCode").value = "";
+      handleUnitInput(false);
+      renderDocument();
+    }
+
+    function openUnitDropdown() {
+      renderUnitDropdownList(document.getElementById("mbUnitCode").value);
+      document.getElementById("mbUnitDropdown").classList.remove("hidden");
+    }
+
+    function renderUnitDropdownList(query = "") {
+      const menu = document.getElementById("mbUnitDropdown");
+      const allowed = getAllowedUnitsForCurrentUser();
+      const q = (query || "").trim().toLowerCase();
+      const filtered = allowed.filter(u =>
+        !q || u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || (u.leader || "").toLowerCase().includes(q)
+      );
+
+      if (filtered.length === 0) {
+        menu.innerHTML = `<div class="unit-dropdown-empty">Nincs találat az engedélyezett egységek között.</div>`;
+        return;
+      }
+
+      menu.innerHTML = filtered.map(u => `
+        <div class="unit-dropdown-item" onmousedown="MegbizoMod.pickUnitFromDropdown('${escapeHtml(u.code)}')">
+          <div><span class="u-code">${escapeHtml(u.code)}</span> – ${escapeHtml(u.name)}</div>
+          ${u.leader ? `<div class="u-leader">Vezető: ${escapeHtml(u.leader)}</div>` : ""}
+        </div>
+      `).join("");
+    }
+
+    function pickUnitFromDropdown(code) {
+      document.getElementById("mbUnitCode").value = code;
+      document.getElementById("mbUnitDropdown").classList.add("hidden");
+      handleUnitInput(false);
+    }
+
+    function handleUnitInput(keepMenuOpen = true) {
+      const codeEl = document.getElementById("mbUnitCode");
+      const nameEl = document.getElementById("mbUnitName");
+      const errEl = document.getElementById("mbUnitCodeError");
+
+      const typed = codeEl.value.trim();
+      if (keepMenuOpen) {
+        renderUnitDropdownList(typed);
+        document.getElementById("mbUnitDropdown").classList.remove("hidden");
+      }
+
+      if (!typed) {
+        codeEl.classList.remove("input-error");
+        errEl.classList.add("hidden");
+        nameEl.value = "";
+        unitValid = true;
+        renderDocument();
+        return;
+      }
+
+      const allowed = getAllowedUnitsForCurrentUser();
+      const matchAllowed = allowed.find(u => u.code.toLowerCase() === typed.toLowerCase());
+
+      if (matchAllowed) {
+        codeEl.classList.remove("input-error");
+        errEl.classList.add("hidden");
+        nameEl.value = matchAllowed.name;
+        unitValid = true;
+      } else {
+        codeEl.classList.add("input-error");
+        errEl.classList.remove("hidden");
+        nameEl.value = "";
+        unitValid = false;
+      }
+      renderDocument();
+    }
+
+    function formatHuDatePart(isoDate, suffix = "nap") {
+      if (!isoDate) return `20____ év ______________ hó ____ ${suffix}`;
+      const parts = isoDate.split("-");
+      if (parts.length !== 3) return isoDate;
+      return `${parts[0]}. év ${parts[1]}. hó ${parts[2]}. ${suffix}`;
+    }
+
+    function formatHuRangeDate(isoDate, suffix) {
+      if (!isoDate) return `20____ év ______________ hó ____${suffix}`;
+      const parts = isoDate.split("-");
+      if (parts.length !== 3) return isoDate;
+      return `${parts[0]}. év ${parts[1]}. hó ${parts[2]}.${suffix}`;
+    }
+
+    function renderDocument() {
+      const container = document.getElementById("mbPagesContainer");
+      if (!container) return;
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const person = document.getElementById("mbPerson").value.trim();
+      const unitName = document.getElementById("mbUnitName").value.trim();
+      const singleDate = formatHuDatePart(document.getElementById("mbSingleDate").value, "napján");
+      const fromDate = formatHuRangeDate(document.getElementById("mbFromDate").value, "-tól");
+      const toDate = formatHuRangeDate(document.getElementById("mbToDate").value, "-ig");
+      const city = document.getElementById("mbCity").value.trim() || "Debrecen";
+      const issueDate = formatHuDatePart(document.getElementById("mbDate").value, "nap");
+
+      const personField = person
+        ? `<span style="display:inline-block; min-width:65mm; border-bottom:1px solid #000; text-align:center; font-weight:600; padding:0 4px;">${escapeHtml(person)}</span>`
+        : `<span style="display:inline-block; width:65mm; border-bottom:1px solid #000;">&nbsp;</span>`;
+
+      const unitField = unitName
+        ? `<span style="display:inline-block; min-width:95mm; border-bottom:1px solid #000; text-align:center; font-weight:600; padding:0 4px;">${escapeHtml(unitName)}</span>`
+        : `<span style="display:inline-block; width:95mm; border-bottom:1px solid #000;">&nbsp;</span>`;
+
+      container.innerHTML = `
+        <div class="a4-page" style="font-family:'Times New Roman', Times, serif;">
+          <div class="doc-top-bar" style="margin-bottom:14mm;">
+            <img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />
+            <div class="doc-top-title" style="font-size:8.5pt;">MEGBÍZÓLEVÉL</div>
+          </div>
+
+          <div class="doc-main-title" style="font-size:18pt; margin:4mm 0 18mm;">
+            Megbízólevél
+          </div>
+
+          <div style="font-size:11.5pt; line-height:2.15; text-align:justify; margin-bottom:14mm;">
+            Megbízom ${personField} a ${escapeHtml(comp.fullName)} <em>(továbbiakban Campus)</em> dolgozóját, hogy a Campus ${unitField} nevű szervezeti egységében
+            ${escapeHtml(singleDate)} végrehajtandó selejtezési eljárásban, vagy
+            ${escapeHtml(fromDate)} ${escapeHtml(toDate)} mint Selejtezési Bizottsági tag közreműködjön.
+          </div>
+
+          <div style="font-size:11.5pt; line-height:1.6; text-align:justify; margin-bottom:22mm;">
+            A selejtezést a Campus „Selejtezési szabályzatában”, valamint ütemtervében leírtak szerint kell végrehajtani.
+          </div>
+
+          <div style="font-size:11.5pt; margin-bottom:24mm;">
+            ${escapeHtml(city)}, ${escapeHtml(issueDate)}
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; margin-top:4mm;">
+            <div style="width:68mm; text-align:center;">
+              <div style="border-top:1px solid #000; padding-top:4px; font-size:11pt;">Ügyvezető Igazgató</div>
+            </div>
+          </div>
+
+          <div class="doc-footer">
+            1. oldal — ${escapeHtml(comp.fullName)} — Megbízólevél
+          </div>
+        </div>
+      `;
+    }
+
+    async function printAndLog() {
+      if (!unitValid) {
+        showToast("Hibás vagy nem engedélyezett egységkód szerepel a nyomtatványon!", "error");
+        return;
+      }
+      window.print();
+      if (!currentUser) return;
+      const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
+      const person = document.getElementById("mbPerson").value.trim() || "—";
+      const unit = `${document.getElementById("mbUnitCode").value} ${document.getElementById("mbUnitName").value}`.trim() || "—";
+      const details = `${compTag}Megbízott: ${person} | Egység: ${unit} | Dátum: ${document.getElementById("mbDate").value || "—"}`;
+
+      try {
+        await apiCall({
+          action: "logDocument",
+          username: currentUser.username,
+          userName: currentUser.fullName || currentUser.name || currentUser.username,
+          docType: "Megbízólevél",
+          details
+        });
+      } catch (e) {}
+    }
+
+    return { init, openUnitDropdown, pickUnitFromDropdown, handleUnitInput, renderDocument, printAndLog };
+  })();
+
+  window.TemplateModules["megbizolevel"] = window.MegbizoMod;
+</script>
