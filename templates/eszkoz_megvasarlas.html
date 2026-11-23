@@ -135,9 +135,7 @@
       const approveDate = formatHuDateBlankable(document.getElementById("emApproveDate").value);
       const approver = document.getElementById("emApprover").value.trim() || "Páll László";
 
-      const displayItems = activeItems.length >= 7
-        ? activeItems
-        : [...activeItems, ...Array.from({ length: 7 - activeItems.length }, () => emptyRow())];
+      const displayItems = activeItems;
 
       let grandTotal = 0;
       const rowsHtml = displayItems.map(it => {
