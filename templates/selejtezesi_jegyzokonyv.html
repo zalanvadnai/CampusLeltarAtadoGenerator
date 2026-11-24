@@ -127,7 +127,7 @@
     gap: 4mm;
     justify-content: center;
     align-items: flex-start;
-    margin-top: 4mm;
+    margin-top: 3mm;
     flex-wrap: wrap;
   }
   .sj-receipt-grid img {
@@ -150,6 +150,12 @@
     padding: 8px;
     margin-bottom: 10px;
     align-items: end;
+  }
+  .sj-waste-add-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
   }
 
   @media screen {
@@ -442,42 +448,20 @@
       </div>
     </div>
 
-    <!-- ==================== 3. LÉPÉS: HULLADÉK / FÉMHULLADÉK FÁZISOK ==================== -->
+    <!-- ==================== 3. LÉPÉS: HULLADÉK MELLÉKLETEK (FÉM / ELEKTRONIKAI / KOMMUNÁLIS) ==================== -->
     <div id="sjFull_step3" class="hidden">
       <div class="panel">
-        <h3>3. Hulladék / Fémhulladék mellékletek</h3>
+        <h3>3. Hulladék mellékletek</h3>
         <p style="font-size:12px; color:var(--muted); margin-top:0;">
-          Minden fázis külön mellékletoldalként jelenik meg. Ha nincs elszállítás/értékesítés, töröld az összes fázist, és a Tartalomjegyzékből is eltűnik.
+          Minden fázis külön mellékletoldalként jelenik meg (fémhulladék, elektronikai vagy kommunális hulladék). Mindegyikhez külön partnercég, telephely és bizonylatkép adható meg.
         </p>
 
-        <div class="row-2">
-          <div class="form-group">
-            <label>Átvevő partner cég</label>
-            <select id="sjFull_buyerSelect" class="form-control" onchange="SelejtezesiJkMod.onBuyerChange()">
-              <option value="KLAUDIA-FER Kft." selected>KLAUDIA-FER Kft.</option>
-               <option value="MOHU Zrt.">MOHU Zrt.</option>
-              <option value="POVAS Kft.">POVAS Kft.</option>
-              <option value="__custom__">Egyéb partner...</option>
-            </select>
-            <input id="sjFull_buyerCustom" class="form-control hidden" style="margin-top:6px;" placeholder="Partner cég neve" oninput="SelejtezesiJkMod.renderDocument()" />
-          </div>
+        <div id="sjFull_phasesList" style="display:flex; flex-direction:column; gap:10px; max-height:460px; overflow-y:auto;"></div>
 
-          <div class="form-group">
-            <label>Telephely</label>
-            <select id="sjFull_siteSelect" class="form-control" onchange="SelejtezesiJkMod.toggleCustom('sjFull_siteSelect','sjFull_siteCustom'); SelejtezesiJkMod.renderDocument();">
-              <option value="Házgyár úti telep" selected>Házgyár úti telep</option>
-              <option value="Vértesi úti telep">Vértesi úti telep</option>
-              <option value="Külső Kassai úti telep">Külső Kassai úti telep</option>
-              <option value="__custom__">Egyéb telephely...</option>
-            </select>
-            <input id="sjFull_siteCustom" class="form-control hidden" style="margin-top:6px;" placeholder="pl. Vágóhíd úti telep" oninput="SelejtezesiJkMod.renderDocument()" />
-          </div>
-        </div>
-
-        <div id="sjFull_phasesList" style="display:flex; flex-direction:column; gap:10px;"></div>
-
-        <div style="margin-top:10px;">
-          <button type="button" class="btn btn-primary btn-sm" onclick="SelejtezesiJkMod.addPhase()">+ Új értékesítési / elszállítási fázis</button>
+        <div class="sj-waste-add-row">
+          <button type="button" class="btn btn-primary btn-sm" onclick="SelejtezesiJkMod.addPhase('metal')">+ Fémhulladék</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="SelejtezesiJkMod.addPhase('ewaste')">+ Elektronikai hulladék</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="SelejtezesiJkMod.addPhase('municipal')">+ Kommunális hulladék</button>
         </div>
 
         <div class="sj-step-nav">
@@ -568,9 +552,14 @@
           <textarea id="sjFull_closeDestCustom" class="form-control hidden" rows="2" style="margin-top:6px;" oninput="SelejtezesiJkMod.renderDocument()"></textarea>
         </div>
 
+        <div class="form-group">
+          <label>Vashulladék összefoglalása (üresen automatikus)</label>
+          <textarea id="sjFull_closeMetalOverride" class="form-control" rows="2" placeholder="Ha üres, a 3. lépés fémhulladék tételeiből áll össze automatikusan..." oninput="SelejtezesiJkMod.renderDocument()"></textarea>
+        </div>
+
         <div class="form-group" style="margin-bottom:0;">
-          <label>Vashulladék értékesítés felülírása (üresen automatikus)</label>
-          <textarea id="sjFull_closeMetalOverride" class="form-control" rows="3" placeholder="Ha üresen hagyod, a 3. lépés fázisai alapján automatikusan számolja a végösszeget és a bizonylatszámokat..." oninput="SelejtezesiJkMod.renderDocument()"></textarea>
+          <label>Elektronikai / kommunális hulladék (üresen automatikus)</label>
+          <textarea id="sjFull_closeNonMetalOverride" class="form-control" rows="2" placeholder="Ha üres, a 3. lépés elektronikai és kommunális tételeiből áll össze automatikusan..." oninput="SelejtezesiJkMod.renderDocument()"></textarea>
         </div>
 
         <div class="sj-step-nav">
@@ -629,16 +618,42 @@
       "Szétszerelés, darabolás, roncsolás"
     ];
 
+    const WASTE_TYPES = {
+      metal: { label: "Fém- és vashulladék", accusative: "A fémhulladékot", defaultBuyer: "KLAUDIA-FER Kft.", defaultSite: "Házgyár úti telep", defaultDocLabel: "Átvételi elismervény:" },
+      ewaste: { label: "Elektronikai hulladék", accusative: "Az elektronikai hulladékot", defaultBuyer: "MOHU / AKSD Kft.", defaultSite: "Vértesi úti telep", defaultDocLabel: "Mérési jegyzőkönyv" },
+      municipal: { label: "Kommunális hulladék", accusative: "A kommunális hulladékot", defaultBuyer: "MOHU / AKSD Kft.", defaultSite: "Vértesi úti telep", defaultDocLabel: "Mérési jegyzőkönyv" }
+    };
+
+    const BUYER_OPTIONS = [
+      "KLAUDIA-FER Kft.",
+      "POVAS Kft.",
+      "MOHU / AKSD Kft.",
+      "MOHU",
+      "AKSD Kft."
+    ];
+
+    const SITE_OPTIONS = [
+      "Házgyár úti telep",
+      "Külső Kassai úti telep",
+      "Vértesi úti telep"
+    ];
+
+    const DOC_LABEL_OPTIONS = [
+      "Átvételi elismervény:",
+      "Mérési jegyzőkönyv",
+      "Átvételi bizonylat:",
+      "A fémhulladék értékesítésének igazolása:"
+    ];
+
     const STEP_LABELS = {
       1: "1. lépés — Borító, Tartalom és I–VI. fejezet",
       2: "2. lépés — 1. sz. melléklet (Eszközjegyzék)",
-      3: "3. lépés — Hulladék / fémhulladék mellékletek",
+      3: "3. lépés — Hulladék mellékletek (fém / elektronikai / kommunális)",
       4: "4. lépés — Megsemmisítési jegyzőkönyv",
       5: "5. lépés — VII. fejezet (Lezárás)"
     };
 
     const HU_MONTHS = ["január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember", "október", "november", "december"];
-    const PHASE_ORDINALS = ["első", "második", "harmadik", "negyedik", "ötödik"];
 
     let currentStep = 1;
     let viewMode = "current";
@@ -652,13 +667,19 @@
       return { nytsz: "", name: "", qty: 1, origUnit: "", reason: "07", waste: "Igen", recoverable: "Nem" };
     }
 
-    function emptyPhase(idx) {
+    function emptyPhase(wasteType = "metal") {
+      const cfg = WASTE_TYPES[wasteType] || WASTE_TYPES.metal;
       return {
+        wasteType: WASTE_TYPES[wasteType] ? wasteType : "metal",
         heading: "HULLADÉKNAK MINŐSÍTETT TÉTELEK",
-        phaseLabel: PHASE_ORDINALS[idx] || `${idx + 1}.`,
+        buyer: cfg.defaultBuyer,
+        buyerCustom: "",
+        site: cfg.defaultSite,
+        siteCustom: "",
         date: "",
-        receipts: "",
         amount: "",
+        receipts: "",
+        docLabel: cfg.defaultDocLabel,
         images: []
       };
     }
@@ -723,7 +744,7 @@
       }
 
       if (items.length === 0) items = [emptyItem()];
-      if (phases.length === 0) phases = [emptyPhase(0)];
+      if (phases.length === 0) phases = [emptyPhase("metal")];
       if (destItems.length === 0) destItems = [emptyDestItem()];
 
       renderItemsEditor();
@@ -787,7 +808,7 @@
         notice.className = "sj-empty-step-notice";
         notice.innerHTML = `
           <div style="font-weight:700; color:#334155; margin-bottom:6px;">${escapeHtml(STEP_LABELS[currentStep])}</div>
-          <div>Ez a melléklet jelenleg nincs hozzáadva vagy ki van kapcsolva.<br>A bal oldali panelen tudod engedélyezni, vagy új fázist hozzáadni.</div>
+          <div>Ez a melléklet jelenleg nincs hozzáadva vagy ki van kapcsolva.<br>A bal oldali panelen tudod engedélyezni, vagy új hulladék-mellékletet hozzáadni.</div>
         `;
         container.appendChild(notice);
       }
@@ -802,25 +823,6 @@
       const cust = document.getElementById(customId);
       if (!sel || !cust) return;
       cust.classList.toggle("hidden", sel.value !== "__custom__");
-    }
-
-    function onBuyerChange() {
-      const buyerSel = document.getElementById("sjFull_buyerSelect");
-      const siteSel = document.getElementById("sjFull_siteSelect");
-      toggleCustom("sjFull_buyerSelect", "sjFull_buyerCustom");
-      if (buyerSel && siteSel) {
-        if (buyerSel.value === "KLAUDIA-FER Kft.") {
-          siteSel.value = "Házgyár úti telep";
-        } else if (buyerSel.value === "POVAS Kft.") {
-          siteSel.value = "Külső Kassai úti telep";
-        } else if (buyerSel.value === "MOHU Zrt.") {
-          siteSel.value = "Vértesi úti telep";
-        } else if (buyerSel.value === "__custom__") {
-          siteSel.value = "__custom__";
-        }
-        toggleCustom("sjFull_siteSelect", "sjFull_siteCustom");
-      }
-      renderDocument();
     }
 
     function getSelectOrCustom(selId, customId) {
@@ -866,24 +868,39 @@
       return /^[aáeéiíoóöőuúüű]/i.test((str || "").trim()) ? "az" : "a";
     }
 
-    function formatBuyerSiteInessive(buyer, site) {
+    function getPhaseBuyer(ph) {
+      return ph.buyer === "__custom__" ? (ph.buyerCustom || "").trim() : (ph.buyer || "").trim();
+    }
+
+    function getPhaseSite(ph) {
+      return ph.site === "__custom__" ? (ph.siteCustom || "").trim() : (ph.site || "").trim();
+    }
+
+    function formatBuyerSiteSublative(buyer, site) {
       const b = (buyer || "").trim();
       const s = (site || "").trim();
       const art = huArticle(b || s);
-      if (!s) return b ? `${art} ${b} telephelyén` : "a kijelölt telephelyen";
+      if (!s) return b ? `${art} ${b} telephelyére` : "a kijelölt telephelyre";
       let sitePart = s;
-      if (/telepén$|telephelyén$/i.test(s)) {
+      if (/telepére$|telephelyére$/i.test(s)) {
         sitePart = s;
-      } else if (/telepére$/i.test(s)) {
-        sitePart = s.replace(/telepére$/i, "telepén");
+      } else if (/telepén$/i.test(s)) {
+        sitePart = s.replace(/telepén$/i, "telepére");
       } else if (/telep$|telephely$/i.test(s)) {
-        sitePart = s + "én";
+        sitePart = s + "ére";
       } else if (/[\d,]/.test(s)) {
-        sitePart = `(${s}) telephelyén`;
+        sitePart = `(${s}) telephelyére`;
       } else {
-        sitePart = `${s} telephelyén`;
+        sitePart = `${s} telephelyére`;
       }
       return b ? `${art} ${b} ${sitePart}` : `${art} ${sitePart}`;
+    }
+
+    function joinHuList(arr) {
+      if (arr.length === 0) return "";
+      if (arr.length === 1) return arr[0];
+      if (arr.length === 2) return `${arr[0]} és ${arr[1]}`;
+      return `${arr.slice(0, -1).join(", ")} és ${arr[arr.length - 1]}`;
     }
 
     // ===== EGYSÉGVÁLASZTÓ (ÁTADÓ) =====
@@ -1129,58 +1146,144 @@
     function removeItem(idx) { items.splice(idx, 1); if (items.length === 0) items.push(emptyItem()); renderItemsEditor(); renderDocument(); }
     function clearItems() { items = [emptyItem()]; renderItemsEditor(); renderDocument(); }
 
-    // ===== 3. LÉPÉS: HULLADÉK / FÉMHULLADÉK FÁZISOK =====
+    // ===== 3. LÉPÉS: HULLADÉK MELLÉKLETEK (FÉM / ELEKTRONIKAI / KOMMUNÁLIS) =====
     function renderPhasesEditor() {
       const container = document.getElementById("sjFull_phasesList");
       if (!container) return;
       if (phases.length === 0) {
-        container.innerHTML = `<div style="font-size:12.5px; color:var(--muted); text-align:center; padding:12px;">Nincs hozzáadott hulladék-értékesítési fázis.</div>`;
+        container.innerHTML = `<div style="font-size:12.5px; color:var(--muted); text-align:center; padding:12px;">Nincs hozzáadott hulladék melléklet. Az alábbi gombokkal adhatsz hozzá fém-, elektronikai vagy kommunális hulladék elszállítást.</div>`;
         return;
       }
-      container.innerHTML = phases.map((ph, idx) => `
-        <div class="sj-card-item">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <strong style="font-size:12.5px; color:var(--primary-dark);">${idx + 2}. sz. melléklet (${escapeHtml(ph.phaseLabel)} fázis)</strong>
-            <button type="button" class="btn btn-danger btn-sm" style="padding:1px 7px;" onclick="SelejtezesiJkMod.removePhase(${idx})">×</button>
-          </div>
-          <div class="form-group" style="margin-bottom:6px;">
-            <label style="font-size:11.5px;">Melléklet címe</label>
-            <select class="form-control" style="padding:5px 7px; font-size:12px;" onchange="SelejtezesiJkMod.updatePhase(${idx},'heading',this.value)">
-              <option value="HULLADÉKNAK MINŐSÍTETT TÉTELEK" ${ph.heading === "HULLADÉKNAK MINŐSÍTETT TÉTELEK" ? "selected" : ""}>HULLADÉKNAK MINŐSÍTETT TÉTELEK</option>
-              <option value="SELEJTEZÉSBŐL VISSZANYERT TARTOZÉKOK, ALKATRÉSZEK, HULLADÉKANYAGOK" ${ph.heading.includes("VISSZANYERT") ? "selected" : ""}>SELEJTEZÉSBŐL VISSZANYERT ANYAGOK</option>
-            </select>
-          </div>
-          <div class="row-2" style="margin-bottom:6px;">
-            <div>
-              <label style="font-size:11.5px;">Értékesítés dátuma</label>
-              <input type="date" class="form-control" style="padding:5px 7px; font-size:12px;" value="${escapeHtml(ph.date)}" oninput="SelejtezesiJkMod.updatePhase(${idx},'date',this.value)" />
+      container.innerHTML = phases.map((ph, idx) => {
+        const wt = WASTE_TYPES[ph.wasteType] || WASTE_TYPES.metal;
+        return `
+          <div class="sj-card-item">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <strong style="font-size:12.5px; color:var(--primary-dark);">${idx + 2}. sz. melléklet — ${escapeHtml(wt.label)}</strong>
+              <button type="button" class="btn btn-danger btn-sm" style="padding:1px 7px;" onclick="SelejtezesiJkMod.removePhase(${idx})">×</button>
             </div>
+
+            <div class="row-2" style="margin-bottom:6px;">
+              <div>
+                <label style="font-size:11px;">Hulladék típusa</label>
+                <select class="form-control" style="padding:5px 6px; font-size:12px;" onchange="SelejtezesiJkMod.onPhaseWasteTypeChange(${idx}, this.value)">
+                  <option value="metal" ${ph.wasteType === "metal" ? "selected" : ""}>Fém- és vashulladék</option>
+                  <option value="ewaste" ${ph.wasteType === "ewaste" ? "selected" : ""}>Elektronikai hulladék</option>
+                  <option value="municipal" ${ph.wasteType === "municipal" ? "selected" : ""}>Kommunális hulladék</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;">Melléklet címe</label>
+                <select class="form-control" style="padding:5px 6px; font-size:12px;" onchange="SelejtezesiJkMod.updatePhase(${idx},'heading',this.value)">
+                  <option value="HULLADÉKNAK MINŐSÍTETT TÉTELEK" ${ph.heading === "HULLADÉKNAK MINŐSÍTETT TÉTELEK" ? "selected" : ""}>HULLADÉKNAK MINŐSÍTETT TÉTELEK</option>
+                  <option value="SELEJTEZÉSBŐL VISSZANYERT TARTOZÉKOK, ALKATRÉSZEK, HULLADÉKANYAGOK" ${ph.heading.includes("VISSZANYERT") ? "selected" : ""}>VISSZANYERT ANYAGOK</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row-2" style="margin-bottom:6px;">
+              <div>
+                <label style="font-size:11px;">Partner cég</label>
+                <select class="form-control" style="padding:5px 6px; font-size:12px;" onchange="SelejtezesiJkMod.onPhaseBuyerChange(${idx}, this.value)">
+                  ${BUYER_OPTIONS.map(b => `<option value="${escapeHtml(b)}" ${ph.buyer === b ? "selected" : ""}>${escapeHtml(b)}</option>`).join("")}
+                  <option value="__custom__" ${ph.buyer === "__custom__" ? "selected" : ""}>Egyéb partner...</option>
+                </select>
+                <input class="form-control ${ph.buyer === "__custom__" ? "" : "hidden"}" style="padding:5px 6px; font-size:12px; margin-top:4px;" placeholder="Partner cég neve" value="${escapeHtml(ph.buyerCustom)}" oninput="SelejtezesiJkMod.updatePhase(${idx},'buyerCustom',this.value)" />
+              </div>
+              <div>
+                <label style="font-size:11px;">Telephely</label>
+                <select class="form-control" style="padding:5px 6px; font-size:12px;" onchange="SelejtezesiJkMod.onPhaseSiteChange(${idx}, this.value)">
+                  ${SITE_OPTIONS.map(s => `<option value="${escapeHtml(s)}" ${ph.site === s ? "selected" : ""}>${escapeHtml(s)}</option>`).join("")}
+                  <option value="__custom__" ${ph.site === "__custom__" ? "selected" : ""}>Egyéb telephely...</option>
+                </select>
+                <input class="form-control ${ph.site === "__custom__" ? "" : "hidden"}" style="padding:5px 6px; font-size:12px; margin-top:4px;" placeholder="pl. Vértesi úti telep" value="${escapeHtml(ph.siteCustom)}" oninput="SelejtezesiJkMod.updatePhase(${idx},'siteCustom',this.value)" />
+              </div>
+            </div>
+
+            <div class="row-2" style="margin-bottom:6px;">
+              <div>
+                <label style="font-size:11px;">Elszállítás / átadás dátuma</label>
+                <input type="date" class="form-control" style="padding:5px 7px; font-size:12px;" value="${escapeHtml(ph.date)}" oninput="SelejtezesiJkMod.updatePhase(${idx},'date',this.value)" />
+              </div>
+              <div>
+                <label style="font-size:11px;">Bevétel összege (Ft, opc.)</label>
+                <input type="number" min="0" class="form-control" style="padding:5px 7px; font-size:12px;" placeholder="Csak értékesítésnél" value="${escapeHtml(ph.amount)}" oninput="SelejtezesiJkMod.updatePhase(${idx},'amount',this.value)" />
+              </div>
+            </div>
+
+            <div class="row-2" style="margin-bottom:6px;">
+              <div>
+                <label style="font-size:11px;">Bizonylat szám(ok)</label>
+                <input class="form-control" style="padding:5px 7px; font-size:12px;" placeholder="pl. MJ 03190/2026/001827" value="${escapeHtml(ph.receipts)}" oninput="SelejtezesiJkMod.updatePhase(${idx},'receipts',this.value)" />
+              </div>
+              <div>
+                <label style="font-size:11px;">Csatolt bizonylat felirata</label>
+                <select class="form-control" style="padding:5px 6px; font-size:12px;" onchange="SelejtezesiJkMod.updatePhase(${idx},'docLabel',this.value)">
+                  ${DOC_LABEL_OPTIONS.map(l => `<option value="${escapeHtml(l)}" ${ph.docLabel === l ? "selected" : ""}>${escapeHtml(l)}</option>`).join("")}
+                </select>
+              </div>
+            </div>
+
             <div>
-              <label style="font-size:11.5px;">Bevétel összege (Ft)</label>
-              <input type="number" min="0" class="form-control" style="padding:5px 7px; font-size:12px;" placeholder="pl. 89000" value="${escapeHtml(ph.amount)}" oninput="SelejtezesiJkMod.updatePhase(${idx},'amount',this.value)" />
+              <label style="font-size:11px;">Szkennelt bizonylat / mérési jegyzőkönyv (kép)</label>
+              <input type="file" accept="image/*" multiple class="form-control" style="padding:4px; font-size:11.5px;" onchange="SelejtezesiJkMod.handlePhaseImages(${idx}, this.files)" />
+              ${ph.images.length > 0 ? `<div style="font-size:11px; color:var(--success); margin-top:4px;">${ph.images.length} db bizonylatkép csatolva <button type="button" class="btn btn-outline btn-sm" style="padding:1px 6px; margin-left:6px;" onclick="SelejtezesiJkMod.clearPhaseImages(${idx})">Törlés</button></div>` : ""}
             </div>
           </div>
-          <div class="form-group" style="margin-bottom:6px;">
-            <label style="font-size:11.5px;">Bizonylat szám(ok)</label>
-            <input class="form-control" style="padding:5px 7px; font-size:12px;" placeholder="pl. PS8ZA 0896605" value="${escapeHtml(ph.receipts)}" oninput="SelejtezesiJkMod.updatePhase(${idx},'receipts',this.value)" />
-          </div>
-          <div>
-            <label style="font-size:11.5px;">Szkennelt átvételi bizonylat(ok) (kép feltöltése)</label>
-            <input type="file" accept="image/*" multiple class="form-control" style="padding:4px; font-size:11.5px;" onchange="SelejtezesiJkMod.handlePhaseImages(${idx}, this.files)" />
-            ${ph.images.length > 0 ? `<div style="font-size:11px; color:var(--success); margin-top:4px;">${ph.images.length} db bizonylatkép csatolva <button type="button" class="btn btn-outline btn-sm" style="padding:1px 6px; margin-left:6px;" onclick="SelejtezesiJkMod.clearPhaseImages(${idx})">Törlés</button></div>` : ""}
-          </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
-    function addPhase() { phases.push(emptyPhase(phases.length)); renderPhasesEditor(); renderDocument(); }
-    function removePhase(idx) {
-      phases.splice(idx, 1);
-      phases.forEach((p, i) => { p.phaseLabel = PHASE_ORDINALS[i] || `${i + 1}.`; });
+    function addPhase(wasteType = "metal") {
+      phases.push(emptyPhase(wasteType));
       renderPhasesEditor();
       renderDocument();
     }
-    function updatePhase(idx, field, val) { phases[idx][field] = val; renderDocument(); }
+
+    function removePhase(idx) {
+      phases.splice(idx, 1);
+      renderPhasesEditor();
+      renderDocument();
+    }
+
+    function onPhaseWasteTypeChange(idx, val) {
+      const ph = phases[idx];
+      if (!ph) return;
+      ph.wasteType = val;
+      const cfg = WASTE_TYPES[val] || WASTE_TYPES.metal;
+      ph.buyer = cfg.defaultBuyer;
+      ph.site = cfg.defaultSite;
+      ph.docLabel = cfg.defaultDocLabel;
+      renderPhasesEditor();
+      renderDocument();
+    }
+
+    function onPhaseBuyerChange(idx, val) {
+      const ph = phases[idx];
+      if (!ph) return;
+      ph.buyer = val;
+      if (val === "KLAUDIA-FER Kft.") ph.site = "Házgyár úti telep";
+      else if (val === "POVAS Kft.") ph.site = "Külső Kassai úti telep";
+      else if (val === "MOHU / AKSD Kft." || val === "MOHU" || val === "AKSD Kft.") ph.site = "Vértesi úti telep";
+      else if (val === "__custom__") ph.site = "__custom__";
+      renderPhasesEditor();
+      renderDocument();
+    }
+
+    function onPhaseSiteChange(idx, val) {
+      const ph = phases[idx];
+      if (!ph) return;
+      ph.site = val;
+      renderPhasesEditor();
+      renderDocument();
+    }
+
+    function updatePhase(idx, field, val) {
+      if (!phases[idx]) return;
+      phases[idx][field] = val;
+      renderDocument();
+    }
+
     function clearPhaseImages(idx) { phases[idx].images = []; renderPhasesEditor(); renderDocument(); }
     function handlePhaseImages(idx, fileList) {
       if (!fileList || fileList.length === 0) return;
@@ -1249,7 +1352,7 @@
             ${DEST_METHODS.map(m => `<option value="${escapeHtml(m)}" ${d.method === m ? "selected" : ""}>${escapeHtml(m)}</option>`).join("")}
             <option value="__custom__" ${d.method === "__custom__" ? "selected" : ""}>Egyéb (egyedi szöveg)...</option>
           </select>
-          ${d.method === "__custom__" ? `<input class="form-control" style="padding:5px 7px; font-size:12px; margin-top:5px;" placeholder="Megsemmisítés módja..." value="${escapeHtml(d.customMethod)}" oninput="SelejtezesiJkMod.updateDestItem(${idx},'customMethod',this.value)" />` : ""}
+          <input class="form-control ${d.method === "__custom__" ? "" : "hidden"}" style="padding:5px 7px; font-size:12px; margin-top:5px;" placeholder="Megsemmisítés módja..." value="${escapeHtml(d.customMethod)}" oninput="SelejtezesiJkMod.updateDestItem(${idx},'customMethod',this.value)" />
         </div>
       `).join("");
     }
@@ -1264,6 +1367,12 @@
     function clearDestItems() { destItems = [emptyDestItem()]; renderDestEditor(); renderDocument(); }
 
     // ===== DÁTUM & PÉNZ FORMÁZÓK =====
+    function huDaySuffix(day) {
+      if (day === 1) return "-jén";
+      if ([2, 3, 6, 8, 13, 16, 18, 20, 23, 26, 28, 30].includes(day)) return "-án";
+      return "-én";
+    }
+
     function formatHuLongDate(iso, withSuffix = false) {
       if (!iso) return "____. __________ ____.";
       const parts = iso.split("-");
@@ -1271,17 +1380,21 @@
       const y = parts[0], m = parseInt(parts[1], 10) - 1, d = parseInt(parts[2], 10);
       const monthName = HU_MONTHS[m] || parts[1];
       if (!withSuffix) return `${y}. ${monthName} ${d}.`;
-      let suf = "-án";
-      if (d === 1) suf = "-jén";
-      else if ([2, 3, 6, 8, 13, 16, 18, 20, 23, 26, 28, 30].includes(d)) suf = "-án";
-      else suf = "-én";
-      return `${y}. ${monthName} ${d}${suf}`;
+      return `${y}. ${monthName} ${d}${huDaySuffix(d)}`;
     }
 
     function formatHuDotDate(iso) {
       if (!iso) return "____. __. __.";
       const p = iso.split("-");
       return p.length === 3 ? `${p[0]}. ${p[1]}. ${p[2]}.` : iso;
+    }
+
+    function formatHuDotDateWithSuffix(iso) {
+      if (!iso) return "";
+      const p = iso.split("-");
+      if (p.length !== 3) return iso;
+      const d = parseInt(p[2], 10);
+      return `${p[0]}. ${p[1]}. ${p[2]}${huDaySuffix(d)}`;
     }
 
     function formatFt(val) {
@@ -1334,9 +1447,6 @@
 
       const sndCode = unitValid ? (document.getElementById("sjFull_sndCode")?.value || "").trim() : "";
       const sndName = (document.getElementById("sjFull_sndName")?.value || "").trim();
-      const buyer = getSelectOrCustom("sjFull_buyerSelect", "sjFull_buyerCustom") || "KLAUDIA-FER Kft.";
-      const buyerSite = getSelectOrCustom("sjFull_siteSelect", "sjFull_siteCustom");
-      const buyerSiteInessive = formatBuyerSiteInessive(buyer, buyerSite);
 
       const includeDest = document.getElementById("sjFull_includeDestruction")?.checked !== false;
       const includeClosing = document.getElementById("sjFull_includeClosing")?.checked !== false;
@@ -1347,6 +1457,7 @@
       const closePartsText = getSelectOrCustom("sjFull_closePartsSelect", "sjFull_closePartsCustom");
       const closeDestText = getSelectOrCustom("sjFull_closeDestSelect", "sjFull_closeDestCustom");
       const closeMetalOverride = (document.getElementById("sjFull_closeMetalOverride")?.value || "").trim();
+      const closeNonMetalOverride = (document.getElementById("sjFull_closeNonMetalOverride")?.value || "").trim();
 
       const footerRef = `${comp.code} ${protoNo}`;
 
@@ -1584,18 +1695,29 @@
         a1Page++;
       }
 
-      // --- 2. (+ 3. ...) SZ. MELLÉKLET: HULLADÉK / FÉMHULLADÉK FÁZISOK (step 3) ---
+      // --- 2. (+ 3. ...) SZ. MELLÉKLET: HULLADÉK MELLÉKLETEK (step 3) ---
       let annexCounter = 2;
       const filledItemCount = Math.max(1, items.filter(i => i.name.trim() || i.nytsz.trim()).length);
 
       phases.forEach((ph, pIdx) => {
         const myAnnexNo = annexCounter++;
         const isFirstPhase = (pIdx === 0);
+        const wt = WASTE_TYPES[ph.wasteType] || WASTE_TYPES.metal;
+        const pBuyer = getPhaseBuyer(ph);
+        const pSite = getPhaseSite(ph);
+        const destStr = formatBuyerSiteSublative(pBuyer, pSite);
         const recStr = ph.receipts.trim() ? ph.receipts.trim() : "__________________";
 
-        const tocTitle = ph.heading.includes("VISSZANYERT")
-          ? `${myAnnexNo}. számú melléklet: Selejtezésből visszanyert tartozékok, alkatrészek, hulladékanyagok (${ph.phaseLabel} fázis)`
-          : `${myAnnexNo}. számú melléklet: A hulladéknak minősített eszközök / fémhulladék elszállításának bizonylata (${ph.phaseLabel} fázis)`;
+        let tocTitle = "";
+        if (ph.heading.includes("VISSZANYERT")) {
+          tocTitle = `${myAnnexNo}. számú melléklet: Selejtezésből visszanyert tartozékok, alkatrészek, hulladékanyagok`;
+        } else if (ph.wasteType === "ewaste") {
+          tocTitle = `${myAnnexNo}. számú melléklet: Elektronikai hulladék elszállításának bizonylata`;
+        } else if (ph.wasteType === "municipal") {
+          tocTitle = `${myAnnexNo}. számú melléklet: Kommunális hulladék elszállításának bizonylata`;
+        } else {
+          tocTitle = `${myAnnexNo}. számú melléklet: A hulladéknak minősített eszközök / fémhulladék elszállításának bizonylata`;
+        }
         tocEntries.push(tocTitle);
 
         const phHtml = `
@@ -1615,34 +1737,37 @@
             </p>
           ` : ""}
 
-          <div style="font-weight:700; font-size:10.5pt; margin:4mm 0 2mm;">A fémhulladék értékesítésének igazolása:</div>
-          <p class="sj-p">
-            Az eszközökből megsemmisítés előtt kinyert fémhulladék ${escapeHtml(buyerSiteInessive)} történő értékesítésének ${escapeHtml(ph.phaseLabel)} fázisát ${escapeHtml(formatHuLongDate(ph.date, true))} elvégeztük.
+          <p class="sj-p" style="margin-top:3mm;">
+            <strong>A szállítás igazolása:</strong> ${escapeHtml(wt.accusative)} ${escapeHtml(formatHuLongDate(ph.date, true))} elszállítottuk ${escapeHtml(destStr)}.
           </p>
+
+          <div style="display:flex; justify-content:flex-end; margin:7mm 0 4mm;">
+            <div style="width:58mm; text-align:center;">
+              <div style="border-top:1px solid #000; padding-top:2px; font-size:9.5pt;">aláírás</div>
+            </div>
+          </div>
+
           <p class="sj-p">
             A <strong>${escapeHtml(recStr)}</strong> sz. bizonylatot a Selejtezési Bizottság átvette.
             ${ph.amount ? ` (Bevétel összege: <strong>${escapeHtml(formatFt(ph.amount))}</strong>)` : ""}
           </p>
 
-          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin:8mm 0 6mm;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin:5mm 0 4mm;">
             <div style="font-size:10.5pt;">${escapeHtml(city)}, ${escapeHtml(formatHuDotDate(ph.date))}</div>
-            <div style="display:flex; gap:14mm;">
-              <div style="width:48mm; text-align:center;">
-                <div style="border-top:1px solid #000; padding-top:2px; font-size:9.5pt;">aláírás</div>
-              </div>
-              <div style="width:48mm; text-align:center;">
-                <div style="border-top:1px solid #000; padding-top:2px; font-size:9.5pt;">átvevő</div>
-              </div>
+            <div style="width:58mm; text-align:center;">
+              <div style="border-top:1px solid #000; padding-top:2px; font-size:9.5pt;">átvevő</div>
             </div>
           </div>
 
+          <div style="font-weight:700; font-size:10.5pt; margin:3mm 0 2mm;">${escapeHtml(ph.docLabel || wt.defaultDocLabel)}</div>
+
           ${ph.images.length > 0 ? `
             <div class="sj-receipt-grid ${ph.images.length > 1 ? "multi" : ""}">
-              ${ph.images.map(src => `<img src="${src}" alt="Átvételi bizonylat" />`).join("")}
+              ${ph.images.map(src => `<img src="${src}" alt="Csatolt bizonylat" />`).join("")}
             </div>
           ` : `
-            <div style="border:1.5px dashed #94a3b8; border-radius:8px; height:110mm; display:flex; align-items:center; justify-content:center; color:#64748b; font-family:Arial, sans-serif; font-size:9pt;">
-              [Csatolt átvételi bizonylat helye — a bal oldali 3. lépésben tölthető fel képként]
+            <div style="border:1.5px dashed #94a3b8; border-radius:8px; height:112mm; display:flex; align-items:center; justify-content:center; color:#64748b; font-family:Arial, sans-serif; font-size:9pt;">
+              [Csatolt bizonylat / mérési jegyzőkönyv helye — a bal oldali 3. lépésben tölthető fel képként]
             </div>
           `}
         `;
@@ -1761,21 +1886,55 @@
         const closeAnnexNo = annexCounter++;
         tocEntries.push(`${closeAnnexNo}. számú melléklet: A jegyzőkönyv VII. fejezete, a selejtezés végrehajtásának lezárása`);
 
-        let metalSummaryText = closeMetalOverride;
-        if (!metalSummaryText) {
-          if (phases.length === 0) {
-            metalSummaryText = "A selejtezési eljárás során fém- és vashulladék értékesítésre nem került sor.";
-          } else {
-            const validDates = phases.map(p => p.date).filter(Boolean).map(d => formatHuDotDate(d));
-            const validReceipts = phases.map(p => p.receipts.trim()).filter(Boolean);
-            const amounts = phases.map(p => parseFloat(p.amount)).filter(n => !isNaN(n) && n > 0);
-            const totalAmount = amounts.reduce((a, b) => a + b, 0);
-            const breakdown = amounts.length > 1 ? ` (${amounts.map(a => formatFt(a)).join(" + ")})` : "";
-            const buyerFull = buyerSite ? `${buyer} (${buyerSite})` : buyer;
-            metalSummaryText = `A szétbontás során kinyert fém- és vashulladékot ${huArticle(buyer)} ${buyerFull} részére értékesítettük${validDates.length ? " " + validDates.join(" és ") + " napokon" : ""}. ` +
-              (totalAmount > 0 ? `Az értékesítésből származó bevétel összesen ${formatFt(totalAmount)}${breakdown}, mely a társaság bankszámlájára kerül átutalásra. ` : "") +
-              (validReceipts.length ? `(Igazoló bizonylatok: ${validReceipts.join(", ")}).` : "");
-          }
+        const metalPhases = phases.filter(p => p.wasteType === "metal");
+        const nonMetalPhases = phases.filter(p => p.wasteType === "ewaste" || p.wasteType === "municipal");
+
+        // 1) Fém- és vashulladék összefoglaló
+        let metalSummaryHtml = "";
+        if (closeMetalOverride) {
+          metalSummaryHtml = `<p class="sj-p"><strong>Vashulladék értékesítése:</strong> ${escapeHtml(closeMetalOverride)}</p>`;
+        } else if (metalPhases.length > 0) {
+          const buyers = [...new Set(metalPhases.map(p => {
+            const b = getPhaseBuyer(p);
+            const s = getPhaseSite(p);
+            return s ? `${b} (${s})` : b;
+          }).filter(Boolean))];
+          const buyerStr = joinHuList(buyers) || "a kijelölt átvevő";
+          const dates = [...new Set(metalPhases.map(p => formatHuDotDateWithSuffix(p.date)).filter(Boolean))];
+          const receipts = metalPhases.map(p => p.receipts.trim()).filter(Boolean);
+          const amounts = metalPhases.map(p => parseFloat(p.amount)).filter(n => !isNaN(n) && n > 0);
+          const totalAmount = amounts.reduce((a, b) => a + b, 0);
+          const breakdown = amounts.length > 1 ? ` (${amounts.map(a => formatFt(a)).join(" + ")})` : "";
+          const firstBuyer = getPhaseBuyer(metalPhases[0]);
+          const txt = `A szétbontás során kinyert fém- és vashulladékot ${huArticle(firstBuyer)} ${buyerStr} részére ${totalAmount > 0 ? "értékesítettük" : "átadtuk"}${dates.length ? " " + joinHuList(dates) : ""}. ` +
+            (totalAmount > 0 ? `Az értékesítésből származó bevétel összesen ${formatFt(totalAmount)}${breakdown}, mely a társaság bankszámlájára kerül átutalásra. ` : "") +
+            (receipts.length ? `(Igazoló bizonylat${receipts.length > 1 ? "ok" : ""}: ${joinHuList(receipts)}).` : "");
+          metalSummaryHtml = `<p class="sj-p"><strong>Vashulladék értékesítése:</strong> ${escapeHtml(txt)}</p>`;
+        } else if (nonMetalPhases.length === 0) {
+          metalSummaryHtml = `<p class="sj-p"><strong>Vashulladék értékesítése:</strong> A selejtezési eljárás során fém- és vashulladék értékesítésre nem került sor.</p>`;
+        }
+
+        // 2) Elektronikai és kommunális hulladék összefoglaló
+        let nonMetalSummaryHtml = "";
+        const hasEwaste = nonMetalPhases.some(p => p.wasteType === "ewaste");
+        const hasMunicipal = nonMetalPhases.some(p => p.wasteType === "municipal");
+        const nonMetalHeading = (hasEwaste && hasMunicipal)
+          ? "Elektronikai és kommunális hulladék:"
+          : (hasEwaste ? "Elektronikai hulladék:" : "Kommunális hulladék:");
+
+        if (closeNonMetalOverride) {
+          nonMetalSummaryHtml = `<p class="sj-p"><strong>${nonMetalPhases.length > 0 ? nonMetalHeading : "Elektronikai és kommunális hulladék:"}</strong> ${escapeHtml(closeNonMetalOverride)}</p>`;
+        } else if (nonMetalPhases.length > 0) {
+          const wasteDesc = (hasEwaste && hasMunicipal)
+            ? "elektronikai és vegyes hulladékot"
+            : (hasEwaste ? "elektronikai hulladékot" : "kommunális és vegyes hulladékot");
+          const partners = [...new Set(nonMetalPhases.map(p => getPhaseBuyer(p)).filter(Boolean))];
+          const partnerText = partners.length ? ` (${partners.join(" / ")})` : "";
+          const dates = [...new Set(nonMetalPhases.map(p => formatHuDotDateWithSuffix(p.date)).filter(Boolean))];
+          const receipts = nonMetalPhases.map(p => p.receipts.trim()).filter(Boolean);
+          const txt = `Az eszközök szétbontása után keletkező ${wasteDesc} a kijelölt hulladékkezelő${partnerText} részére átadtuk${dates.length ? " " + joinHuList(dates) : ""}.` +
+            (receipts.length ? ` (Igazoló bizonylat${receipts.length > 1 ? "ok" : ""}: ${joinHuList(receipts)}).` : "");
+          nonMetalSummaryHtml = `<p class="sj-p"><strong>${nonMetalHeading}</strong> ${escapeHtml(txt)}</p>`;
         }
 
         const closingSigners = [
@@ -1803,7 +1962,8 @@
             </p>
 
             <div class="sj-h-section" style="margin-bottom:4mm;">A hasznosítás eredményének összefoglalása</div>
-            <p class="sj-p"><strong>Vashulladék értékesítése:</strong> ${escapeHtml(metalSummaryText)}</p>
+            ${metalSummaryHtml}
+            ${nonMetalSummaryHtml}
             <p class="sj-p"><strong>Haszonanyag:</strong> ${escapeHtml(closePartsText)}</p>
             <p class="sj-p"><strong>Megsemmisítés:</strong> ${escapeHtml(closeDestText)}</p>
 
@@ -1916,7 +2076,7 @@
       const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
       const protoNo = (document.getElementById("sjFull_protoNo")?.value || "").trim();
       const filledCount = items.filter(i => i.name.trim() || i.nytsz.trim()).length;
-      const details = `${compTag}Sorszám: ${protoNo} | Dátum: ${document.getElementById("sjFull_date").value} | ${filledCount} tétel | ${phases.length} hulladék fázis`;
+      const details = `${compTag}Sorszám: ${protoNo} | Dátum: ${document.getElementById("sjFull_date").value} | ${filledCount} tétel | ${phases.length} hulladék melléklet`;
 
       try {
         await apiCall({
@@ -1930,10 +2090,10 @@
     }
 
     return {
-      init, goStep, setViewMode, toggleCustom, onBuyerChange, openUnitDropdown, pickUnitFromDropdown, handleUnitInput,
+      init, goStep, setViewMode, toggleCustom, openUnitDropdown, pickUnitFromDropdown, handleUnitInput,
       parsePastedData, loadSampleItems, applyBulkFields,
       updateItem, addItem, removeItem, clearItems,
-      addPhase, removePhase, updatePhase, handlePhaseImages, clearPhaseImages,
+      addPhase, removePhase, onPhaseWasteTypeChange, onPhaseBuyerChange, onPhaseSiteChange, updatePhase, handlePhaseImages, clearPhaseImages,
       pickAnnex1ForDestruction, importAllFromAnnex1, updateDestItem, addDestItem, removeDestItem, clearDestItems,
       renderDocument, printAndLog
     };
