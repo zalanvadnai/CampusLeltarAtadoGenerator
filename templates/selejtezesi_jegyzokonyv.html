@@ -455,6 +455,7 @@
             <label>Átvevő partner cég</label>
             <select id="sjFull_buyerSelect" class="form-control" onchange="SelejtezesiJkMod.onBuyerChange()">
               <option value="KLAUDIA-FER Kft." selected>KLAUDIA-FER Kft.</option>
+               <option value="MOHU Zrt.">MOHU Zrt.</option>
               <option value="POVAS Kft.">POVAS Kft.</option>
               <option value="__custom__">Egyéb partner...</option>
             </select>
@@ -811,6 +812,8 @@
           siteSel.value = "Házgyár úti telep";
         } else if (buyerSel.value === "POVAS Kft.") {
           siteSel.value = "Külső Kassai úti telep";
+        } else if (buyerSel.value === "MOHU Zrt.") {
+          siteSel.value = "Vértesi úti telep";
         } else if (buyerSel.value === "__custom__") {
           siteSel.value = "__custom__";
         }
