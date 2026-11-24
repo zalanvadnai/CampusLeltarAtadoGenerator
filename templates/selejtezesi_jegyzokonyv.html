@@ -152,7 +152,6 @@
     align-items: end;
   }
 
-  /* CSAK KÉPERNYŐN REJTI A NEM AKTÍV FEJEZETEKET, NYOMTATÁSKOR MINDIG MINDEN MEGJELENIK */
   @media screen {
     .sj-page-hidden-screen {
       display: none !important;
@@ -206,14 +205,14 @@
           <input id="sjFull_locCustom" class="form-control hidden" style="margin-top:6px;" placeholder="pl. a Lovarda épületében" oninput="SelejtezesiJkMod.renderDocument()" />
         </div>
 
-        <!-- SELEJTEZÉSI BIZOTTSÁG (3 VÁLASZTHATÓ TAG) -->
+        <!-- SELEJTEZÉSI BIZOTTSÁG (MAX. 3 FŐ) -->
         <div class="form-group">
           <label>Selejtezési Bizottság részéről (max. 3 fő)</label>
           <div style="display:flex; flex-direction:column; gap:7px;">
             <div>
               <select id="sjFull_biz1Select" class="form-control" style="padding:7px 10px; font-size:13px;" onchange="SelejtezesiJkMod.toggleCustom('sjFull_biz1Select','sjFull_biz1CustomWrap'); SelejtezesiJkMod.renderDocument();">
                 <option value="Pocsai Tamás|Üzemeltetési igazgató" selected>1. tag: Pocsai Tamás (Üzemeltetési ig.)</option>
-                <option value="Petróczki Gábor|Üzemeltetési vezető">1. tag: Petróczki Gábor (Catering ig.)</option>
+                <option value="Petróczki Gábor|Üzemeltetési vezető">1. tag: Petróczki Gábor (Categring ig.)</option>
                 <option value="Tóth Zoltán|Raktárvezető">1. tag: Tóth Zoltán (Egységvezető)</option>
                 <option value="Kovács László|Eszközgazdálkodási vezető">1. tag: Kovács László (Eszközgazd. vez.)</option>
                 <option value="Soltész Tímea|Ügyvezetés, adminisztráció">1. tag: Soltész Tímea (Adminisztráció)</option>
@@ -230,8 +229,8 @@
               <select id="sjFull_biz2Select" class="form-control" style="padding:7px 10px; font-size:13px;" onchange="SelejtezesiJkMod.toggleCustom('sjFull_biz2Select','sjFull_biz2CustomWrap'); SelejtezesiJkMod.renderDocument();">
                 <option value="" selected>2. tag: — Nincs kiválasztva —</option>
                 <option value="Pocsai Tamás|Üzemeltetési igazgató">2. tag: Pocsai Tamás (Üzemeltetési ig.)</option>
-                <option value="Petróczki Gábor|Üzemeltetési vezető">2. tag: Petróczki Gábor (Üzemeltetési vez.)</option>
-                <option value="Tóth Zoltán|Raktárvezető">2. tag: Tóth Zoltán (Raktárvezető)</option>
+                <option value="Petróczki Gábor|Üzemeltetési vezető">2. tag: Petróczki Gábor (Catering ig.)</option>
+                <option value="Tóth Zoltán|Raktárvezető">2. tag: Tóth Zoltán (Egységvezető)</option>
                 <option value="Kovács László|Eszközgazdálkodási vezető">2. tag: Kovács László (Eszközgazd. vez.)</option>
                 <option value="Soltész Tímea|Ügyvezetés, adminisztráció">2. tag: Soltész Tímea (Adminisztráció)</option>
                 <option value="__custom__">2. tag: Egyéb személy...</option>
@@ -246,8 +245,8 @@
               <select id="sjFull_biz3Select" class="form-control" style="padding:7px 10px; font-size:13px;" onchange="SelejtezesiJkMod.toggleCustom('sjFull_biz3Select','sjFull_biz3CustomWrap'); SelejtezesiJkMod.renderDocument();">
                 <option value="" selected>3. tag: — Nincs kiválasztva —</option>
                 <option value="Pocsai Tamás|Üzemeltetési igazgató">3. tag: Pocsai Tamás (Üzemeltetési ig.)</option>
-                <option value="Petróczki Gábor|Üzemeltetési vezető">3. tag: Petróczki Gábor (Üzemeltetési vez.)</option>
-                <option value="Tóth Zoltán|Raktárvezető">3. tag: Tóth Zoltán (Raktárvezető)</option>
+                <option value="Petróczki Gábor|Üzemeltetési vezető">3. tag: Petróczki Gábor (Catering ig.)</option>
+                <option value="Tóth Zoltán|Raktárvezető">3. tag: Tóth Zoltán (Egységvezető)</option>
                 <option value="Kovács László|Eszközgazdálkodási vezető">3. tag: Kovács László (Eszközgazd. vez.)</option>
                 <option value="Soltész Tímea|Ügyvezetés, adminisztráció">3. tag: Soltész Tímea (Adminisztráció)</option>
                 <option value="__custom__">3. tag: Egyéb személy...</option>
@@ -260,17 +259,57 @@
           </div>
         </div>
 
+        <!-- SZERVEZETI EGYSÉG RÉSZÉRŐL (MAX. 3 FŐ) -->
         <div class="form-group">
-          <label>Szervezeti egység részéről</label>
-          <select id="sjFull_unitRepSelect" class="form-control" onchange="SelejtezesiJkMod.toggleCustom('sjFull_unitRepSelect','sjFull_unitRepCustomWrap'); SelejtezesiJkMod.renderDocument();">
-            <option value="Kovács László|Eszközgazdálkodási vezető">Kovács László (Eszközgazdálkodási vezető)</option>
-            <option value="Tóth Zoltán|Központi raktár vezető">Tóth Zoltán (Központi raktár vezető)</option>
-            <option value="Soltész Tímea|Ügyvezetés, adminisztráció">Soltész Tímea (Adminisztráció)</option>
-            <option value="__custom__">Egyéb személy...</option>
-          </select>
-          <div id="sjFull_unitRepCustomWrap" class="hidden row-2" style="margin-top:6px;">
-            <input id="sjFull_unitRepNameCustom" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Név" oninput="SelejtezesiJkMod.renderDocument()" />
-            <input id="sjFull_unitRepTitleCustom" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Beosztás" oninput="SelejtezesiJkMod.renderDocument()" />
+          <label>Szervezeti egység részéről (max. 3 fő)</label>
+          <div style="display:flex; flex-direction:column; gap:7px;">
+            <div>
+              <select id="sjFull_unit1Select" class="form-control" style="padding:7px 10px; font-size:13px;" onchange="SelejtezesiJkMod.toggleCustom('sjFull_unit1Select','sjFull_unit1CustomWrap'); SelejtezesiJkMod.renderDocument();">
+                <option value="Kovács László|Eszközgazdálkodási vezető" selected>1. fő: Kovács László (Eszközgazd. vez.)</option>
+                <option value="Tóth Zoltán|Központi raktár vezető">1. fő: Tóth Zoltán (Egységvezető)</option>
+                <option value="Petróczki Gábor|Üzemeltetési vezető">1. fő: Petróczki Gábor (Catering ig.)</option>
+                <option value="Pocsai Tamás|Üzemeltetési igazgató">1. fő: Pocsai Tamás (Üzemeltetési ig.)</option>
+                <option value="Soltész Tímea|Ügyvezetés, adminisztráció">1. fő: Soltész Tímea (Adminisztráció)</option>
+                <option value="__custom__">1. fő: Egyéb személy...</option>
+                <option value="">1. fő: — Nincs megadva —</option>
+              </select>
+              <div id="sjFull_unit1CustomWrap" class="hidden row-2" style="margin-top:5px;">
+                <input id="sjFull_unit1NameCustom" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="1. fő neve" oninput="SelejtezesiJkMod.renderDocument()" />
+                <input id="sjFull_unit1TitleCustom" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Beosztása" oninput="SelejtezesiJkMod.renderDocument()" />
+              </div>
+            </div>
+
+            <div>
+              <select id="sjFull_unit2Select" class="form-control" style="padding:7px 10px; font-size:13px;" onchange="SelejtezesiJkMod.toggleCustom('sjFull_unit2Select','sjFull_unit2CustomWrap'); SelejtezesiJkMod.renderDocument();">
+                <option value="" selected>2. fő: — Nincs kiválasztva —</option>
+                <option value="Kovács László|Eszközgazdálkodási vezető">2. fő: Kovács László (Eszközgazd. vez.)</option>
+                <option value="Tóth Zoltán|Központi raktár vezető">2. fő: Tóth Zoltán (Egységvezető)</option>
+                <option value="Petróczki Gábor|Üzemeltetési vezető">2. fő: Petróczki Gábor (Catering ig.)</option>
+                <option value="Pocsai Tamás|Üzemeltetési igazgató">2. fő: Pocsai Tamás (Üzemeltetési ig.)</option>
+                <option value="Soltész Tímea|Ügyvezetés, adminisztráció">2. fő: Soltész Tímea (Adminisztráció)</option>
+                <option value="__custom__">2. fő: Egyéb személy...</option>
+              </select>
+              <div id="sjFull_unit2CustomWrap" class="hidden row-2" style="margin-top:5px;">
+                <input id="sjFull_unit2NameCustom" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="2. fő neve" oninput="SelejtezesiJkMod.renderDocument()" />
+                <input id="sjFull_unit2TitleCustom" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Beosztása" oninput="SelejtezesiJkMod.renderDocument()" />
+              </div>
+            </div>
+
+            <div>
+              <select id="sjFull_unit3Select" class="form-control" style="padding:7px 10px; font-size:13px;" onchange="SelejtezesiJkMod.toggleCustom('sjFull_unit3Select','sjFull_unit3CustomWrap'); SelejtezesiJkMod.renderDocument();">
+                <option value="" selected>3. fő: — Nincs kiválasztva —</option>
+                <option value="Kovács László|Eszközgazdálkodási vezető">3. fő: Kovács László (Eszközgazd. vez.)</option>
+                <option value="Tóth Zoltán|Központi raktár vezető">3. fő: Tóth Zoltán (Egységvezető)</option>
+                <option value="Petróczki Gábor|Üzemeltetési vezető">3. fő: Petróczki Gábor (Catering ig.)</option>
+                <option value="Pocsai Tamás|Üzemeltetési igazgató">3. fő: Pocsai Tamás (Üzemeltetési ig.)</option>
+                <option value="Soltész Tímea|Ügyvezetés, adminisztráció">3. fő: Soltész Tímea (Adminisztráció)</option>
+                <option value="__custom__">3. fő: Egyéb személy...</option>
+              </select>
+              <div id="sjFull_unit3CustomWrap" class="hidden row-2" style="margin-top:5px;">
+                <input id="sjFull_unit3NameCustom" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="3. fő neve" oninput="SelejtezesiJkMod.renderDocument()" />
+                <input id="sjFull_unit3TitleCustom" class="form-control" style="padding:6px 8px; font-size:12.5px;" placeholder="Beosztása" oninput="SelejtezesiJkMod.renderDocument()" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -278,7 +317,8 @@
           <div class="form-group">
             <label>Engedélyező (I. fejezet)</label>
             <select id="sjFull_approverSelect" class="form-control" onchange="SelejtezesiJkMod.toggleCustom('sjFull_approverSelect','sjFull_approverCustom'); SelejtezesiJkMod.renderDocument();">
-              <option value="Páll László">Páll László ügyvezető</option>
+              <option value="Páll László">Páll László (ügyvezető)</option>
+              <option value="Miklósvölgyi Péter">Miklósvölgyi Péter (ügyvezető)</option>
               <option value="__custom__">Egyéb engedélyező...</option>
             </select>
             <input id="sjFull_approverCustom" class="form-control hidden" style="margin-top:6px;" placeholder="Engedélyező neve" oninput="SelejtezesiJkMod.renderDocument()" />
@@ -586,7 +626,7 @@
     const PHASE_ORDINALS = ["első", "második", "harmadik", "negyedik", "ötödik"];
 
     let currentStep = 1;
-    let viewMode = "current"; // "current" | "all"
+    let viewMode = "current";
     let items = [];
     let phases = [];
     let destItems = [];
@@ -773,6 +813,15 @@
       const list = [];
       [1, 2, 3].forEach(n => {
         const p = getPersonPair(`sjFull_biz${n}Select`, `sjFull_biz${n}NameCustom`, `sjFull_biz${n}TitleCustom`);
+        if (p.name) list.push(p);
+      });
+      return list;
+    }
+
+    function getUnitRepMembers() {
+      const list = [];
+      [1, 2, 3].forEach(n => {
+        const p = getPersonPair(`sjFull_unit${n}Select`, `sjFull_unit${n}NameCustom`, `sjFull_unit${n}TitleCustom`);
         if (p.name) list.push(p);
       });
       return list;
@@ -1217,7 +1266,7 @@
       const dateIso = document.getElementById("sjFull_date")?.value || "";
       const loc = getSelectOrCustom("sjFull_locSelect", "sjFull_locCustom");
       const bizMembers = getCommitteeMembers();
-      const unitRep = getPersonPair("sjFull_unitRepSelect", "sjFull_unitRepNameCustom", "sjFull_unitRepTitleCustom");
+      const unitMembers = getUnitRepMembers();
       const approver = getSelectOrCustom("sjFull_approverSelect", "sjFull_approverCustom") || "Páll László";
       const resp = getSelectOrCustom("sjFull_respSelect", "sjFull_respCustom") || "Kovács László";
       const grossVal = document.getElementById("sjFull_grossVal")?.value || "0";
@@ -1249,12 +1298,21 @@
       // --- 2. OLDAL: JEGYZŐKÖNYV I–II. (step 1) ---
       const bizPresentHtml = bizMembers.length > 0
         ? bizMembers.map(m => `
-            <div style="display:flex; gap:10mm; padding-left:6mm; margin-bottom:1.5mm;">
+            <div style="display:flex; gap:10mm; padding-left:6mm; margin-bottom:1.2mm;">
               <strong style="min-width:48mm;">${escapeHtml(m.name)}</strong>
               <span>${escapeHtml(m.title)}</span>
             </div>
           `).join("")
-        : `<div style="padding-left:6mm; color:#666; margin-bottom:2mm;">—</div>`;
+        : `<div style="padding-left:6mm; color:#666; margin-bottom:1.5mm;">—</div>`;
+
+      const unitPresentHtml = unitMembers.length > 0
+        ? unitMembers.map(m => `
+            <div style="display:flex; gap:10mm; padding-left:6mm; margin-bottom:1.2mm;">
+              <strong style="min-width:48mm;">${escapeHtml(m.name)}</strong>
+              <span>${escapeHtml(m.title)}</span>
+            </div>
+          `).join("")
+        : `<div style="padding-left:6mm; color:#666; margin-bottom:1.5mm;">—</div>`;
 
       numberedPages.push({
         step: 1,
@@ -1264,20 +1322,17 @@
             <div class="doc-top-title">Selejtezési jegyzőkönyv</div>
           </div>
 
-          <div class="doc-main-title" style="font-size:17pt; margin:2mm 0 1mm;">Jegyzőkönyv</div>
-          <div style="text-align:center; font-size:12pt; font-weight:700; margin-bottom:6mm;">tárgyi eszközök selejtezéséről</div>
+          <div class="doc-main-title" style="font-size:17pt; margin:1.5mm 0 1mm;">Jegyzőkönyv</div>
+          <div style="text-align:center; font-size:12pt; font-weight:700; margin-bottom:5mm;">tárgyi eszközök selejtezéséről</div>
 
           <p class="sj-p">Készült ${escapeHtml(formatHuLongDate(dateIso, true))} ${escapeHtml(loc)}.</p>
 
-          <p class="sj-p" style="font-weight:700; margin-bottom:2mm;">Jelen vannak:</p>
-          <div style="margin-bottom:4.5mm; font-size:10.2pt; line-height:1.45;">
+          <p class="sj-p" style="font-weight:700; margin-bottom:1.5mm;">Jelen vannak:</p>
+          <div style="margin-bottom:4mm; font-size:10pt; line-height:1.4;">
             <div style="margin-bottom:1mm;"><em>A Selejtezési Bizottság részéről (név, beosztás):</em></div>
             ${bizPresentHtml}
-            <div style="margin-top:2.5mm; margin-bottom:1mm;"><em>Szervezeti egység részéről (név, beosztás):</em></div>
-            <div style="display:flex; gap:10mm; padding-left:6mm;">
-              <strong style="min-width:48mm;">${escapeHtml(unitRep.name || "—")}</strong>
-              <span>${escapeHtml(unitRep.title)}</span>
-            </div>
+            <div style="margin-top:2mm; margin-bottom:1mm;"><em>Szervezeti egység részéről (név, beosztás):</em></div>
+            ${unitPresentHtml}
           </div>
 
           <div class="sj-h-section">I. Selejtezési hatáskör</div>
@@ -1293,14 +1348,14 @@
             Fentiek alapján a Bizottság az 1. sz. mellékletként elkészített jegyzékekben felsorolt, értékesítés és átmozgatás alá nem került tárgyi eszközök selejtezését javasolja.
           </p>
 
-          <table style="width:86%; margin:3.5mm auto 5mm; border-collapse:collapse; font-family:'Times New Roman', Times, serif; font-size:10.8pt;">
+          <table style="width:86%; margin:3mm auto 4.5mm; border-collapse:collapse; font-family:'Times New Roman', Times, serif; font-size:10.5pt;">
             <tr>
-              <td style="padding:3px 6px;">A selejtezésre javasolt tárgyi eszközök bruttó értéke (összesen):</td>
-              <td style="padding:3px 6px; text-align:right; font-weight:700;">${escapeHtml(formatFt(grossVal))}</td>
+              <td style="padding:2.5px 6px;">A selejtezésre javasolt tárgyi eszközök bruttó értéke (összesen):</td>
+              <td style="padding:2.5px 6px; text-align:right; font-weight:700;">${escapeHtml(formatFt(grossVal))}</td>
             </tr>
             <tr>
-              <td style="padding:3px 6px;">A selejtezésre javasolt tárgyi eszközök összevont nettó értéke:</td>
-              <td style="padding:3px 6px; text-align:right; font-weight:700;">${escapeHtml(formatFt(netVal))}</td>
+              <td style="padding:2.5px 6px;">A selejtezésre javasolt tárgyi eszközök összevont nettó értéke:</td>
+              <td style="padding:2.5px 6px; text-align:right; font-weight:700;">${escapeHtml(formatFt(netVal))}</td>
             </tr>
           </table>
 
@@ -1325,8 +1380,9 @@
 
       const page3Signers = [
         ...(bizMembers.length > 0 ? bizMembers.map(m => ({ label: "Selejtezési Bizottság", name: m.name })) : [{ label: "Selejtezési Bizottság", name: "" }]),
-        { label: "Szervezeti egység", name: unitRep.name }
+        ...(unitMembers.length > 0 ? unitMembers.map(m => ({ label: "Szervezeti egység", name: m.name })) : [{ label: "Szervezeti egység", name: "" }])
       ];
+      const page3Cols = Math.min(page3Signers.length, 3);
 
       numberedPages.push({
         step: 1,
@@ -1340,7 +1396,7 @@
           <p class="sj-p">
             ${utilParagraph} A selejtezett tárgyi eszközök hulladékanyagának raktárra vételéért, értékesítéséért, megsemmisítéséért <strong>${escapeHtml(resp)}</strong> a felelős.
           </p>
-          <div style="display:flex; justify-content:flex-end; margin:6mm 0 3mm;">
+          <div style="display:flex; justify-content:flex-end; margin:5.5mm 0 2.5mm;">
             <div style="width:62mm; text-align:center;">
               <div style="border-top:1px solid #000; padding-top:2px; font-size:9pt;">Aláírás (tudomásul vétel)</div>
             </div>
@@ -1361,25 +1417,27 @@
             A Bizottság rögzíti, hogy az 1. számú mellékletben felsorolt eszközök selejtezésére vonatkozó javaslatát a hatáskört gyakorló vezető részére előterjesztette. A Bizottság javasolja az érintett eszközök állományból történő végleges kivezetését és hulladékként történő hasznosítását. Ennek keretében az eszközök szükség szerinti szétbontása, valamint a keletkező hulladékanyagok hulladékgazdálkodási előírások szerinti elkülönített kezelése és átadása a vonatkozó jogszabályoknak meg kell feleljen.
           </p>
 
-          <div style="font-weight:700; font-size:10pt; margin:3.5mm 0 9mm;">Aláírások:</div>
-          <div style="display:grid; grid-template-columns: repeat(${page3Signers.length}, 1fr); gap:6mm; width:100%; margin:0 auto 8mm; text-align:center;">
+          <div style="font-weight:700; font-size:10pt; margin:3mm 0 8mm;">Aláírások:</div>
+          <div style="display:grid; grid-template-columns: repeat(${page3Cols}, 1fr); column-gap:8mm; row-gap:10mm; width:100%; margin:0 auto 10mm; text-align:center;">
             ${page3Signers.map(s => `
               <div>
                 <div style="border-top:1px solid #000; padding-top:2px; font-size:8.8pt; font-weight:700;">${escapeHtml(s.label)}</div>
-                ${s.name ? `<div style="font-size:8.5pt; color:#333;">${escapeHtml(s.name)}</div>` : ""}
+                ${s.name ? `<div style="font-size:8.4pt; color:#333;">${escapeHtml(s.name)}</div>` : ""}
               </div>
             `).join("")}
           </div>
 
-          <div style="border-top:1.5px solid #333; padding-top:4.5mm; margin-top:3mm;">
+          <div style="margin-top:4mm;">
             <p class="sj-p">
               A selejtezési jegyzőkönyvben foglaltakkal egyetértek, a jegyzékben felsorolt tárgyi eszközök selejtezését, hulladékként történő elszállítását, fémhulladékként történő értékesítését, vagy megsemmisítését jóváhagyom.
             </p>
-            <p class="sj-p" style="margin-bottom:9mm;">
+            <p class="sj-p" style="margin-bottom:10mm;">
               Elrendelem a selejtezett tárgyi eszközök mai nappal történő kivezetését az állományból.
             </p>
-            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-              <div style="font-size:10.5pt;">${escapeHtml(city)}, ${escapeHtml(formatHuDotDate(dateIso))}</div>
+            <div style="font-size:10.5pt; margin-bottom:12mm;">
+              ${escapeHtml(city)}, ${escapeHtml(formatHuDotDate(dateIso))}
+            </div>
+            <div style="display:flex; justify-content:flex-end;">
               <div style="width:65mm; text-align:center;">
                 <div style="border-top:1px solid #000; padding-top:3px; font-size:10pt;">Ügyvezető</div>
               </div>
@@ -1660,8 +1718,9 @@
 
         const closingSigners = [
           ...bizMembers.map(m => ({ name: m.name, title: m.title })),
-          ...(unitRep.name ? [{ name: unitRep.name, title: unitRep.title }] : [])
+          ...unitMembers.map(m => ({ name: m.name, title: m.title }))
         ];
+        const closingCols = Math.max(1, Math.min(closingSigners.length, 3));
 
         numberedPages.push({
           step: 5,
@@ -1693,7 +1752,7 @@
 
             <div style="font-size:11pt; margin-bottom:18mm;">${escapeHtml(city)}, ${escapeHtml(formatHuDotDate(closeDateIso))}</div>
 
-            <div style="display:grid; grid-template-columns: repeat(${Math.max(1, Math.min(closingSigners.length, 4))}, 1fr); gap:8mm; width:100%; margin:0 auto; text-align:center;">
+            <div style="display:grid; grid-template-columns: repeat(${closingCols}, 1fr); column-gap:10mm; row-gap:14mm; width:100%; margin:0 auto; text-align:center;">
               ${closingSigners.map(s => `
                 <div>
                   <div style="border-top:1px solid #000; padding-top:4px; font-size:10pt; font-weight:700;">${escapeHtml(s.name)}</div>
