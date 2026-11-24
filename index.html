@@ -264,14 +264,117 @@
     .company-card h3 { margin: 0 0 6px; font-size: 18px; }
     .company-card span { font-size: 13px; color: var(--muted); }
 
-    /* ===== DOCUMENT SELECTOR + FULL A4 PREVIEW & MAGNIFIER ===== */
+    /* ===== DOCUMENT SELECTOR + DRAFTS + FULL A4 PREVIEW & MAGNIFIER ===== */
     .doc-selector-grid { display: grid; grid-template-columns: 430px 1fr; gap: 28px; align-items: start; max-width: 1120px; margin: 16px auto; }
     @media (max-width: 900px) { .doc-selector-grid { grid-template-columns: 1fr; } }
+    .doc-selector-left { display: flex; flex-direction: column; gap: 16px; }
     .styled-select-wrap { position: relative; }
     .styled-select-wrap select { appearance: none; padding: 12px 38px 12px 14px; font-size: 15px; font-weight: 600; border: 2px solid var(--border); border-radius: 10px; background: #fff; }
     .styled-select-wrap select:focus { border-color: var(--primary); }
     .styled-select-wrap::after { content: "▼"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--primary); pointer-events: none; }
     .preview-stage { background: #e2e8f0; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; align-items: center; min-height: 480px; }
+
+    /* PISZKOZATOK BLOKK */
+    .drafts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+    .drafts-header h3 { margin: 0 !important; }
+    .draft-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 310px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .draft-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .draft-item:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      transform: translateY(-1px);
+    }
+    .draft-info {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .draft-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .draft-sub {
+      font-size: 11.5px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .draft-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .draft-time {
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 3px 7px;
+      white-space: nowrap;
+    }
+    .draft-del-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .draft-del-btn:hover {
+      background: #fee2e2;
+      color: var(--danger);
+      border-color: #fecaca;
+    }
+    .draft-empty {
+      font-size: 12.5px;
+      color: var(--muted);
+      text-align: center;
+      padding: 20px 10px;
+      background: #f8fafc;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 10px;
+      line-height: 1.45;
+    }
 
     .mini-doc-paper {
       width: 416px;
@@ -543,24 +646,35 @@
       </div>
     </section>
 
-    <!-- ===== 2. NYOMTATVÁNYVÁLASZTÓ + FULL A4 PREVIEW & MAGNIFIER ===== -->
+    <!-- ===== 2. NYOMTATVÁNYVÁLASZTÓ + PISZKOZATOK + FULL A4 PREVIEW & MAGNIFIER ===== -->
     <section id="docSelectView" class="hidden">
       <div class="doc-selector-grid">
-        <div class="panel">
-          <h3>Nyomtatvány kiválasztása</h3>
-          <p style="font-size:13px; color:var(--muted); margin-top:0;">
-            Kiválasztott cég: <strong id="selectorCompanyName"></strong>
-          </p>
-          <div class="form-group">
-            <label for="docTypeDropdown">Elérhető formanyomtatványok</label>
-            <div class="styled-select-wrap">
-              <select id="docTypeDropdown" class="form-control" onchange="renderMiniPreview()"></select>
+        <div class="doc-selector-left">
+          <div class="panel" style="margin-bottom:0;">
+            <h3>Nyomtatvány kiválasztása</h3>
+            <p style="font-size:13px; color:var(--muted); margin-top:0;">
+              Kiválasztott cég: <strong id="selectorCompanyName"></strong>
+            </p>
+            <div class="form-group">
+              <label for="docTypeDropdown">Elérhető formanyomtatványok</label>
+              <div class="styled-select-wrap">
+                <select id="docTypeDropdown" class="form-control" onchange="renderMiniPreview()"></select>
+              </div>
+            </div>
+            <p id="docTypeDesc" style="font-size:13px; color:var(--muted); min-height:44px; margin-bottom:20px; line-height:1.45;"></p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <button class="btn btn-primary btn-lg btn-block" onclick="openSelectedDocument()">✓ Nyomtatvány megnyitása →</button>
+              <button class="btn btn-outline btn-block" onclick="goHomeToCompanySelect(true)">← Másik cég választása</button>
             </div>
           </div>
-          <p id="docTypeDesc" style="font-size:13px; color:var(--muted); min-height:44px; margin-bottom:20px; line-height:1.45;"></p>
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            <button class="btn btn-primary btn-lg btn-block" onclick="openSelectedDocument()">✓ Nyomtatvány megnyitása →</button>
-            <button class="btn btn-outline btn-block" onclick="goHomeToCompanySelect(true)">← Másik cég választása</button>
+
+          <!-- PISZKOZATOK BLOKK -->
+          <div class="panel" style="margin-bottom:0;">
+            <div class="drafts-header">
+              <h3>Piszkozatok <span id="draftsCountBadge" style="font-size:12px; color:var(--muted); font-weight:600;"></span></h3>
+              <button type="button" id="clearDraftsBtn" class="btn btn-outline btn-sm hidden" onclick="clearCompanyDrafts()">Összes törlése</button>
+            </div>
+            <div id="draftsListContainer" class="draft-list"></div>
           </div>
         </div>
 
@@ -835,14 +949,6 @@
 
   // ===== SABLONOK REGISZTRÁCIÓJA =====
   const DOC_TYPES = [
-
-    {
-      id: "selejtezesi_jegyzokonyv",
-      label: "Selejtezési jegyzőkönyv (teljes)",
-      title: "IMMATERIÁLIS JAVAK, TÁRGYI ESZKÖZÖK SELEJTEZÉSI JEGYZŐKÖNYVE",
-      file: "templates/selejtezesi_jegyzokonyv.html",
-      desc: "Teljes, lépésről lépésre összeállítható selejtezési jegyzőkönyv (borító, I–VII. fejezetek, eszközjegyzék tömeges importtal, fémhulladék bizonylatok és megsemmisítési melléklet)."
-    },
     {
       id: "raktari_atadolap",
       label: "Raktári átadólap",
@@ -954,8 +1060,38 @@
       title: "TÁRGYI ESZKÖZÖK ÁTVÉTELI LAPJA",
       file: "templates/atveteli_lap_dolgozoi.html",
       desc: "Dolgozóknak visszaszolgáltatási kötelezettséggel átadott tárgyi eszközök átvételi lapja."
+    },
+    {
+      id: "selejtezesi_jegyzokonyv",
+      label: "Selejtezési jegyzőkönyv (teljes)",
+      title: "IMMATERIÁLIS JAVAK, TÁRGYI ESZKÖZÖK SELEJTEZÉSI JEGYZŐKÖNYVE",
+      file: "templates/selejtezesi_jegyzokonyv.html",
+      desc: "Teljes, lépésről lépésre összeállítható selejtezési jegyzőkönyv (borító, I–VII. fejezetek, eszközjegyzék tömeges importtal, fémhulladék bizonylatok és megsemmisítési melléklet)."
     }
   ];
+
+  // Dinamikus táblázatok / listák térképe a piszkozat mentéshez és visszaállításhoz
+  const DRAFT_LIST_CONFIG = {
+    raktari_atadolap: [{ id: "editItemsBody", add: "addEmptyItem", remove: "removeItem", minRows: 1 }],
+    egysegek_kozotti: [{ id: "ekEditItemsBody", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    hasznositasi_jegyzek: [{ id: "hjEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    felesleges_eszk_jegyzek: [{ id: "feEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    hasznositando_eszk_jegyzek: [{ id: "heEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    eszkoz_megvasarlas: [{ id: "emEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    megsemmisitesi_jegyzokonyv: [{ id: "mjEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    visszanyert_anyagok: [{ id: "vaEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    selejtezesre_javasolt: [{ id: "sjEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    selejtezett_javak: [{ id: "sijEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    selejtezett_targyi_eszkozok: [{ id: "steEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    allomanyba_vetel: [{ id: "avEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    atveteli_lap: [{ id: "alEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    atveteli_lap_dolgozoi: [{ id: "aldEditItemsList", add: "addEmptyItem", remove: "removeItem", clear: "clearItems", minRows: 1 }],
+    selejtezesi_jegyzokonyv: [
+      { id: "sjFull_itemsList", add: "addItem", remove: "removeItem", clear: "clearItems", minRows: 1 },
+      { id: "sjFull_phasesList", add: "addPhase", remove: "removePhase", minRows: 0, freshRows: 1 },
+      { id: "sjFull_destList", add: "addDestItem", remove: "removeDestItem", clear: "clearDestItems", minRows: 1 }
+    ]
+  };
 
   window.TemplateModules = {};
   const templateHtmlCache = {};
@@ -1075,6 +1211,12 @@
   let previewZoomBound = false;
   let previewZoomLevel = 1.15;
 
+  // Piszkozat állapot
+  let activeDraftId = null;
+  let activeDocId = null;
+  let draftSaveTimer = null;
+  let draftListenersBound = false;
+
   // ===== SHARED HELPERS =====
   function showToast(msg, type = "info") {
     const t = document.getElementById("toast");
@@ -1098,6 +1240,13 @@
       }
     }
     return str;
+  }
+
+  function formatDraftTimestamp(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    return `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, "0")}. ${String(d.getDate()).padStart(2, "0")}. ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   }
 
   function formatHungarianDateWithSuffix(dateStr) {
@@ -1180,8 +1329,354 @@
     `).join("");
   }
 
+  // ===== PISZKOZATOK (DRAFTS) KEZELŐ =====
+  function getDraftStorageKey() {
+    const uname = (currentUser && currentUser.username) ? currentUser.username.toLowerCase() : "guest";
+    return `campus_drafts_v1_${uname}`;
+  }
+
+  function loadAllDrafts() {
+    try {
+      const raw = localStorage.getItem(getDraftStorageKey());
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function persistAllDrafts(drafts) {
+    try {
+      localStorage.setItem(getDraftStorageKey(), JSON.stringify(drafts.slice(0, 25)));
+    } catch (e) {
+      // Ha megtelne a tárhely, megtartjuk a legutóbbi 10 piszkozatot
+      try {
+        localStorage.setItem(getDraftStorageKey(), JSON.stringify(drafts.slice(0, 10)));
+      } catch (e2) {}
+    }
+  }
+
+  function getEditableRows(container) {
+    if (!container) return [];
+    return [...container.children].filter(child => child.querySelector("input:not([type='file']), select, textarea"));
+  }
+
+  function getRowControls(rowEl) {
+    return [...rowEl.querySelectorAll("input:not([type='file']), select, textarea")];
+  }
+
+  function isInsideConfiguredList(el, listConfigs) {
+    return listConfigs.some(cfg => el.closest("#" + cfg.id));
+  }
+
+  function extractDraftSubtitle(docId, fields, lists) {
+    const parts = [];
+    if (fields["sjFull_protoNo"] && fields["sjFull_protoNo"].value) {
+      parts.push("Sorszám: " + fields["sjFull_protoNo"].value);
+    }
+    const unitIds = ["sndCode", "ekSndCode", "feSndCode", "heSndCode", "sjSndCode", "sijSndCode", "steSndCode", "sjFull_sndCode", "alRecCode", "aldSndCode", "mbUnitCode", "avBeszCode"];
+    for (const uid of unitIds) {
+      if (fields[uid] && fields[uid].value) {
+        parts.push("Egység: " + fields[uid].value);
+        break;
+      }
+    }
+    const personIds = ["emBuyerName", "mbPerson", "aldEmpName"];
+    for (const pid of personIds) {
+      if (fields[pid] && fields[pid].value) {
+        parts.push(fields[pid].value);
+        break;
+      }
+    }
+    const listConfigs = DRAFT_LIST_CONFIG[docId] || [];
+    if (listConfigs.length > 0) {
+      const primaryList = lists[listConfigs[0].id] || [];
+      const filledRows = primaryList.filter(row =>
+        row.some(c => c.type !== "checkbox" && c.type !== "radio" && String(c.value || "").trim() !== "" && !["1", "07", "Igen", "Nem"].includes(String(c.value || "").trim()))
+      ).length;
+      if (filledRows > 0) parts.push(`${filledRows} tétel`);
+    }
+    return parts.join(" • ") || "Elkezdett nyomtatvány";
+  }
+
+  function captureCurrentDraftData() {
+    const host = document.getElementById("docHostView");
+    if (!host || !activeDocId) return null;
+
+    const listConfigs = DRAFT_LIST_CONFIG[activeDocId] || [];
+    const fields = {};
+
+    host.querySelectorAll("input[id]:not([type='file']), select[id], textarea[id]").forEach(el => {
+      if (isInsideConfiguredList(el, listConfigs)) return;
+      if (el.type === "checkbox" || el.type === "radio") {
+        fields[el.id] = { type: el.type, checked: el.checked };
+      } else {
+        fields[el.id] = { type: el.type || el.tagName.toLowerCase(), value: el.value };
+      }
+    });
+
+    const lists = {};
+    listConfigs.forEach(cfg => {
+      const container = host.querySelector("#" + cfg.id);
+      if (!container) return;
+      const rows = getEditableRows(container);
+      lists[cfg.id] = rows.map(rowEl =>
+        getRowControls(rowEl).map(ctrl => ({
+          type: ctrl.type || ctrl.tagName.toLowerCase(),
+          value: ctrl.value,
+          checked: !!ctrl.checked
+        }))
+      );
+    });
+
+    const extra = {};
+    if (activeDocId === "selejtezesi_jegyzokonyv") {
+      const activeStepBtn = host.querySelector(".sj-step-btn.active");
+      if (activeStepBtn) extra.step = Number(activeStepBtn.dataset.step) || 1;
+    }
+
+    return { fields, lists, extra };
+  }
+
+  function saveCurrentDraft(immediate = false) {
+    if (currentView !== "docActive" || !activeDraftId || !activeDocId || !selectedCompany || !currentUser) return;
+    if (!immediate) {
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = setTimeout(() => saveCurrentDraft(true), 350);
+      return;
+    }
+
+    const dt = DOC_TYPES.find(x => x.id === activeDocId);
+    if (!dt) return;
+    const captured = captureCurrentDraftData();
+    if (!captured) return;
+
+    const draftObj = {
+      id: activeDraftId,
+      docId: activeDocId,
+      docLabel: dt.label,
+      companyCode: selectedCompany.code,
+      updatedAt: new Date().toISOString(),
+      subtitle: extractDraftSubtitle(activeDocId, captured.fields, captured.lists),
+      fields: captured.fields,
+      lists: captured.lists,
+      extra: captured.extra
+    };
+
+    const drafts = loadAllDrafts().filter(d => d.id !== activeDraftId);
+    drafts.unshift(draftObj);
+    persistAllDrafts(drafts);
+  }
+
+  function resetModuleDynamicLists(docId) {
+    const mod = window.TemplateModules[docId];
+    const listConfigs = DRAFT_LIST_CONFIG[docId] || [];
+    const host = document.getElementById("docHostView");
+    if (!mod || !host) return;
+
+    listConfigs.forEach(cfg => {
+      const container = host.querySelector("#" + cfg.id);
+      if (!container) return;
+
+      if (cfg.clear && typeof mod[cfg.clear] === "function") {
+        mod[cfg.clear]();
+      } else if (typeof mod[cfg.remove] === "function") {
+        let guard = 0;
+        const targetMin = cfg.minRows || 0;
+        while (getEditableRows(container).length > targetMin && guard++ < 300) {
+          mod[cfg.remove](0);
+        }
+        if (targetMin === 1) {
+          mod[cfg.remove](0); // 1 üres sorra visszaállítja
+        } else if (cfg.freshRows && typeof mod[cfg.add] === "function") {
+          for (let i = 0; i < cfg.freshRows; i++) mod[cfg.add]();
+        }
+      }
+    });
+  }
+
+  function applyFieldValue(el, saved) {
+    if (!el || !saved) return;
+    if (el.type === "checkbox" || el.type === "radio") {
+      if (el.checked !== !!saved.checked) {
+        el.checked = !!saved.checked;
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    } else if (el.value !== saved.value) {
+      el.value = saved.value;
+      if (el.tagName === "SELECT") {
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      } else {
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    }
+  }
+
+  function restoreDraftIntoHost(docId, draft) {
+    const host = document.getElementById("docHostView");
+    const mod = window.TemplateModules[docId];
+    if (!host || !mod || !draft) return;
+
+    const listConfigs = DRAFT_LIST_CONFIG[docId] || [];
+
+    // 1. Dinamikus táblázatok / listák visszaállítása
+    listConfigs.forEach(cfg => {
+      const savedRows = (draft.lists && Array.isArray(draft.lists[cfg.id])) ? draft.lists[cfg.id] : null;
+      if (!savedRows) return;
+      const container = host.querySelector("#" + cfg.id);
+      if (!container) return;
+
+      // Alaphelyzetbe állítás
+      if (cfg.clear && typeof mod[cfg.clear] === "function") {
+        mod[cfg.clear]();
+      } else if (typeof mod[cfg.remove] === "function") {
+        let guard = 0;
+        while (getEditableRows(container).length > (cfg.minRows || 0) && guard++ < 300) {
+          mod[cfg.remove](0);
+        }
+        if ((cfg.minRows || 0) === 1) mod[cfg.remove](0);
+      }
+
+      // Sorok számának beállítása
+      let currentLen = getEditableRows(container).length;
+      if (savedRows.length === 0 && (cfg.minRows || 0) === 0 && typeof mod[cfg.remove] === "function") {
+        let g = 0;
+        while (getEditableRows(container).length > 0 && g++ < 200) mod[cfg.remove](0);
+      } else if (typeof mod[cfg.add] === "function") {
+        let g = 0;
+        while (currentLen < savedRows.length && g++ < 500) {
+          mod[cfg.add]();
+          currentLen = getEditableRows(container).length;
+        }
+      }
+
+      // Sorok mezőinek kitöltése (lépésenként újra lekérdezve a dinamikusan megjelenő mezők miatt)
+      savedRows.forEach((savedControls, rIdx) => {
+        savedControls.forEach((sc, cIdx) => {
+          const rowsNow = getEditableRows(container);
+          const rowEl = rowsNow[rIdx];
+          if (!rowEl) return;
+          const ctrlsNow = getRowControls(rowEl);
+          const ctrl = ctrlsNow[cIdx];
+          if (ctrl) applyFieldValue(ctrl, sc);
+        });
+      });
+    });
+
+    // 2. Egyszerű ID-val rendelkező mezők visszaállítása (2 menetben az egymástól függő legördülők / egységkódok miatt)
+    const fields = draft.fields || {};
+    const fieldIds = Object.keys(fields);
+    fieldIds.forEach(id => applyFieldValue(host.querySelector("#" + id), fields[id]));
+    fieldIds.forEach(id => {
+      const el = host.querySelector("#" + id);
+      if (!el || el.closest(".unit-combo")) return;
+      applyFieldValue(el, fields[id]);
+    });
+
+    // Nyitva maradt egység-legördülők bezárása
+    host.querySelectorAll(".unit-dropdown-menu").forEach(m => m.classList.add("hidden"));
+
+    // Selejtezési jegyzőkönyv aktív lépés visszaállítása
+    if (docId === "selejtezesi_jegyzokonyv" && draft.extra && draft.extra.step && typeof mod.goStep === "function") {
+      mod.goStep(draft.extra.step, false);
+    }
+
+    if (typeof mod.renderDocument === "function") {
+      mod.renderDocument();
+    }
+  }
+
+  function bindHostDraftListeners() {
+    if (draftListenersBound) return;
+    const host = document.getElementById("docHostView");
+    if (!host) return;
+    draftListenersBound = true;
+
+    host.addEventListener("input", () => saveCurrentDraft(false));
+    host.addEventListener("change", () => saveCurrentDraft(false));
+    host.addEventListener("click", e => {
+      if (e.target.closest("button")) saveCurrentDraft(false);
+    });
+    window.addEventListener("beforeunload", () => saveCurrentDraft(true));
+  }
+
+  function renderDraftsList() {
+    const container = document.getElementById("draftsListContainer");
+    const countBadge = document.getElementById("draftsCountBadge");
+    const clearBtn = document.getElementById("clearDraftsBtn");
+    if (!container || !selectedCompany || !currentUser) return;
+
+    const perms = currentUser.permissions || [];
+    const drafts = loadAllDrafts().filter(d =>
+      d.companyCode === selectedCompany.code &&
+      (currentUser.role === "admin" || perms.includes(d.docId)) &&
+      DOC_TYPES.some(dt => dt.id === d.docId && dt.file)
+    );
+
+    if (countBadge) countBadge.textContent = drafts.length > 0 ? `(${drafts.length})` : "";
+    if (clearBtn) clearBtn.classList.toggle("hidden", drafts.length === 0);
+
+    if (drafts.length === 0) {
+      container.innerHTML = `<div class="draft-empty">Még nincs mentett piszkozat ehhez a céghez.<br>Amint megnyitsz vagy szerkesztesz egy nyomtatványt, automatikusan megjelenik itt.</div>`;
+      return;
+    }
+
+    container.innerHTML = drafts.map(d => `
+      <div class="draft-item" onclick="openDraft('${escapeHtml(d.id)}')" title="Kattints a piszkozat megnyitásához">
+        <div class="draft-info">
+          <div class="draft-title">${escapeHtml(d.docLabel)}</div>
+          <div class="draft-sub">${escapeHtml(d.subtitle || "Elkezdett nyomtatvány")}</div>
+        </div>
+        <div class="draft-right">
+          <span class="draft-time">${escapeHtml(formatDraftTimestamp(d.updatedAt))}</span>
+          <button type="button" class="draft-del-btn" title="Piszkozat törlése" onclick="deleteDraft(event, '${escapeHtml(d.id)}')">×</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function openDraft(draftId) {
+    const draft = loadAllDrafts().find(d => d.id === draftId);
+    if (!draft) { showToast("A piszkozat nem található!", "error"); renderDraftsList(); return; }
+    const dt = DOC_TYPES.find(x => x.id === draft.docId);
+    if (!dt || !dt.file) { showToast("Ez a nyomtatvány már nem elérhető.", "error"); return; }
+    loadAndOpenTemplate(dt, draft);
+  }
+
+  function deleteDraft(ev, draftId) {
+    ev.stopPropagation();
+    const drafts = loadAllDrafts().filter(d => d.id !== draftId);
+    persistAllDrafts(drafts);
+    renderDraftsList();
+    showToast("Piszkozat törölve.", "info");
+  }
+
+  function clearCompanyDrafts() {
+    if (!selectedCompany) return;
+    if (!confirm("Biztosan törlöd az összes mentett piszkozatot ehhez a céghez?")) return;
+    const remaining = loadAllDrafts().filter(d => d.companyCode !== selectedCompany.code);
+    persistAllDrafts(remaining);
+    renderDraftsList();
+    showToast("Piszkozatok törölve.", "info");
+  }
+
+  // ===== SABLON STÍLUSOK MEGŐRZÉSE (<head>) =====
+  function extractAndInjectTemplateStyles(docId, tempDiv) {
+    const styles = [...tempDiv.querySelectorAll("style")];
+    styles.forEach((s, idx) => {
+      const styleKey = `tpl-style-${docId}-${idx}`;
+      if (!document.getElementById(styleKey)) {
+        const styleEl = document.createElement("style");
+        styleEl.id = styleKey;
+        styleEl.textContent = s.textContent;
+        document.head.appendChild(styleEl);
+      }
+      s.remove();
+    });
+  }
+
   // ===== DINAMIKUS SABLONBETÖLTŐ (templates/*.html) =====
-  async function loadAndOpenTemplate(dt) {
+  async function loadAndOpenTemplate(dt, draftToRestore = null) {
     const host = document.getElementById("docHostView");
     document.getElementById("previewRenderHost").innerHTML = "";
     document.getElementById("loadingOverlay").classList.remove("hidden");
@@ -1197,6 +1692,7 @@
 
       const temp = document.createElement("div");
       temp.innerHTML = rawHtml;
+      extractAndInjectTemplateStyles(dt.id, temp);
       const scripts = [...temp.querySelectorAll("script")];
       scripts.forEach(s => s.remove());
 
@@ -1210,9 +1706,24 @@
         });
       }
 
+      bindHostDraftListeners();
       showOnlySection("docHostView", "docActive");
+
       if (window.TemplateModules[dt.id] && typeof window.TemplateModules[dt.id].init === "function") {
         window.TemplateModules[dt.id].init();
+      }
+
+      if (draftToRestore) {
+        activeDraftId = draftToRestore.id;
+        activeDocId = dt.id;
+        restoreDraftIntoHost(dt.id, draftToRestore);
+        saveCurrentDraft(true);
+        showToast("Piszkozat betöltve!", "success");
+      } else {
+        resetModuleDynamicLists(dt.id);
+        activeDraftId = "draft_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+        activeDocId = dt.id;
+        saveCurrentDraft(true);
       }
     } catch (err) {
       showToast("Hiba a sablon betöltésekor: " + err.message, "error");
@@ -1252,6 +1763,9 @@
   });
 
   function logout() {
+    saveCurrentDraft(true);
+    activeDraftId = null;
+    activeDocId = null;
     currentUser = null;
     selectedCompany = null;
     document.body.className = "";
@@ -1299,11 +1813,17 @@
     document.getElementById("cardUDC").classList.toggle("locked", !hasCompanyAccess("UDC"));
   }
 
-  function goHomeToCompanySelect(skipConfirm = false) {
-    if (!skipConfirm && currentView === "docActive") {
-      if (!confirm("Biztosan vissza akarsz lépni a cégválasztáshoz? A nem mentett módosítások elveszhetnek.")) return;
+  function closeActiveDocumentEditor() {
+    if (currentView === "docActive") {
+      saveCurrentDraft(true);
     }
+    activeDraftId = null;
+    activeDocId = null;
     document.getElementById("docHostView").innerHTML = "";
+  }
+
+  function goHomeToCompanySelect(skipConfirm = false) {
+    closeActiveDocumentEditor();
     document.getElementById("previewRenderHost").innerHTML = "";
     selectedCompany = null;
     document.body.className = "";
@@ -1316,16 +1836,14 @@
       showToast("Nincs hozzáférésed ehhez a céghez!", "error");
       return;
     }
-    if (currentView === "docActive" && selectedCompany && selectedCompany.code !== code) {
-      if (!confirm("Biztosan átváltasz a másik cégre? A nem mentett módosítások elveszhetnek.")) return;
-    }
-    document.getElementById("docHostView").innerHTML = "";
+    closeActiveDocumentEditor();
     selectedCompany = COMPANIES[code];
     document.body.className = selectedCompany.themeClass;
 
     document.getElementById("selectorCompanyName").textContent = `${selectedCompany.code} — ${selectedCompany.fullName}`;
     populateDocDropdown();
     showOnlySection("docSelectView", "docSelect");
+    renderDraftsList();
     renderMiniPreview();
   }
 
@@ -1356,8 +1874,11 @@
       bDocs.className = "nav-tab" + (["docSelect", "docActive", "comingSoon"].includes(currentView) ? " active" : "");
       bDocs.textContent = "Nyomtatványok";
       bDocs.onclick = () => {
-        if (currentView === "docActive") backToDocSelector();
-        else showOnlySection("docSelectView", "docSelect");
+        if (currentView === "docActive") backToDocSelector(true);
+        else {
+          showOnlySection("docSelectView", "docSelect");
+          renderDraftsList();
+        }
       };
       nav.appendChild(bDocs);
     }
@@ -1366,8 +1887,7 @@
     bSettings.className = "nav-tab" + (currentView === "settings" ? " active" : "");
     bSettings.textContent = "Beállítások";
     bSettings.onclick = () => {
-      if (currentView === "docActive" && !confirm("Biztosan elhagyod a szerkesztőt a Beállításokhoz?")) return;
-      document.getElementById("docHostView").innerHTML = "";
+      closeActiveDocumentEditor();
       showOnlySection("settingsView", "settings");
       loadUserReports();
     };
@@ -1378,8 +1898,7 @@
       bAdmin.className = "nav-tab" + (currentView === "admin" ? " active" : "");
       bAdmin.innerHTML = `Admin Panel ${pendingReportsCount > 0 ? `<span class="notif-badge">${pendingReportsCount}</span>` : ""}`;
       bAdmin.onclick = () => {
-        if (currentView === "docActive" && !confirm("Biztosan elhagyod a szerkesztőt az Admin Panelhez?")) return;
-        document.getElementById("docHostView").innerHTML = "";
+        closeActiveDocumentEditor();
         showOnlySection("adminView", "admin");
         loadUsers();
         loadAdminReports();
@@ -1448,6 +1967,7 @@
       const previewHost = document.getElementById("previewRenderHost");
       const temp = document.createElement("div");
       temp.innerHTML = rawHtml;
+      extractAndInjectTemplateStyles(dt.id, temp);
       const scripts = [...temp.querySelectorAll("script")];
       scripts.forEach(s => s.remove());
 
@@ -1558,18 +2078,20 @@
     if (!dt) { showToast("Nincs kiválasztott nyomtatvány!", "error"); return; }
 
     if (dt.file) {
-      loadAndOpenTemplate(dt);
+      loadAndOpenTemplate(dt, null);
     } else {
       document.getElementById("comingSoonTitle").textContent = dt.label + " — Fejlesztés alatt";
       showOnlySection("comingSoonView", "comingSoon");
     }
   }
 
-  function backToDocSelector(skipConfirm = false) {
-    if (!skipConfirm && !confirm("Biztosan vissza akarsz lépni a nyomtatványválasztóhoz?")) return;
-    document.getElementById("docHostView").innerHTML = "";
+  function backToDocSelector(skipToast = false) {
+    const wasActive = (currentView === "docActive");
+    closeActiveDocumentEditor();
     showOnlySection("docSelectView", "docSelect");
+    renderDraftsList();
     renderMiniPreview();
+    if (wasActive && !skipToast) showToast("Piszkozat automatikusan elmentve!", "info");
   }
 
   // ===== PICKER HELPERS (UNITS & PERMISSIONS MODALS) =====
