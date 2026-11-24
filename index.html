@@ -639,8 +639,8 @@
             <span class="lock-badge">Nincs hozzáférés</span>
             <img src="UD_campus_logo_hosszu.png" alt="UD Campus" onerror="this.src=FALLBACK_UDC_LOGO" />
             <div class="code-tag">UDC</div>
-            <h3>UD Campus</h3>
-            <span>UD Campus arculatú formanyomtatványok</span>
+            <h3>UD Campus NK Kft.</h3>
+            <span>UD Campus Nonprofit Közhasznú Kft.</span>
           </div>
         </div>
       </div>
@@ -1196,8 +1196,22 @@
   );
 
   const COMPANIES = {
-    DCNK: { code: "DCNK", shortName: "DCNK", fullName: "Debreceni Campus Nonprofit Közhasznú Kft.", logo: "campuslog.png", fallbackLogo: FALLBACK_DCNK_LOGO, themeClass: "" },
-    UDC: { code: "UDC", shortName: "UD Campus", fullName: "UD Campus", logo: "UD_campus_logo_hosszu.png", fallbackLogo: FALLBACK_UDC_LOGO, themeClass: "theme-udc" }
+    DCNK: {
+      code: "DCNK",
+      shortName: "Debreceni Campus NP KH Kft.",
+      fullName: "Debreceni Campus Nonprofit Közhasznú Kft.",
+      logo: "campuslog.png",
+      fallbackLogo: FALLBACK_DCNK_LOGO,
+      themeClass: ""
+    },
+    UDC: {
+      code: "UDC",
+      shortName: "UD Campus NP KH Kft.",
+      fullName: "UD Campus Nonprofit Közhasznú Kft.",
+      logo: "UD_campus_logo_hosszu.png",
+      fallbackLogo: FALLBACK_UDC_LOGO,
+      themeClass: "theme-udc"
+    }
   };
 
   let selectedCompany = null;
