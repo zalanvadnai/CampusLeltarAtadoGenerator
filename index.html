@@ -502,6 +502,68 @@
 
     .coming-soon { background: #fff; border-radius: 14px; padding: 50px 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); max-width: 640px; margin: 20px auto; }
 
+    /* ===== UNIVERZÁLIS CUSTOM LEGÖRDÜLŐK ===== */
+    .cs-native-select { display: none !important; }
+    .cs-wrap { position: relative; width: 100%; min-width: 0; display: block; }
+    .cs-trigger {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      width: 100%;
+      min-width: 0;
+      text-align: left;
+      cursor: pointer;
+      background: #fff;
+      color: #334155;
+      font-family: inherit;
+    }
+    .cs-trigger:hover { border-color: #94a3b8; }
+    .cs-trigger.open { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+    .cs-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .cs-arrow {
+      font-size: 10px;
+      color: var(--muted);
+      flex-shrink: 0;
+      transition: transform 0.15s;
+    }
+    .cs-trigger.open .cs-arrow { transform: rotate(180deg); color: var(--primary); }
+    .styled-select-wrap::after { display: none !important; }
+    .styled-select-wrap .cs-trigger {
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: 600;
+      border-width: 2px;
+      border-radius: 10px;
+    }
+    #globalCustomDropdown {
+      position: fixed;
+      z-index: 9999;
+      margin: 0;
+      max-height: 250px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+      padding: 4px;
+    }
+    #globalCustomDropdown .unit-dropdown-item {
+      color: #475569;
+    }
+    #globalCustomDropdown .unit-dropdown-item.selected {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 700;
+    }
+
+    
     /* ===== PRINT RULES ===== */
     @page { size: A4 portrait; margin: 0; }
     @media print {
@@ -2546,6 +2608,207 @@
       </tr>
     `).join("");
   }
+
+  // ===== UNIVERZÁLIS CUSTOM DROPDOWN MOTOR =====
+  let activeDropdownAnchor = null;
+
+  function ensureGlobalDropdownEl() {
+    let el = document.getElementById("globalCustomDropdown");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "globalCustomDropdown";
+      el.className = "hidden";
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+
+  function closeGlobalDropdown() {
+    const el = document.getElementById("globalCustomDropdown");
+    if (el) el.classList.add("hidden");
+    if (activeDropdownAnchor) {
+      activeDropdownAnchor.classList.remove("open");
+      activeDropdownAnchor = null;
+    }
+  }
+
+  function positionGlobalDropdown(anchorEl, minWidth = 180) {
+    const menu = ensureGlobalDropdownEl();
+    const rect = anchorEl.getBoundingClientRect();
+    const menuW = Math.min(Math.max(rect.width, minWidth), window.innerWidth - 20);
+    const left = Math.max(10, Math.min(rect.left, window.innerWidth - menuW - 10));
+
+    menu.style.width = `${menuW}px`;
+    menu.style.left = `${left}px`;
+    menu.classList.remove("hidden");
+
+    const spaceBelow = window.innerHeight - rect.bottom - 12;
+    const spaceAbove = rect.top - 12;
+    const openUp = spaceBelow < 160 && spaceAbove > spaceBelow;
+
+    if (openUp) {
+      const maxH = Math.min(250, Math.max(100, spaceAbove));
+      menu.style.maxHeight = `${maxH}px`;
+      menu.style.top = "auto";
+      menu.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+    } else {
+      const maxH = Math.min(250, Math.max(100, spaceBelow));
+      menu.style.maxHeight = `${maxH}px`;
+      menu.style.bottom = "auto";
+      menu.style.top = `${rect.bottom + 4}px`;
+    }
+  }
+
+  function syncCustomSelectTrigger(sel) {
+    if (!sel || !sel._csLabel) return;
+    const opt = sel.options[sel.selectedIndex] || sel.options[0];
+    sel._csLabel.textContent = opt ? opt.textContent : "";
+  }
+
+  function openCustomSelectMenu(sel, triggerBtn) {
+    const menu = ensureGlobalDropdownEl();
+    if (activeDropdownAnchor === triggerBtn && !menu.classList.contains("hidden")) {
+      closeGlobalDropdown();
+      return;
+    }
+    closeGlobalDropdown();
+    activeDropdownAnchor = triggerBtn;
+    triggerBtn.classList.add("open");
+
+    const opts = [...sel.options];
+    if (opts.length === 0) {
+      menu.innerHTML = `<div class="unit-dropdown-empty">Nincs választható elem.</div>`;
+    } else {
+      menu.innerHTML = opts.map((opt, idx) => `
+        <div class="unit-dropdown-item ${idx === sel.selectedIndex ? "selected" : ""}" data-opt-idx="${idx}">
+          ${escapeHtml(opt.textContent)}
+        </div>
+      `).join("");
+
+      menu.querySelectorAll(".unit-dropdown-item").forEach(itemEl => {
+        itemEl.addEventListener("mousedown", e => {
+          e.preventDefault();
+          const idx = Number(itemEl.dataset.optIdx);
+          if (sel.options[idx]) {
+            sel.selectedIndex = idx;
+            sel.value = sel.options[idx].value;
+            sel.dispatchEvent(new Event("change", { bubbles: true }));
+            setTimeout(() => syncCustomSelectTrigger(sel), 0);
+          }
+          closeGlobalDropdown();
+        });
+      });
+    }
+
+    positionGlobalDropdown(triggerBtn, 160);
+    const activeItem = menu.querySelector(".unit-dropdown-item.selected");
+    if (activeItem) activeItem.scrollIntoView({ block: "nearest" });
+  }
+
+  window.openFloatingUnitMenu = function (inputEl, query, onPick) {
+    const menu = ensureGlobalDropdownEl();
+    closeGlobalDropdown();
+    activeDropdownAnchor = inputEl;
+
+    const q = (query || "").trim().toLowerCase();
+    const filtered = UNITS_LIST.filter(u =>
+      !q || u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || (u.leader || "").toLowerCase().includes(q)
+    );
+
+    if (filtered.length === 0) {
+      menu.innerHTML = `<div class="unit-dropdown-empty">Nincs találat az egységek között.</div>`;
+    } else {
+      menu.innerHTML = filtered.map(u => `
+        <div class="unit-dropdown-item" data-code="${escapeHtml(u.code)}">
+          <div><span class="u-code">${escapeHtml(u.code)}</span> – ${escapeHtml(u.name)}</div>
+          ${u.leader ? `<div class="u-leader">Vezető: ${escapeHtml(u.leader)}</div>` : ""}
+        </div>
+      `).join("");
+
+      menu.querySelectorAll(".unit-dropdown-item").forEach(itemEl => {
+        itemEl.addEventListener("mousedown", e => {
+          e.preventDefault();
+          const code = itemEl.dataset.code;
+          if (typeof onPick === "function") onPick(code);
+          closeGlobalDropdown();
+        });
+      });
+    }
+
+    positionGlobalDropdown(inputEl, 240);
+  };
+
+  function enhanceSelectElement(sel) {
+    if (!sel || sel.dataset.csEnhanced === "1" || sel.closest("#previewRenderHost")) return;
+    sel.dataset.csEnhanced = "1";
+
+    const wrap = document.createElement("div");
+    wrap.className = "cs-wrap";
+    if (sel.style.width) wrap.style.width = sel.style.width;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "form-control cs-trigger";
+    if (sel.style.fontSize) btn.style.fontSize = sel.style.fontSize;
+    if (sel.style.padding) btn.style.padding = sel.style.padding;
+
+    const labelSpan = document.createElement("span");
+    labelSpan.className = "cs-label";
+    const arrowSpan = document.createElement("span");
+    arrowSpan.className = "cs-arrow";
+    arrowSpan.textContent = "▼";
+
+    btn.appendChild(labelSpan);
+    btn.appendChild(arrowSpan);
+
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    wrap.appendChild(btn);
+    sel.classList.add("cs-native-select");
+    sel._csLabel = labelSpan;
+    sel._csBtn = btn;
+
+    syncCustomSelectTrigger(sel);
+
+    btn.addEventListener("click", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      openCustomSelectMenu(sel, btn);
+    });
+
+    sel.addEventListener("change", () => setTimeout(() => syncCustomSelectTrigger(sel), 0));
+
+    const optObserver = new MutationObserver(() => syncCustomSelectTrigger(sel));
+    optObserver.observe(sel, { childList: true, subtree: true, characterData: true, attributes: true });
+  }
+
+  function enhanceAllSelects(root = document) {
+    root.querySelectorAll("select:not([data-cs-enhanced='1'])").forEach(enhanceSelectElement);
+  }
+
+  (function initCustomSelectEngine() {
+    enhanceAllSelects(document);
+    const bodyObserver = new MutationObserver(() => enhanceAllSelects(document));
+    bodyObserver.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener("mousedown", e => {
+      const menu = document.getElementById("globalCustomDropdown");
+      if (!menu || menu.classList.contains("hidden")) return;
+      if (e.target.closest("#globalCustomDropdown")) return;
+      if (activeDropdownAnchor && (e.target === activeDropdownAnchor || activeDropdownAnchor.contains(e.target))) return;
+      closeGlobalDropdown();
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeGlobalDropdown();
+    });
+
+    window.addEventListener("resize", closeGlobalDropdown);
+    window.addEventListener("scroll", e => {
+      if (e.target && e.target.id === "globalCustomDropdown") return;
+      closeGlobalDropdown();
+    }, true);
+  })();
 
   // ===== INIT =====
   (function init() {
