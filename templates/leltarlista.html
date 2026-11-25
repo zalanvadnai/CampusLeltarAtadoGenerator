@@ -1,0 +1,853 @@
+<style>
+  .ll-gen-grid {
+    display: grid;
+    grid-template-columns: 390px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 1200px) {
+    .ll-gen-grid { grid-template-columns: 1fr; }
+  }
+  .ll-pages-scroll {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 12px;
+  }
+  .a4-page.a4-landscape {
+    page: a4-landscape;
+    width: 297mm;
+    height: 210mm;
+    padding: 9mm 11mm 9mm 11mm;
+    font-family: Calibri, Arial, "Segoe UI", sans-serif;
+    color: #111;
+    display: flex;
+    flex-direction: column;
+  }
+  .ll-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 6mm;
+    margin-bottom: 4.5mm;
+  }
+  .ll-header-center {
+    text-align: center;
+    line-height: 1.25;
+  }
+  .ll-title {
+    font-size: 11.5pt;
+    font-weight: 700;
+    color: #000;
+  }
+  .ll-subtitle {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #111;
+  }
+  .ll-header-right {
+    text-align: right;
+    line-height: 1.25;
+  }
+  .ll-comp-name {
+    font-size: 10pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #000;
+  }
+  .ll-comp-tax {
+    font-size: 9pt;
+    color: #222;
+  }
+
+  /* TÁBLÁZAT (FOTÓ SZERINTI TISZTA, ZEBRA-CSÍKOZOTT STÍLUS) */
+  .ll-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.3pt;
+    line-height: 1.25;
+    table-layout: fixed;
+  }
+  .ll-table thead th {
+    background: #d9d9d9;
+    color: #000;
+    font-weight: 700;
+    font-size: 7.5pt;
+    padding: 2.2mm 2mm;
+    border-top: 1px solid #b5b5b5;
+    border-bottom: 1px solid #999;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+  }
+  .ll-table thead th.ll-th-left { text-align: left; }
+  .ll-table thead th.ll-th-right { text-align: right; }
+
+  .ll-table tbody tr:nth-child(odd) { background: #ffffff; }
+  .ll-table tbody tr:nth-child(even) { background: #ececec; }
+  .ll-table tbody td {
+    padding: 1.45mm 2mm;
+    border: none;
+    vertical-align: middle;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .ll-table tbody tr.ll-sum-row {
+    background: #d9d9d9 !important;
+    font-weight: 700;
+    border-top: 1.2px solid #555;
+    border-bottom: 1.2px solid #555;
+  }
+  .ll-c-center { text-align: center; }
+  .ll-c-right { text-align: right; white-space: nowrap; }
+  .ll-c-left { text-align: left; }
+
+  .ll-closing-block {
+    margin-top: 5mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 10mm;
+    font-size: 9pt;
+  }
+  .ll-sign-grid {
+    display: flex;
+    gap: 16mm;
+  }
+  .ll-sign-box {
+    width: 58mm;
+    text-align: center;
+  }
+  .ll-sign-line {
+    border-top: 1px solid #333;
+    padding-top: 1.5mm;
+    margin-top: 9mm;
+    font-size: 8.5pt;
+  }
+  .ll-footer {
+    margin-top: auto;
+    padding-top: 3mm;
+    text-align: center;
+    font-size: 8pt;
+    color: #222;
+  }
+
+  .ll-item-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px;
+    background: #f8fafc;
+  }
+  .ll-opt-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #475569;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  @page a4-landscape {
+    size: A4 landscape;
+    margin: 0;
+  }
+  @media print {
+    .ll-gen-grid { display: block; }
+    .ll-pages-scroll { overflow: visible; padding: 0; }
+    .a4-page.a4-landscape {
+      width: 297mm !important;
+      height: 210mm !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+    }
+  }
+</style>
+
+<div class="ll-gen-grid">
+  <!-- BAL OLDAL: VEZÉRLŐPULT -->
+  <div class="left-controls no-print">
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" onclick="backToInventorySelector()">← Vissza a leltárlistákhoz</button>
+    </div>
+
+    <!-- 1. ALAPADATOK -->
+    <div class="panel">
+      <h3>1. Leltárlista alapadatok</h3>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Egységkód</label>
+          <input id="ll_unitCode" class="form-control" placeholder="pl. 3163 vagy ALL" oninput="LeltarlistaMod.onMetaChange()" />
+        </div>
+        <div class="form-group">
+          <label>Leltári év</label>
+          <input id="ll_year" type="number" class="form-control" value="2025" oninput="LeltarlistaMod.onMetaChange()" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Egység neve (információ / aláíráshoz)</label>
+        <input id="ll_unitName" class="form-control" placeholder="pl. Gróf Tisza István Campus konyha" oninput="LeltarlistaMod.onMetaChange()" />
+      </div>
+
+      <div class="form-group">
+        <label>Alcím a fejlécben</label>
+        <input id="ll_subtitle" class="form-control" value="Tárgyi eszközök, immateriális javak" oninput="LeltarlistaMod.onMetaChange()" />
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Zárás dátuma</label>
+          <input id="ll_date" type="date" class="form-control" oninput="LeltarlistaMod.onMetaChange()" />
+        </div>
+        <div class="form-group">
+          <label>Keltezés helye</label>
+          <input id="ll_city" class="form-control" value="Debrecen" oninput="LeltarlistaMod.onMetaChange()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Egységvezető (aláíró)</label>
+          <input id="ll_leader" class="form-control" placeholder="Aláíró neve" oninput="LeltarlistaMod.onMetaChange()" />
+        </div>
+        <div class="form-group">
+          <label>Leltárellenőr (aláíró)</label>
+          <input id="ll_checker" class="form-control" placeholder="Ellenőr neve" oninput="LeltarlistaMod.onMetaChange()" />
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+        <label class="ll-opt-check">
+          <input type="checkbox" id="ll_showSummary" checked onchange="LeltarlistaMod.onMetaChange()" />
+          Összesítő sor megjelenítése a lista végén (db, bruttó, nettó)
+        </label>
+        <label class="ll-opt-check">
+          <input type="checkbox" id="ll_showSignatures" checked onchange="LeltarlistaMod.onMetaChange()" />
+          Keltezés és aláírásblokk a záró oldalon
+        </label>
+      </div>
+    </div>
+
+    <!-- 2. TÖMEGES IMPORT -->
+    <div class="panel">
+      <h3>2. Tömeges import (CSV / Excel / Sheets)</h3>
+      <div class="dropzone" id="ll_dropzone" onclick="document.getElementById('ll_csvInput').click()">
+        Húzd ide a <strong>.csv / .tsv</strong> fájlt, vagy kattints a tallózáshoz
+        <input type="file" id="ll_csvInput" accept=".csv,.tsv,.txt" class="hidden" />
+      </div>
+      <textarea
+        id="ll_pasteInput"
+        class="paste-box"
+        placeholder="Másold ki a sorokat (Nyilvántartási szám | Megnevezés | Rögzített mennyiség | Beszerzés dátuma | Bruttó érték | Nettó érték | Egységkód | Megjegyzés) és illeszd be ide..."
+      ></textarea>
+      <label class="ll-opt-check" style="margin-top:8px;">
+        <input type="checkbox" id="ll_filterByUnit" onchange="LeltarlistaMod.reapplyUnitFilter()" />
+        Csak a kiválasztott egységkód sorainak megtartása importáláskor
+      </label>
+      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="LeltarlistaMod.parsePastedData()">Adatok beolvasása</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="LeltarlistaMod.loadSampleItems()">Mintaadatok</button>
+      </div>
+    </div>
+
+    <!-- 3. TÉTELEK LISTÁJA -->
+    <div class="panel">
+      <h3>3. Leltári tételek (<span id="ll_itemCountBadge">0</span> tétel)</h3>
+      <div id="ll_itemsList" style="max-height:330px; overflow-y:auto; display:flex; flex-direction:column; gap:7px;"></div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="LeltarlistaMod.addItem()">+ Új tétel</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="LeltarlistaMod.clearItems()">Tételek törlése</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOBB OLDAL: ÉLŐ FEKVŐ A4 ELŐNÉZET -->
+  <div style="min-width:0;">
+    <div class="preview-toolbar no-print">
+      <div>
+        <strong>Élő A4 (fekvő) nyomtatási kép</strong>
+        <span id="ll_pageCountInfo" style="color:var(--muted); font-size:12.5px; margin-left:6px;"></span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="LeltarlistaMod.printAndLog()">🖨️ Nyomtatás / PDF</button>
+    </div>
+    <div class="ll-pages-scroll">
+      <div class="pages-wrapper" id="ll_pagesContainer" style="align-items:flex-start;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.LeltarlistaMod = (function () {
+    let items = [];
+    let rawImportedItems = [];
+
+    function emptyItem(defaultUnit = "") {
+      return {
+        nytsz: "",
+        name: "",
+        qty: 1,
+        acqDate: "",
+        gross: "",
+        net: "",
+        unitCode: defaultUnit || "",
+        note: ""
+      };
+    }
+
+    function getDefaultUnitCode() {
+      const val = (document.getElementById("ll_unitCode")?.value || "").trim();
+      return (!val || val.toUpperCase() === "ALL") ? "" : val;
+    }
+
+    function init(context = null) {
+      const ctx = context || {};
+      const curYear = String(ctx.year || new Date().getFullYear());
+
+      const unitCodeEl = document.getElementById("ll_unitCode");
+      const unitNameEl = document.getElementById("ll_unitName");
+      const yearEl = document.getElementById("ll_year");
+      const dateEl = document.getElementById("ll_date");
+      const leaderEl = document.getElementById("ll_leader");
+
+      if (unitCodeEl) unitCodeEl.value = ctx.unitCode || "";
+      if (unitNameEl) unitNameEl.value = ctx.unitName || "";
+      if (yearEl) yearEl.value = curYear;
+      if (dateEl) dateEl.value = ctx.date || `${curYear}-12-31`;
+      if (leaderEl) leaderEl.value = ctx.leader || "";
+
+      const filterCb = document.getElementById("ll_filterByUnit");
+      if (filterCb) {
+        filterCb.checked = !!(ctx.unitCode && ctx.unitCode !== "ALL");
+      }
+
+      const dz = document.getElementById("ll_dropzone");
+      if (dz) {
+        dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("dragover"); });
+        dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+        dz.addEventListener("drop", e => {
+          e.preventDefault();
+          dz.classList.remove("dragover");
+          if (e.dataTransfer.files[0]) readCsvFile(e.dataTransfer.files[0]);
+        });
+      }
+      const csvIn = document.getElementById("ll_csvInput");
+      if (csvIn) {
+        csvIn.addEventListener("change", e => {
+          if (e.target.files[0]) readCsvFile(e.target.files[0]);
+          e.target.value = "";
+        });
+      }
+
+      rawImportedItems = [];
+      items = [emptyItem(getDefaultUnitCode())];
+      renderItemsEditor();
+      renderDocument();
+    }
+
+    function notifyDraftSave(immediate = false) {
+      if (typeof window.saveCurrentInventoryDraft === "function") {
+        window.saveCurrentInventoryDraft(immediate);
+      }
+    }
+
+    function onMetaChange() {
+      renderDocument();
+      notifyDraftSave(false);
+    }
+
+    // ===== FORMÁZÓK =====
+    function parseNum(val) {
+      if (val === "" || val === null || val === undefined) return null;
+      const cleaned = String(val).replace(/[^\d\-]/g, "");
+      if (cleaned === "" || cleaned === "-") return null;
+      const n = parseInt(cleaned, 10);
+      return isNaN(n) ? null : n;
+    }
+
+    function formatFtCell(val) {
+      const n = parseNum(val);
+      if (n === null) return "";
+      return n.toLocaleString("hu-HU") + " Ft";
+    }
+
+    function getShortCompanyHeading(comp) {
+      if (!comp) return "DEBRECENI CAMPUS NP KFT";
+      if (comp.code === "UDC") return "UD CAMPUS NP KFT";
+      if (comp.code === "DCNK") return "DEBRECENI CAMPUS NP KFT";
+      return (comp.shortName || comp.fullName || comp.code).toUpperCase();
+    }
+
+    // ===== CSV / GOOGLE SHEETS IMPORT =====
+    function readCsvFile(file) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById("ll_pasteInput").value = ev.target.result;
+        parsePastedData();
+      };
+      reader.readAsText(file, "UTF-8");
+    }
+
+    function detectDelimiter(text) {
+      let inQuotes = false, tabs = 0, semis = 0, commas = 0;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '"') inQuotes = !inQuotes;
+        else if (!inQuotes) {
+          if (ch === "\n" || ch === "\r") break;
+          if (ch === "\t") tabs++;
+          else if (ch === ";") semis++;
+          else if (ch === ",") commas++;
+        }
+      }
+      if (tabs >= semis && tabs >= commas && tabs > 0) return "\t";
+      if (semis >= commas && semis > 0) return ";";
+      return ",";
+    }
+
+    function parseDelimitedTable(text, delim) {
+      const rows = [];
+      let row = [], cur = "", inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQuotes) {
+          if (ch === '"') {
+            if (text[i + 1] === '"') { cur += '"'; i++; }
+            else inQuotes = false;
+          } else cur += ch;
+        } else {
+          if (ch === '"' && cur.length === 0) inQuotes = true;
+          else if (ch === delim) { row.push(cur.trim()); cur = ""; }
+          else if (ch === "\r" || ch === "\n") {
+            if (ch === "\r" && text[i + 1] === "\n") i++;
+            row.push(cur.trim());
+            if (row.some(c => c !== "")) rows.push(row);
+            row = []; cur = "";
+          } else cur += ch;
+        }
+      }
+      row.push(cur.trim());
+      if (row.some(c => c !== "")) rows.push(row);
+      return rows;
+    }
+
+    function parsePastedData() {
+      const raw = (document.getElementById("ll_pasteInput")?.value || "").replace(/^\uFEFF/, "").trim();
+      if (!raw) { showToast("Nincs beillesztett adat!", "error"); return; }
+
+      const delim = detectDelimiter(raw);
+      const grid = parseDelimitedTable(raw, delim);
+      if (grid.length === 0) return;
+
+      const firstNorm = grid[0].map(h =>
+        String(h || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+      );
+
+      let colMap = { nytsz: -1, name: -1, qty: -1, acqDate: -1, gross: -1, net: -1, unitCode: -1, note: -1 };
+      let hasHeader = false;
+
+      firstNorm.forEach((h, i) => {
+        if (h.includes("nyilvantart") || h.includes("nytsz")) { colMap.nytsz = i; hasHeader = true; }
+        else if (h.includes("megnevez") || h.includes("eszkoz")) { colMap.name = i; hasHeader = true; }
+        else if (h.includes("menny") || h === "db" || h.includes("darab")) { colMap.qty = i; hasHeader = true; }
+        else if (h.includes("beszerz") || h.includes("datum") || h.includes("aktiv")) { colMap.acqDate = i; hasHeader = true; }
+        else if (h.includes("brutto")) { colMap.gross = i; hasHeader = true; }
+        else if (h.includes("netto")) { colMap.net = i; hasHeader = true; }
+        else if (h.includes("egyseg") || h.includes("kod")) { colMap.unitCode = i; hasHeader = true; }
+        else if (h.includes("megjegy")) { colMap.note = i; hasHeader = true; }
+      });
+
+      const startRow = hasHeader ? 1 : 0;
+      if (!hasHeader) {
+        colMap = { nytsz: 0, name: 1, qty: 2, acqDate: 3, gross: 4, net: 5, unitCode: 6, note: 7 };
+      }
+
+      const parsed = [];
+      for (let r = startRow; r < grid.length; r++) {
+        const row = grid[r];
+        const nytsz = colMap.nytsz >= 0 ? (row[colMap.nytsz] || "").trim() : "";
+        const name = colMap.name >= 0 ? (row[colMap.name] || "").replace(/\s*\r?\n\s*/g, " ").trim() : "";
+        if (!nytsz && !name) continue;
+
+        const qtyVal = colMap.qty >= 0 ? (parseInt(String(row[colMap.qty] || "").replace(/[^\d]/g, ""), 10) || 1) : 1;
+        const acqDate = colMap.acqDate >= 0 ? (row[colMap.acqDate] || "").trim() : "";
+        const gross = colMap.gross >= 0 ? (row[colMap.gross] || "").trim() : "";
+        const net = colMap.net >= 0 ? (row[colMap.net] || "").trim() : "";
+        const unitCode = colMap.unitCode >= 0 ? (row[colMap.unitCode] || "").trim() : getDefaultUnitCode();
+        const note = colMap.note >= 0 ? (row[colMap.note] || "").trim() : "";
+
+        parsed.push({ nytsz, name, qty: qtyVal, acqDate, gross, net, unitCode, note });
+      }
+
+      if (parsed.length === 0) { showToast("Nem sikerült érvényes sorokat kiolvasni!", "error"); return; }
+
+      rawImportedItems = parsed;
+      reapplyUnitFilter(true);
+    }
+
+    function reapplyUnitFilter(showMsg = false) {
+      if (rawImportedItems.length === 0) return;
+      const shouldFilter = document.getElementById("ll_filterByUnit")?.checked === true;
+      const targetCode = getDefaultUnitCode().toLowerCase();
+
+      let result = rawImportedItems.map(r => ({ ...r }));
+      if (shouldFilter && targetCode) {
+        const matched = result.filter(r => String(r.unitCode || "").trim().toLowerCase() === targetCode);
+        if (matched.length > 0) {
+          result = matched;
+        } else if (showMsg) {
+          showToast(`A(z) ${targetCode} egységkódra nem volt találat — az összes (${result.length}) sor betöltve.`, "info");
+        }
+      }
+
+      items = result.length > 0 ? result : [emptyItem(getDefaultUnitCode())];
+      renderItemsEditor();
+      renderDocument();
+      notifyDraftSave(true);
+      if (showMsg) showToast(`${items.length} tétel betöltve a leltárlistába!`, "success");
+    }
+
+    function loadSampleItems() {
+      const u = getDefaultUnitCode() || "3163";
+      items = [
+        { nytsz: "130273", name: "Videó megfigyelő rendszer", qty: 1, acqDate: "2024.08.29", gross: "1714500", net: "1380762", unitCode: u, note: "" },
+        { nytsz: "130281", name: "Hűtő egyajtós", qty: 1, acqDate: "2024.07.17", gross: "104997", net: "0", unitCode: u, note: "" },
+        { nytsz: "130282", name: "Konyhai mérleg", qty: 1, acqDate: "2024.07.17", gross: "5499", net: "0", unitCode: u, note: "" },
+        { nytsz: "130404", name: "Hűtőszekrény - kétajtós rozsdamentes", qty: 1, acqDate: "2025.05.08", gross: "745000", net: "674560", unitCode: u, note: "" },
+        { nytsz: "110001", name: "OFFICE 2021 PROFESSIONAL PLUS", qty: 1, acqDate: "2023. 01. 12.", gross: "19990", net: "0", unitCode: "3199", note: "" }
+      ];
+      renderItemsEditor();
+      renderDocument();
+      notifyDraftSave(true);
+      showToast("Mintaadatok betöltve!", "info");
+    }
+
+    // ===== TÉTELEK SZERKESZTŐ =====
+    function renderItemsEditor() {
+      const container = document.getElementById("ll_itemsList");
+      const badge = document.getElementById("ll_itemCountBadge");
+      if (badge) badge.textContent = items.length;
+      if (!container) return;
+
+      const MAX_VISIBLE_EDITOR = 80;
+      const visible = items.slice(0, MAX_VISIBLE_EDITOR);
+      const hiddenCount = Math.max(0, items.length - MAX_VISIBLE_EDITOR);
+
+      container.innerHTML = visible.map((it, idx) => `
+        <div class="ll-item-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <strong style="font-size:11.5px; color:var(--primary-dark);">${idx + 1}. tétel</strong>
+            <button type="button" class="btn btn-danger btn-sm" style="padding:1px 6px;" onclick="LeltarlistaMod.removeItem(${idx})">×</button>
+          </div>
+          <div style="display:grid; grid-template-columns: 90px 1fr; gap:5px; margin-bottom:5px;">
+            <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="NYTSZ" value="${escapeHtml(it.nytsz)}" oninput="LeltarlistaMod.updateItem(${idx},'nytsz',this.value)" />
+            <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Megnevezés" value="${escapeHtml(it.name)}" oninput="LeltarlistaMod.updateItem(${idx},'name',this.value)" />
+          </div>
+          <div style="display:grid; grid-template-columns: 48px 92px 1fr 1fr; gap:5px; margin-bottom:5px;">
+            <input type="number" min="0" class="form-control" style="padding:4px 5px; font-size:11.5px; text-align:center;" placeholder="Db" value="${escapeHtml(it.qty)}" oninput="LeltarlistaMod.updateItem(${idx},'qty',this.value)" />
+            <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Besz. dátum" value="${escapeHtml(it.acqDate)}" oninput="LeltarlistaMod.updateItem(${idx},'acqDate',this.value)" />
+            <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Bruttó Ft" value="${escapeHtml(it.gross)}" oninput="LeltarlistaMod.updateItem(${idx},'gross',this.value)" />
+            <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Nettó Ft" value="${escapeHtml(it.net)}" oninput="LeltarlistaMod.updateItem(${idx},'net',this.value)" />
+          </div>
+          <div style="display:grid; grid-template-columns: 76px 1fr; gap:5px;">
+            <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Egység" value="${escapeHtml(it.unitCode)}" oninput="LeltarlistaMod.updateItem(${idx},'unitCode',this.value)" />
+            <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Megjegyzés" value="${escapeHtml(it.note)}" oninput="LeltarlistaMod.updateItem(${idx},'note',this.value)" />
+          </div>
+        </div>
+      `).join("") + (hiddenCount > 0 ? `
+        <div style="font-size:11.5px; color:var(--muted); text-align:center; padding:8px; background:#fff; border:1px dashed #cbd5e1; border-radius:8px;">
+          + további <strong>${hiddenCount} tétel</strong> (a jobb oldali A4 előnézetben és nyomtatásban minden tétel szerepel)
+        </div>
+      ` : "");
+    }
+
+    function updateItem(idx, field, val) {
+      if (!items[idx]) return;
+      items[idx][field] = field === "qty" ? (val === "" ? "" : (parseInt(val, 10) || 0)) : val;
+      renderDocument();
+      notifyDraftSave(false);
+    }
+
+    function addItem() {
+      items.push(emptyItem(getDefaultUnitCode()));
+      renderItemsEditor();
+      renderDocument();
+      notifyDraftSave(false);
+    }
+
+    function removeItem(idx) {
+      items.splice(idx, 1);
+      if (items.length === 0) items.push(emptyItem(getDefaultUnitCode()));
+      renderItemsEditor();
+      renderDocument();
+      notifyDraftSave(false);
+    }
+
+    function clearItems() {
+      rawImportedItems = [];
+      items = [emptyItem(getDefaultUnitCode())];
+      renderItemsEditor();
+      renderDocument();
+      notifyDraftSave(false);
+    }
+
+    // ===== DINAMIKUS FEKVŐ A4 OLDALTÖRDELÉS ÉS RENDER =====
+    function estimateRowLines(it) {
+      const nameLen = String(it.name || "").length;
+      const noteLen = String(it.note || "").length;
+      const nameLines = Math.max(1, Math.ceil(nameLen / 34));
+      const noteLines = Math.max(1, Math.ceil(noteLen / 28));
+      return Math.max(nameLines, noteLines);
+    }
+
+    function renderDocument() {
+      const container = document.getElementById("ll_pagesContainer");
+      if (!container) return;
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const year = (document.getElementById("ll_year")?.value || String(new Date().getFullYear())).trim();
+      const subtitle = (document.getElementById("ll_subtitle")?.value || "Tárgyi eszközök, immateriális javak").trim();
+      const dateVal = document.getElementById("ll_date")?.value || `${year}-12-31`;
+      const city = (document.getElementById("ll_city")?.value || "Debrecen").trim();
+      const leader = (document.getElementById("ll_leader")?.value || "").trim();
+      const checker = (document.getElementById("ll_checker")?.value || "").trim();
+      const showSummary = document.getElementById("ll_showSummary")?.checked !== false;
+      const showSignatures = document.getElementById("ll_showSignatures")?.checked !== false;
+
+      const compHeading = getShortCompanyHeading(comp);
+      const compTax = comp.taxId || "";
+      const dateSpaced = typeof formatSpacedDate === "function" ? formatSpacedDate(dateVal) : dateVal;
+
+      const filledItems = items.filter(it => it.nytsz.trim() || it.name.trim() || it.gross !== "" || it.net !== "");
+      const sumQty = filledItems.reduce((s, it) => s + (parseInt(it.qty, 10) || 0), 0);
+      const sumGross = filledItems.reduce((s, it) => s + (parseNum(it.gross) || 0), 0);
+      const sumNet = filledItems.reduce((s, it) => s + (parseNum(it.net) || 0), 0);
+
+      // Fekvő A4: ~32 egységnyi sortörés fér el egy oldalon kényelmesen
+      const MAX_UNITS_PER_PAGE = 32;
+      const CLOSING_UNITS = (showSummary ? 2 : 0) + (showSignatures ? 6 : 0);
+
+      const pages = [];
+      let currentSlice = [];
+      let usedUnits = 0;
+
+      items.forEach(it => {
+        const cost = estimateRowLines(it) + 0.35;
+        if (currentSlice.length > 0 && usedUnits + cost > MAX_UNITS_PER_PAGE) {
+          pages.push({ slice: currentSlice, hasClosing: false });
+          currentSlice = [it];
+          usedUnits = cost;
+        } else {
+          currentSlice.push(it);
+          usedUnits += cost;
+        }
+      });
+
+      if (currentSlice.length > 0) {
+        if (CLOSING_UNITS > 0 && usedUnits + CLOSING_UNITS > MAX_UNITS_PER_PAGE) {
+          pages.push({ slice: currentSlice, hasClosing: false });
+          pages.push({ slice: [], hasClosing: true });
+        } else {
+          pages.push({ slice: currentSlice, hasClosing: true });
+        }
+      } else {
+        pages.push({ slice: [emptyItem(getDefaultUnitCode())], hasClosing: true });
+      }
+
+      const totalPages = pages.length;
+      const badge = document.getElementById("ll_pageCountInfo");
+      if (badge) {
+        badge.textContent = `(${totalPages} oldal • ${filledItems.length} tétel • Bruttó: ${sumGross.toLocaleString("hu-HU")} Ft)`;
+      }
+
+      container.innerHTML = pages.map((pg, pIdx) => `
+        <div class="a4-page a4-landscape">
+          <div class="ll-header">
+            <div>
+              <img src="${comp.logo}" alt="${comp.code}" class="doc-header-logo" onerror="this.src='${comp.fallbackLogo}'" />
+            </div>
+            <div class="ll-header-center">
+              <div class="ll-title">Leltár lista ${escapeHtml(year)}</div>
+              <div class="ll-subtitle">${escapeHtml(subtitle)}</div>
+            </div>
+            <div class="ll-header-right">
+              <div class="ll-comp-name">${escapeHtml(compHeading)}</div>
+              ${compTax ? `<div class="ll-comp-tax">${escapeHtml(compTax)}</div>` : ""}
+            </div>
+          </div>
+
+          ${(pg.slice.length > 0 || (pg.hasClosing && showSummary)) ? `
+            <table class="ll-table">
+              <colgroup>
+                <col style="width:10%;">
+                <col style="width:24%;">
+                <col style="width:7%;">
+                <col style="width:10%;">
+                <col style="width:11%;">
+                <col style="width:11%;">
+                <col style="width:7%;">
+                <col style="width:20%;">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th class="ll-th-left">Nyilvántartási<br>szám</th>
+                  <th class="ll-th-left">Megnevezés</th>
+                  <th>Rögzített<br>mennyiség</th>
+                  <th>Beszerzés dátuma</th>
+                  <th class="ll-th-right">Bruttó érték</th>
+                  <th class="ll-th-right">Nettó érték</th>
+                  <th>Egységkód</th>
+                  <th class="ll-th-left">Megjegyzés</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pg.slice.map(it => {
+                  const hasAny = it.nytsz.trim() || it.name.trim() || it.gross !== "" || it.net !== "";
+                  return `
+                    <tr>
+                      <td class="ll-c-left">${escapeHtml(it.nytsz)}</td>
+                      <td class="ll-c-left">${escapeHtml(it.name)}</td>
+                      <td class="ll-c-center">${hasAny ? escapeHtml(it.qty) : "&nbsp;"}</td>
+                      <td class="ll-c-center">${escapeHtml(it.acqDate)}</td>
+                      <td class="ll-c-right">${escapeHtml(formatFtCell(it.gross))}</td>
+                      <td class="ll-c-right">${escapeHtml(formatFtCell(it.net))}</td>
+                      <td class="ll-c-center">${escapeHtml(it.unitCode)}</td>
+                      <td class="ll-c-left">${escapeHtml(it.note)}</td>
+                    </tr>
+                  `;
+                }).join("")}
+                ${(pg.hasClosing && showSummary) ? `
+                  <tr class="ll-sum-row">
+                    <td class="ll-c-left" colspan="2">Összesen (${filledItems.length} tétel):</td>
+                    <td class="ll-c-center">${sumQty}</td>
+                    <td></td>
+                    <td class="ll-c-right">${sumGross.toLocaleString("hu-HU")} Ft</td>
+                    <td class="ll-c-right">${sumNet.toLocaleString("hu-HU")} Ft</td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                ` : ""}
+              </tbody>
+            </table>
+          ` : ""}
+
+          ${(pg.hasClosing && showSignatures) ? `
+            <div class="ll-closing-block">
+              <div>${escapeHtml(city)}, ${escapeHtml(dateSpaced)}</div>
+              <div class="ll-sign-grid">
+                <div class="ll-sign-box">
+                  <div class="ll-sign-line">${escapeHtml(leader || "Egységvezető / Felelős")}</div>
+                </div>
+                <div class="ll-sign-box">
+                  <div class="ll-sign-line">${escapeHtml(checker || "Leltárellenőr / Bizottság")}</div>
+                </div>
+              </div>
+            </div>
+          ` : ""}
+
+          <div class="ll-footer">
+            ${pIdx + 1}. oldal / ${totalPages}. oldal
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // ===== PISZKOZAT MENTÉS / VISSZAÁLLÍTÁS API =====
+    function getDraftData() {
+      return {
+        unitCode: (document.getElementById("ll_unitCode")?.value || "").trim(),
+        unitName: (document.getElementById("ll_unitName")?.value || "").trim(),
+        year: (document.getElementById("ll_year")?.value || "").trim(),
+        subtitle: (document.getElementById("ll_subtitle")?.value || "").trim(),
+        date: (document.getElementById("ll_date")?.value || "").trim(),
+        city: (document.getElementById("ll_city")?.value || "Debrecen").trim(),
+        leader: (document.getElementById("ll_leader")?.value || "").trim(),
+        checker: (document.getElementById("ll_checker")?.value || "").trim(),
+        showSummary: document.getElementById("ll_showSummary")?.checked !== false,
+        showSignatures: document.getElementById("ll_showSignatures")?.checked !== false,
+        items: items.map(it => ({ ...it }))
+      };
+    }
+
+    function restoreDraftData(draft) {
+      if (!draft) return;
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
+      setVal("ll_unitCode", draft.unitCode || "");
+      setVal("ll_unitName", draft.unitName || "");
+      setVal("ll_year", draft.year || String(new Date().getFullYear()));
+      setVal("ll_subtitle", draft.subtitle || "Tárgyi eszközök, immateriális javak");
+      setVal("ll_date", draft.date || `${draft.year || new Date().getFullYear()}-12-31`);
+      setVal("ll_city", draft.city || "Debrecen");
+      setVal("ll_leader", draft.leader || "");
+      setVal("ll_checker", draft.checker || "");
+
+      const sumCb = document.getElementById("ll_showSummary");
+      if (sumCb && typeof draft.showSummary === "boolean") sumCb.checked = draft.showSummary;
+      const sigCb = document.getElementById("ll_showSignatures");
+      if (sigCb && typeof draft.showSignatures === "boolean") sigCb.checked = draft.showSignatures;
+
+      items = Array.isArray(draft.items) && draft.items.length > 0
+        ? draft.items.map(it => ({ ...it }))
+        : [emptyItem(draft.unitCode || "")];
+
+      renderItemsEditor();
+      renderDocument();
+    }
+
+    // ===== FEKVŐ NYOMTATÁS ÉS NAPLÓZÁS =====
+    async function printAndLog() {
+      notifyDraftSave(true);
+
+      let landscapeRule = document.getElementById("ll_forceLandscapePrint");
+      if (!landscapeRule) {
+        landscapeRule = document.createElement("style");
+        landscapeRule.id = "ll_forceLandscapePrint";
+        landscapeRule.textContent = "@media print { @page { size: A4 landscape; margin: 0; } }";
+        document.head.appendChild(landscapeRule);
+      }
+
+      const cleanup = () => {
+        document.getElementById("ll_forceLandscapePrint")?.remove();
+        window.removeEventListener("afterprint", cleanup);
+      };
+      window.addEventListener("afterprint", cleanup);
+
+      window.print();
+      setTimeout(cleanup, 1500);
+
+      if (!currentUser) return;
+      const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
+      const uCode = (document.getElementById("ll_unitCode")?.value || "").trim() || "Összes";
+      const year = (document.getElementById("ll_year")?.value || "").trim();
+      const filledCount = items.filter(i => i.name.trim() || i.nytsz.trim()).length;
+      const details = `${compTag}Egység: ${uCode} | Év: ${year} | ${filledCount} tétel`;
+
+      try {
+        await apiCall({
+          action: "logDocument",
+          username: currentUser.username,
+          userName: currentUser.fullName || currentUser.name || currentUser.username,
+          docType: "Leltár lista",
+          details
+        });
+      } catch (e) {}
+    }
+
+    return {
+      init,
+      onMetaChange,
+      parsePastedData,
+      reapplyUnitFilter,
+      loadSampleItems,
+      updateItem,
+      addItem,
+      removeItem,
+      clearItems,
+      renderDocument,
+      getDraftData,
+      restoreDraftData,
+      printAndLog
+    };
+  })();
+
+  window.TemplateModules["leltarlista"] = window.LeltarlistaMod;
+</script>
