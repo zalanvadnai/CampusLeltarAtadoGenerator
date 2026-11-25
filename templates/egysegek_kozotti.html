@@ -1,16 +1,128 @@
+<style>
+  .ek-import-box {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .ek-import-stats {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 6px 0 8px;
+  }
+  .ek-pair-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 170px;
+    overflow-y: auto;
+    padding: 2px 2px 4px;
+  }
+  .ek-pair-chip {
+    padding: 5px 10px;
+    border-radius: 18px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .ek-pair-chip:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+  }
+  .ek-pair-chip.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
+  .ek-pair-chip .ek-cnt {
+    font-size: 10.5px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+  }
+  .ek-pair-chip.active .ek-cnt {
+    background: rgba(255, 255, 255, 0.24);
+  }
+  .ek-opt-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #475569;
+    cursor: pointer;
+    margin-top: 8px;
+    user-select: none;
+  }
+</style>
+
 <div class="gen-grid">
+  <!-- BAL OLDAL: VEZÉRLŐPULT -->
   <div class="left-controls no-print">
     <div style="margin-bottom:12px;">
       <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
     </div>
 
+    <!-- 1. TÖMEGES IMPORT (CSV / GOOGLE SHEETS) -->
     <div class="panel">
-      <h3>1. Átadó, Átvevő és Dátum</h3>
+      <h3>1. Tömeges import (CSV / Google Sheets)</h3>
+      <div class="dropzone" id="ekDropzone" onclick="document.getElementById('ekCsvInput').click()">
+        Húzd ide a <strong>.csv / .tsv</strong> fájlt, vagy kattints a tallózáshoz
+        <input type="file" id="ekCsvInput" accept=".csv,.tsv,.txt" class="hidden" />
+      </div>
+      <textarea
+        id="ekPasteInput"
+        class="paste-box"
+        placeholder="Másold ki a sorokat a Google Táblázatból (Nytsz | Megnevezés | Mennyiség | Honnan | Hová | Megjegyzés | Átadva | Átírva) és illeszd be ide..."
+      ></textarea>
+
+      <label class="ek-opt-check">
+        <input type="checkbox" id="ekImportIncludeNote" onchange="EgysegekKozottiMod.onImportFilterChange()" />
+        Megjegyzés oszlop átemelése a specifikáció/megjegyzés mezőbe
+      </label>
+
+      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="EgysegekKozottiMod.parsePastedData()">Adatok beolvasása</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="EgysegekKozottiMod.clearImportedData()">Import ürítése</button>
+      </div>
+
+      <!-- SZŰRÉS ÉS HONNAN -> HOVÁ PÁRVÁLASZTÓ -->
+      <div id="ekImportFilterWrap" class="ek-import-box hidden">
+        <div class="row-2" style="margin-bottom:6px;">
+          <div>
+            <label style="font-size:11.5px; font-weight:600; color:#334155; display:block; margin-bottom:4px;">Státusz szűrő</label>
+            <select id="ekImportStatusFilter" class="form-control" style="padding:6px 8px; font-size:12px;" onchange="EgysegekKozottiMod.onImportFilterChange()">
+              <option value="pending_transfer">Átadva, még nincs átírva</option>
+              <option value="handed_over">Minden átadott (Átadva = IGAZ)</option>
+              <option value="not_written">Még nincs átírva (Átírva = HAMIS)</option>
+              <option value="all">Összes beolvasott sor</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11.5px; font-weight:600; color:#334155; display:block; margin-bottom:4px;">Pár keresése</label>
+            <input id="ekPairSearch" class="form-control" style="padding:6px 8px; font-size:12px;" placeholder="pl. 3111 vagy Agrár..." oninput="EgysegekKozottiMod.renderPairChips()" />
+          </div>
+        </div>
+        <div id="ekImportStats" class="ek-import-stats"></div>
+        <div id="ekPairChips" class="ek-pair-chips"></div>
+      </div>
+    </div>
+
+    <!-- 2. ÁTADÓ ÉS ÁTVEVŐ EGYSÉG ADATAI -->
+    <div class="panel">
+      <h3>2. Átadó és Átvevő egység</h3>
+
       <div class="row-2">
         <div class="form-group">
           <label>Átadó egység kódja</label>
           <div class="unit-combo">
-            <input id="ekSndCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="EgysegekMod.openUnitDropdown('snd')" oninput="EgysegekMod.handleUnitInput('snd')" />
+            <input id="ekSndCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="EgysegekKozottiMod.openUnitDropdown('snd')" oninput="EgysegekKozottiMod.handleUnitInput('snd')" />
             <span class="unit-combo-arrow">▼</span>
             <div id="ekSndDropdown" class="unit-dropdown-menu hidden"></div>
           </div>
@@ -18,7 +130,7 @@
         </div>
         <div class="form-group">
           <label>Átadó egység neve</label>
-          <input id="ekSndName" class="form-control" oninput="EgysegekMod.renderDocument()" />
+          <input id="ekSndName" class="form-control" oninput="EgysegekKozottiMod.renderDocument()" />
         </div>
       </div>
 
@@ -26,140 +138,169 @@
         <div class="form-group">
           <label>Átvevő egység kódja</label>
           <div class="unit-combo">
-            <input id="ekRecCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="EgysegekMod.openUnitDropdown('rec')" oninput="EgysegekMod.handleUnitInput('rec')" />
+            <input id="ekRecCode" class="form-control" autocomplete="off" placeholder="Válassz vagy írj kódot..." onfocus="EgysegekKozottiMod.openUnitDropdown('rec')" oninput="EgysegekKozottiMod.handleUnitInput('rec')" />
             <span class="unit-combo-arrow">▼</span>
             <div id="ekRecDropdown" class="unit-dropdown-menu hidden"></div>
           </div>
-          <div id="ekRecCodeError" class="field-error-msg hidden">Nincs hozzáférésed ehhez az egységhez!</div>
         </div>
         <div class="form-group">
           <label>Átvevő egység neve</label>
-          <input id="ekRecName" class="form-control" oninput="EgysegekMod.renderDocument()" />
+          <input id="ekRecName" class="form-control" oninput="EgysegekKozottiMod.renderDocument()" />
         </div>
       </div>
 
       <div class="row-2">
         <div class="form-group">
-          <label>Átadó neve (aláíró)</label>
-          <input id="ekSndSign" class="form-control" oninput="EgysegekMod.renderDocument()" />
+          <label>Átadó aláíró (opc.)</label>
+          <input id="ekSndLeader" class="form-control" placeholder="Egységvezető neve" oninput="EgysegekKozottiMod.renderDocument()" />
         </div>
         <div class="form-group">
-          <label>Átvevő neve (aláíró)</label>
-          <input id="ekRecSign" class="form-control" oninput="EgysegekMod.renderDocument()" />
+          <label>Átvevő aláíró (opc.)</label>
+          <input id="ekRecLeader" class="form-control" placeholder="Egységvezető neve" oninput="EgysegekKozottiMod.renderDocument()" />
         </div>
       </div>
 
       <div class="row-2">
         <div class="form-group">
           <label>Átadás dátuma</label>
-          <input id="ekDate" type="date" class="form-control" oninput="EgysegekMod.renderDocument()" />
+          <input id="ekDate" type="date" class="form-control" oninput="EgysegekKozottiMod.renderDocument()" />
         </div>
         <div class="form-group">
           <label>Keltezés helye</label>
-          <input id="ekCity" class="form-control" value="Debrecen" oninput="EgysegekMod.renderDocument()" />
+          <input id="ekCity" class="form-control" value="Debrecen" oninput="EgysegekKozottiMod.renderDocument()" />
         </div>
       </div>
 
       <div class="form-group" style="margin-bottom:0;">
-        <label>Megjegyzés</label>
-        <textarea id="ekNote" class="form-control" rows="2" oninput="EgysegekMod.renderDocument()"></textarea>
+        <label>Megjegyzés (a nyomtatvány aljára)</label>
+        <textarea id="ekNote" class="form-control" rows="2" placeholder="Opcionális megjegyzés..." oninput="EgysegekKozottiMod.renderDocument()"></textarea>
       </div>
     </div>
 
+    <!-- 3. ÁTADOTT ESZKÖZÖK LISTÁJA -->
     <div class="panel">
-      <h3>2. Eszközök / Tételek (<span id="ekItemCountBadge">0</span> tétel)</h3>
-      <div style="max-height:300px; overflow:auto;">
+      <h3>3. Átadott eszközök (<span id="ekItemCountBadge">0</span> tétel)</h3>
+      <div style="max-height:320px; overflow:auto;">
         <table class="mini-table">
           <thead>
             <tr>
-              <th style="width:28%;">Megnevezés</th>
-              <th style="width:20%;">Típus</th>
-              <th style="width:20%;">Gyári szám</th>
-              <th style="width:24%;">Specifikáció</th>
-              <th style="width:8%;"></th>
+              <th style="width:74px;">NYTSZ</th>
+              <th>Megnevezés</th>
+              <th style="width:42px;">Db</th>
+              <th style="width:110px;">Spec./Megj.</th>
+              <th style="width:26px;"></th>
             </tr>
           </thead>
           <tbody id="ekEditItemsBody"></tbody>
         </table>
       </div>
-      <div style="display:flex; gap:8px; margin-top:8px;">
-        <button class="btn btn-primary btn-sm" onclick="EgysegekMod.addEmptyItem()">+ Új tétel</button>
-        <button class="btn btn-outline btn-sm" onclick="EgysegekMod.clearItems()">Tételek törlése</button>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="EgysegekKozottiMod.addEmptyItem()">+ Új tétel</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="EgysegekKozottiMod.clearItems()">Tételek törlése</button>
       </div>
     </div>
   </div>
 
+  <!-- JOBB OLDAL: ÉLŐ A4 ELŐNÉZET -->
   <div>
     <div class="preview-toolbar no-print">
       <div>
         <strong>Élő A4 nyomtatási kép</strong>
-        <span id="ekPageCountInfo" style="color:var(--muted); font-size:13px; margin-left:8px;"></span>
+        <span id="ekPageCountInfo" style="color:var(--muted); font-size:12.5px; margin-left:6px;"></span>
       </div>
-      <button class="btn btn-primary" onclick="EgysegekMod.printAndLog()">🖨️ Nyomtatás / Mentés PDF-ként</button>
+      <button class="btn btn-primary btn-sm" onclick="EgysegekKozottiMod.printAndLog()">🖨️ Nyomtatás / PDF</button>
     </div>
     <div class="pages-wrapper" id="ekPagesContainer"></div>
   </div>
 </div>
 
 <script>
-  window.EgysegekMod = (function () {
-    let activeItems = [];
-    let unitValidationState = { rec: true, snd: true };
+  window.EgysegekKozottiMod = (function () {
+    let items = [];
+    let importedRows = [];
+    let hasStatusCols = false;
+    let activePairKey = null;
+    let sndUnitValid = true;
     let docClickBound = false;
 
+    function emptyItem() {
+      return { nytsz: "", name: "", qty: 1, spec: "" };
+    }
+
+    function todayIso() {
+      const n = new Date();
+      return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}-${String(n.getDate()).padStart(2, "0")}`;
+    }
+
     function init() {
-      unitValidationState = { rec: true, snd: true };
+      sndUnitValid = true;
+      importedRows = [];
+      hasStatusCols = false;
+      activePairKey = null;
 
       const dateEl = document.getElementById("ekDate");
-      if (dateEl && !dateEl.value) {
-        const now = new Date();
-        dateEl.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      if (dateEl && !dateEl.value) dateEl.value = todayIso();
+
+      const dz = document.getElementById("ekDropzone");
+      if (dz) {
+        dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("dragover"); });
+        dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+        dz.addEventListener("drop", e => {
+          e.preventDefault();
+          dz.classList.remove("dragover");
+          if (e.dataTransfer.files[0]) readCsvFile(e.dataTransfer.files[0]);
+        });
+      }
+
+      const csvIn = document.getElementById("ekCsvInput");
+      if (csvIn) {
+        csvIn.addEventListener("change", e => {
+          if (e.target.files[0]) readCsvFile(e.target.files[0]);
+          e.target.value = "";
+        });
       }
 
       if (!docClickBound) {
         document.addEventListener("click", e => {
           if (!e.target.closest(".unit-combo")) {
-            document.getElementById("ekRecDropdown")?.classList.add("hidden");
             document.getElementById("ekSndDropdown")?.classList.add("hidden");
+            document.getElementById("ekRecDropdown")?.classList.add("hidden");
           }
         });
         docClickBound = true;
       }
 
-      document.getElementById("ekRecCode").value = "";
-      document.getElementById("ekSndCode").value = "";
-      handleUnitInput("rec", false);
-      handleUnitInput("snd", false);
-
-      if (activeItems.length === 0) {
-        activeItems = [{ name: "", type: "", serial: "", spec: "" }];
-      }
-      renderEditTable();
+      if (items.length === 0) items = [emptyItem()];
+      renderItemsEditor();
       renderDocument();
     }
 
+    // ===== EGYSÉGVÁLASZTÓK (ÁTADÓ / ÁTVEVŐ) =====
     function openUnitDropdown(side) {
-      document.getElementById(side === "rec" ? "ekSndDropdown" : "ekRecDropdown").classList.add("hidden");
-      const val = document.getElementById(side === "rec" ? "ekRecCode" : "ekSndCode").value;
-      renderUnitDropdownList(side, val);
-      document.getElementById(side === "rec" ? "ekRecDropdown" : "ekSndDropdown").classList.remove("hidden");
+      const inputId = side === "snd" ? "ekSndCode" : "ekRecCode";
+      const menuId = side === "snd" ? "ekSndDropdown" : "ekRecDropdown";
+      renderUnitDropdownList(side, document.getElementById(inputId)?.value || "");
+      document.getElementById(menuId)?.classList.remove("hidden");
     }
 
     function renderUnitDropdownList(side, query = "") {
-      const menu = document.getElementById(side === "rec" ? "ekRecDropdown" : "ekSndDropdown");
-      const allowed = getAllowedUnitsForCurrentUser();
+      const menuId = side === "snd" ? "ekSndDropdown" : "ekRecDropdown";
+      const menu = document.getElementById(menuId);
+      if (!menu) return;
+
+      const pool = side === "snd" ? getAllowedUnitsForCurrentUser() : UNITS_LIST;
       const q = (query || "").trim().toLowerCase();
-      const filtered = allowed.filter(u =>
+      const filtered = pool.filter(u =>
         !q || u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || (u.leader || "").toLowerCase().includes(q)
       );
 
       if (filtered.length === 0) {
-        menu.innerHTML = `<div class="unit-dropdown-empty">Nincs találat az engedélyezett egységek között.</div>`;
+        menu.innerHTML = `<div class="unit-dropdown-empty">Nincs találat az egységek között.</div>`;
         return;
       }
 
       menu.innerHTML = filtered.map(u => `
-        <div class="unit-dropdown-item" onmousedown="EgysegekMod.pickUnitFromDropdown('${side}', '${escapeHtml(u.code)}')">
+        <div class="unit-dropdown-item" onmousedown="EgysegekKozottiMod.pickUnitFromDropdown('${side}', '${escapeHtml(u.code)}')">
           <div><span class="u-code">${escapeHtml(u.code)}</span> – ${escapeHtml(u.name)}</div>
           ${u.leader ? `<div class="u-leader">Vezető: ${escapeHtml(u.leader)}</div>` : ""}
         </div>
@@ -167,238 +308,661 @@
     }
 
     function pickUnitFromDropdown(side, code) {
-      document.getElementById(side === "rec" ? "ekRecCode" : "ekSndCode").value = code;
-      document.getElementById(side === "rec" ? "ekRecDropdown" : "ekSndDropdown").classList.add("hidden");
+      const inputId = side === "snd" ? "ekSndCode" : "ekRecCode";
+      const menuId = side === "snd" ? "ekSndDropdown" : "ekRecDropdown";
+      document.getElementById(inputId).value = code;
+      document.getElementById(menuId)?.classList.add("hidden");
       handleUnitInput(side, false);
     }
 
     function handleUnitInput(side, keepMenuOpen = true) {
-      const codeEl = document.getElementById(side === "rec" ? "ekRecCode" : "ekSndCode");
-      const nameEl = document.getElementById(side === "rec" ? "ekRecName" : "ekSndName");
-      const signEl = document.getElementById(side === "rec" ? "ekRecSign" : "ekSndSign");
-      const errEl = document.getElementById(side === "rec" ? "ekRecCodeError" : "ekSndCodeError");
+      const isSnd = side === "snd";
+      const codeEl = document.getElementById(isSnd ? "ekSndCode" : "ekRecCode");
+      const nameEl = document.getElementById(isSnd ? "ekSndName" : "ekRecName");
+      const leaderEl = document.getElementById(isSnd ? "ekSndLeader" : "ekRecLeader");
+      const errEl = isSnd ? document.getElementById("ekSndCodeError") : null;
+      const menuEl = document.getElementById(isSnd ? "ekSndDropdown" : "ekRecDropdown");
+      if (!codeEl) return;
 
       const typed = codeEl.value.trim();
       if (keepMenuOpen) {
         renderUnitDropdownList(side, typed);
-        document.getElementById(side === "rec" ? "ekRecDropdown" : "ekSndDropdown").classList.remove("hidden");
+        menuEl?.classList.remove("hidden");
       }
 
       if (!typed) {
         codeEl.classList.remove("input-error");
-        errEl.classList.add("hidden");
+        errEl?.classList.add("hidden");
         nameEl.value = "";
-        signEl.value = "";
-        unitValidationState[side] = true;
+        leaderEl.value = "";
+        if (isSnd) sndUnitValid = true;
         renderDocument();
         return;
       }
 
-      const allowed = getAllowedUnitsForCurrentUser();
-      const matchAllowed = allowed.find(u => u.code.toLowerCase() === typed.toLowerCase());
+      const pool = isSnd ? getAllowedUnitsForCurrentUser() : UNITS_LIST;
+      const match = pool.find(u => u.code.toLowerCase() === typed.toLowerCase());
 
-      if (matchAllowed) {
+      if (match) {
         codeEl.classList.remove("input-error");
-        errEl.classList.add("hidden");
-        nameEl.value = matchAllowed.name;
-        signEl.value = matchAllowed.leader || "";
-        unitValidationState[side] = true;
-      } else {
+        errEl?.classList.add("hidden");
+        nameEl.value = match.name;
+        leaderEl.value = match.leader || "";
+        if (isSnd) sndUnitValid = true;
+      } else if (isSnd) {
         codeEl.classList.add("input-error");
-        errEl.classList.remove("hidden");
+        errEl?.classList.remove("hidden");
         nameEl.value = "";
-        signEl.value = "";
-        unitValidationState[side] = false;
+        leaderEl.value = "";
+        sndUnitValid = false;
+      } else {
+        const anyMatch = UNITS_LIST.find(u => u.code.toLowerCase() === typed.toLowerCase());
+        if (anyMatch) {
+          nameEl.value = anyMatch.name;
+          leaderEl.value = anyMatch.leader || "";
+        }
       }
       renderDocument();
     }
 
-    function renderEditTable() {
-      const tbody = document.getElementById("ekEditItemsBody");
-      document.getElementById("ekItemCountBadge").textContent = activeItems.length;
-      tbody.innerHTML = "";
-      activeItems.forEach((item, idx) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><input value="${escapeHtml(item.name)}" placeholder="Megnevezés" oninput="EgysegekMod.updateItem(${idx},'name',this.value)" /></td>
-          <td><input value="${escapeHtml(item.type)}" placeholder="Típus" oninput="EgysegekMod.updateItem(${idx},'type',this.value)" /></td>
-          <td><input value="${escapeHtml(item.serial)}" placeholder="Gyári sz." oninput="EgysegekMod.updateItem(${idx},'serial',this.value)" /></td>
-          <td><input value="${escapeHtml(item.spec)}" placeholder="Szín, méret..." oninput="EgysegekMod.updateItem(${idx},'spec',this.value)" /></td>
-          <td style="text-align:center;"><button class="btn btn-danger btn-sm" style="padding:2px 6px;" onclick="EgysegekMod.removeItem(${idx})">×</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
+    // ===== TÖMEGES IMPORT PARSER (IDÉZŐJEL- ÉS SORTÖRÉSTŰRŐ) =====
+    function readCsvFile(file) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        document.getElementById("ekPasteInput").value = ev.target.result;
+        parsePastedData();
+      };
+      reader.readAsText(file, "UTF-8");
     }
 
-    function updateItem(idx, field, val) { activeItems[idx][field] = val; renderDocument(); }
-    function addEmptyItem() { activeItems.push({ name: "", type: "", serial: "", spec: "" }); renderEditTable(); renderDocument(); }
-    function removeItem(idx) { activeItems.splice(idx, 1); if (activeItems.length === 0) activeItems.push({ name: "", type: "", serial: "", spec: "" }); renderEditTable(); renderDocument(); }
-    function clearItems() { activeItems = [{ name: "", type: "", serial: "", spec: "" }]; renderEditTable(); renderDocument(); }
-
-    function formatHuYearMonthDay(isoDate) {
-      if (!isoDate) return "20____ év ____ hó ____ nap";
-      const parts = isoDate.split("-");
-      if (parts.length !== 3) return isoDate;
-      return `${parts[0]}. év ${parts[1]}. hó ${parts[2]}. nap`;
+    function detectDelimiter(text) {
+      let inQuotes = false;
+      let tabs = 0, semis = 0, commas = 0;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '"') inQuotes = !inQuotes;
+        else if (!inQuotes) {
+          if (ch === "\n" || ch === "\r") break;
+          if (ch === "\t") tabs++;
+          else if (ch === ";") semis++;
+          else if (ch === ",") commas++;
+        }
+      }
+      if (tabs >= semis && tabs >= commas && tabs > 0) return "\t";
+      if (semis >= commas && semis > 0) return ";";
+      return ",";
     }
 
-    function renderDocument() {
-      const container = document.getElementById("ekPagesContainer");
-      if (!container) return;
-      container.innerHTML = "";
+    function parseDelimitedTable(text, delim) {
+      const rows = [];
+      let row = [];
+      let cur = "";
+      let inQuotes = false;
 
-      const sndCode = unitValidationState.snd ? document.getElementById("ekSndCode").value.trim() : "";
-      const sndName = document.getElementById("ekSndName").value.trim();
-      const recCode = unitValidationState.rec ? document.getElementById("ekRecCode").value.trim() : "";
-      const recName = document.getElementById("ekRecName").value.trim();
-      const sndSign = document.getElementById("ekSndSign").value.trim();
-      const recSign = document.getElementById("ekRecSign").value.trim();
-      const dateStr = formatHuYearMonthDay(document.getElementById("ekDate").value);
-      const city = document.getElementById("ekCity").value.trim() || "Debrecen";
-      const note = document.getElementById("ekNote").value;
-
-      const comp = selectedCompany || COMPANIES.DCNK;
-      const displayItems = activeItems;
-
-      const pages = [];
-      let idx = 0, pageNum = 1;
-      while (idx < displayItems.length) {
-        const isFirst = (pageNum === 1);
-        const remaining = displayItems.length - idx;
-        const maxWithClosing = isFirst ? 15 : 22;
-        const maxWithoutClosing = isFirst ? 26 : 34;
-
-        if (remaining <= maxWithClosing) {
-          pages.push({ pageNum, items: displayItems.slice(idx), startIndex: idx, isFirst, isLast: true });
-          idx = displayItems.length;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (inQuotes) {
+          if (ch === '"') {
+            if (text[i + 1] === '"') {
+              cur += '"';
+              i++;
+            } else {
+              inQuotes = false;
+            }
+          } else {
+            cur += ch;
+          }
         } else {
-          const take = Math.min(remaining, maxWithoutClosing);
-          pages.push({ pageNum, items: displayItems.slice(idx, idx + take), startIndex: idx, isFirst, isLast: false });
-          idx += take;
-          pageNum++;
-          if (idx === displayItems.length) pages.push({ pageNum, items: [], startIndex: idx, isFirst: false, isLast: true });
+          if (ch === '"' && cur.length === 0) {
+            inQuotes = true;
+          } else if (ch === delim) {
+            row.push(cur.trim());
+            cur = "";
+          } else if (ch === "\r" || ch === "\n") {
+            if (ch === "\r" && text[i + 1] === "\n") i++;
+            row.push(cur.trim());
+            if (row.some(cell => cell !== "")) rows.push(row);
+            row = [];
+            cur = "";
+          } else {
+            cur += ch;
+          }
+        }
+      }
+      row.push(cur.trim());
+      if (row.some(cell => cell !== "")) rows.push(row);
+      return rows;
+    }
+
+    function parseBoolCell(val) {
+      const v = String(val || "").trim().toLowerCase();
+      return ["true", "igaz", "igen", "1", "x", "✓", "✔", "yes"].includes(v);
+    }
+
+    function parseUnitCell(raw) {
+      const text = String(raw || "").trim();
+      if (!text) return { code: "", name: "", leader: "", raw: "" };
+
+      const firstLine = text.split(/\r?\n/)[0].trim();
+      const singleLine = text.replace(/\s*\r?\n\s*/g, " / ").trim();
+      const m = firstLine.match(/^([0-9]{3,5}[A-Za-z]?)\s*[-–—:]\s*(.+)$/);
+
+      if (m) {
+        const code = m[1].trim();
+        const sheetName = m[2].trim();
+        const found = UNITS_LIST.find(u => u.code.toLowerCase() === code.toLowerCase());
+        return {
+          code,
+          name: found ? found.name : sheetName,
+          leader: found ? (found.leader || "") : "",
+          raw: singleLine
+        };
+      }
+
+      const codeOnly = firstLine.match(/^([0-9]{3,5}[A-Za-z]?)$/);
+      if (codeOnly) {
+        const code = codeOnly[1].trim();
+        const found = UNITS_LIST.find(u => u.code.toLowerCase() === code.toLowerCase());
+        return {
+          code,
+          name: found ? found.name : "",
+          leader: found ? (found.leader || "") : "",
+          raw: singleLine
+        };
+      }
+
+      return { code: "", name: singleLine, leader: "", raw: singleLine };
+    }
+
+    function parsePastedData() {
+      const raw = (document.getElementById("ekPasteInput")?.value || "").replace(/^\uFEFF/, "").trim();
+      if (!raw) { showToast("Nincs beillesztett vagy feltöltött adat!", "error"); return; }
+
+      const delim = detectDelimiter(raw);
+      const grid = parseDelimitedTable(raw, delim);
+      if (grid.length === 0) { showToast("Nem sikerült sorokat kiolvasni!", "error"); return; }
+
+      const firstRowNorm = grid[0].map(h =>
+        String(h || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+      );
+
+      let colMap = { nytsz: -1, name: -1, qty: -1, from: -1, to: -1, note: -1, atadva: -1, atirva: -1 };
+      let hasHeader = false;
+
+      firstRowNorm.forEach((h, i) => {
+        if (h.includes("nytsz") || h.includes("nyilvantart")) { colMap.nytsz = i; hasHeader = true; }
+        else if (h.includes("megnevez") || h.includes("eszkoz")) { colMap.name = i; hasHeader = true; }
+        else if (h === "db" || h.includes("menny") || h.includes("darab")) { colMap.qty = i; hasHeader = true; }
+        else if (h.includes("honnan") || h.includes("atado")) { colMap.from = i; hasHeader = true; }
+        else if (h.includes("hova") || h.includes("atvevo")) { colMap.to = i; hasHeader = true; }
+        else if (h.includes("megjegy") || h.includes("spec") || h.includes("tipus")) { colMap.note = i; hasHeader = true; }
+        else if (h.includes("atadva")) { colMap.atadva = i; hasHeader = true; }
+        else if (h.includes("atirva")) { colMap.atirva = i; hasHeader = true; }
+      });
+
+      const startRow = hasHeader ? 1 : 0;
+
+      // Ha fejléc nélkül illesztették be (a Google Sheets sorrendje alapján: Nytsz | Megnevezés | Mennyiség | Honnan | Hová | Megjegyzés | Átadva | Átírva)
+      if (!hasHeader) {
+        const cols = grid[0].length;
+        if (cols >= 5) {
+          colMap = {
+            nytsz: 0,
+            name: 1,
+            qty: 2,
+            from: 3,
+            to: 4,
+            note: cols >= 6 ? 5 : -1,
+            atadva: cols >= 7 ? 6 : -1,
+            atirva: cols >= 8 ? 7 : -1
+          };
+        } else {
+          colMap = {
+            nytsz: 0,
+            name: cols >= 2 ? 1 : -1,
+            qty: cols >= 3 ? 2 : -1,
+            from: -1,
+            to: -1,
+            note: cols >= 4 ? 3 : -1,
+            atadva: -1,
+            atirva: -1
+          };
         }
       }
 
-      const filledCount = activeItems.filter(i => i.name.trim() || i.type.trim() || i.serial.trim()).length;
-      document.getElementById("ekPageCountInfo").textContent = `(${pages.length} oldal • ${filledCount} kitöltött tétel)`;
+      hasStatusCols = (colMap.atadva >= 0 || colMap.atirva >= 0);
+      const hasUnitCols = (colMap.from >= 0 || colMap.to >= 0);
 
-      pages.forEach(p => {
-        const pageEl = document.createElement("div");
-        pageEl.className = "a4-page";
+      const parsed = [];
+      for (let r = startRow; r < grid.length; r++) {
+        const row = grid[r];
+        const nytsz = colMap.nytsz >= 0 ? (row[colMap.nytsz] || "").replace(/\s+/g, " ").trim() : "";
+        const name = colMap.name >= 0 ? (row[colMap.name] || "").replace(/\s*\r?\n\s*/g, " ").trim() : "";
+        if (!nytsz && !name) continue;
 
-        let html = `
-          <div class="doc-top-bar">
-            <img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />
-            <div class="doc-top-title">EGYSÉGEK KÖZÖTTI ÁTADÓ LAP</div>
-          </div>
-        `;
+        const qtyRaw = colMap.qty >= 0 ? (row[colMap.qty] || "") : "1";
+        const qty = parseInt(String(qtyRaw).replace(/[^\d]/g, ""), 10) || 1;
+        const fromInfo = colMap.from >= 0 ? parseUnitCell(row[colMap.from]) : { code: "", name: "", leader: "", raw: "" };
+        const toInfo = colMap.to >= 0 ? parseUnitCell(row[colMap.to]) : { code: "", name: "", leader: "", raw: "" };
+        const note = colMap.note >= 0 ? (row[colMap.note] || "").replace(/\s*\r?\n\s*/g, " | ").trim() : "";
+        const atadva = colMap.atadva >= 0 ? parseBoolCell(row[colMap.atadva]) : false;
+        const atirva = colMap.atirva >= 0 ? parseBoolCell(row[colMap.atirva]) : false;
 
-        if (p.isFirst) {
-          html += `
-            <div class="doc-main-title" style="margin-bottom:5mm;">EGYSÉGEK KÖZÖTTI ÁTADÓ LAP</div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr 0.9fr; gap:6mm; margin-bottom:6mm;">
-              <table class="party-table">
-                <tr><th colspan="2">ÁTADÓ</th></tr>
-                <tr><td>Egység kód</td><td>${escapeHtml(sndCode)}</td></tr>
-                <tr><td>Egység neve</td><td>${escapeHtml(sndName)}</td></tr>
-              </table>
-              <table class="party-table">
-                <tr><th colspan="2">ÁTVEVŐ</th></tr>
-                <tr><td>Egység kód</td><td>${escapeHtml(recCode)}</td></tr>
-                <tr><td>Egység neve</td><td>${escapeHtml(recName)}</td></tr>
-              </table>
-              <table class="party-table">
-                <tr><th>ÁTADÁS DÁTUMA</th></tr>
-                <tr><td style="text-align:center; height:14mm; vertical-align:middle; background:#fff; font-weight:600;">${escapeHtml(dateStr)}</td></tr>
-              </table>
-            </div>
-          `;
+        const fromKey = fromInfo.code || fromInfo.raw || "Nincs megadva";
+        const toKey = toInfo.code || toInfo.raw || "Nincs megadva";
+
+        parsed.push({
+          nytsz,
+          name,
+          qty,
+          fromInfo,
+          toInfo,
+          pairKey: `${fromKey}__${toKey}`,
+          note,
+          atadva,
+          atirva
+        });
+      }
+
+      if (parsed.length === 0) {
+        showToast("Nem sikerült érvényes tételeket találni!", "error");
+        return;
+      }
+
+      importedRows = parsed;
+
+      // Ha nincs Honnan/Hová oszlop, közvetlenül betöltjük a tételek közé
+      if (!hasUnitCols) {
+        document.getElementById("ekImportFilterWrap")?.classList.add("hidden");
+        const includeNote = document.getElementById("ekImportIncludeNote")?.checked === true;
+        items = parsed.map(r => ({ nytsz: r.nytsz, name: r.name, qty: r.qty, spec: includeNote ? r.note : "" }));
+        renderItemsEditor();
+        renderDocument();
+        showToast(`${parsed.length} tétel sikeresen beolvasva!`, "success");
+        return;
+      }
+
+      // Ha vannak státusz oszlopok, alapból "Átadva, még nincs átírva", különben "Összes"
+      const filterEl = document.getElementById("ekImportStatusFilter");
+      if (filterEl) {
+        filterEl.value = hasStatusCols ? "pending_transfer" : "all";
+        filterEl.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+
+      document.getElementById("ekImportFilterWrap")?.classList.remove("hidden");
+      activePairKey = null;
+      onImportFilterChange(true);
+      showToast(`${parsed.length} sor beolvasva! Válaszd ki az átadó → átvevő párt.`, "success");
+    }
+
+    function getFilteredImportedRows() {
+      const mode = document.getElementById("ekImportStatusFilter")?.value || "all";
+      if (!hasStatusCols || mode === "all") return importedRows;
+      if (mode === "pending_transfer") return importedRows.filter(r => r.atadva && !r.atirva);
+      if (mode === "handed_over") return importedRows.filter(r => r.atadva);
+      if (mode === "not_written") return importedRows.filter(r => !r.atirva);
+      return importedRows;
+    }
+
+    function buildImportPairs(rows) {
+      const map = new Map();
+      rows.forEach(r => {
+        if (!map.has(r.pairKey)) {
+          const fShort = r.fromInfo.code || r.fromInfo.name || "?";
+          const tShort = r.toInfo.code || r.toInfo.name || "?";
+          map.set(r.pairKey, {
+            key: r.pairKey,
+            label: `${fShort} → ${tShort}`,
+            title: `${r.fromInfo.raw || fShort}  →  ${r.toInfo.raw || tShort}`,
+            search: `${r.fromInfo.code} ${r.fromInfo.name} ${r.fromInfo.raw} ${r.toInfo.code} ${r.toInfo.name} ${r.toInfo.raw}`.toLowerCase(),
+            fromInfo: r.fromInfo,
+            toInfo: r.toInfo,
+            rows: []
+          });
         }
+        map.get(r.pairKey).rows.push(r);
+      });
+      return [...map.values()].sort((a, b) => a.label.localeCompare(b.label, "hu"));
+    }
 
-        if (p.items.length > 0 || p.isFirst) {
-          html += `
-            <table class="items-table">
-              <thead>
-                <tr>
-                  <th style="width:8%;">TÉTEL SZÁM</th>
-                  <th style="width:28%;">MEGNEVEZÉS</th>
-                  <th style="width:18%;">TÍPUS</th>
-                  <th style="width:18%;">GYÁRI SZÁM</th>
-                  <th style="width:28%;">SPECIFIKÁCIÓ (PL. SZÍN, MÉRET)</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${p.items.map((it, i) => `
-                  <tr style="height:6.5mm;">
-                    <td class="c-center">${(p.startIndex || 0) + i + 1}</td>
-                    <td>${escapeHtml(it.name)}</td>
-                    <td>${escapeHtml(it.type)}</td>
-                    <td>${escapeHtml(it.serial)}</td>
-                    <td>${escapeHtml(it.spec)}</td>
+    function onImportFilterChange(autoSelectFirst = false) {
+      if (importedRows.length === 0) return;
+
+      const filtered = getFilteredImportedRows();
+      const pairs = buildImportPairs(filtered);
+
+      const statsEl = document.getElementById("ekImportStats");
+      if (statsEl) {
+        statsEl.textContent = `Beolvasva: ${importedRows.length} sor • Szűrés után: ${filtered.length} sor • ${pairs.length} átadó–átvevő pár`;
+      }
+
+      if (pairs.length === 0) {
+        activePairKey = null;
+        renderPairChips(pairs);
+        return;
+      }
+
+      const stillExists = pairs.some(p => p.key === activePairKey);
+      if (!stillExists && (autoSelectFirst || activePairKey)) {
+        activePairKey = pairs[0].key;
+      }
+
+      renderPairChips(pairs);
+
+      if (activePairKey) {
+        selectImportPair(activePairKey, false);
+      }
+    }
+
+    function renderPairChips(precomputedPairs = null) {
+      const chipsEl = document.getElementById("ekPairChips");
+      if (!chipsEl) return;
+
+      const pairs = precomputedPairs || buildImportPairs(getFilteredImportedRows());
+      const q = (document.getElementById("ekPairSearch")?.value || "").trim().toLowerCase();
+      const visible = pairs.filter(p => !q || p.search.includes(q));
+
+      if (visible.length === 0) {
+        chipsEl.innerHTML = `<div style="font-size:12px; color:var(--muted); padding:6px 2px;">Nincs a szűrésnek megfelelő átadás.</div>`;
+        return;
+      }
+
+      chipsEl.innerHTML = visible.map(p => `
+        <button
+          type="button"
+          class="ek-pair-chip ${p.key === activePairKey ? "active" : ""}"
+          title="${escapeHtml(p.title)}"
+          onclick="EgysegekKozottiMod.selectImportPair('${escapeHtml(p.key)}', true)"
+        >
+          <span>${escapeHtml(p.label)}</span>
+          <span class="ek-cnt">${p.rows.length}</span>
+        </button>
+      `).join("");
+    }
+
+    function selectImportPair(pairKey, notify = true) {
+      const pairs = buildImportPairs(getFilteredImportedRows());
+      const pair = pairs.find(p => p.key === pairKey);
+      if (!pair) return;
+
+      activePairKey = pairKey;
+      renderPairChips(pairs);
+
+      const sndCodeEl = document.getElementById("ekSndCode");
+      const sndNameEl = document.getElementById("ekSndName");
+      const sndLeaderEl = document.getElementById("ekSndLeader");
+      const recCodeEl = document.getElementById("ekRecCode");
+      const recNameEl = document.getElementById("ekRecName");
+      const recLeaderEl = document.getElementById("ekRecLeader");
+
+      // Átadó beállítása (jogosultság ellenőrzéssel)
+      if (sndCodeEl) {
+        sndCodeEl.value = pair.fromInfo.code || "";
+        if (pair.fromInfo.code) {
+          handleUnitInput("snd", false);
+          if (!sndUnitValid) {
+            showToast(`Figyelem: nincs hozzáférésed a(z) ${pair.fromInfo.code} átadó egységhez!`, "error");
+          }
+        } else {
+          sndCodeEl.classList.remove("input-error");
+          document.getElementById("ekSndCodeError")?.classList.add("hidden");
+          sndUnitValid = true;
+          sndNameEl.value = pair.fromInfo.name || "";
+          sndLeaderEl.value = pair.fromInfo.leader || "";
+        }
+      }
+
+      // Átvevő beállítása
+      if (recCodeEl) {
+        recCodeEl.value = pair.toInfo.code || "";
+        if (pair.toInfo.code) {
+          handleUnitInput("rec", false);
+          if (!recNameEl.value && pair.toInfo.name) recNameEl.value = pair.toInfo.name;
+        } else {
+          recNameEl.value = pair.toInfo.name || "";
+          recLeaderEl.value = pair.toInfo.leader || "";
+        }
+      }
+
+      const includeNote = document.getElementById("ekImportIncludeNote")?.checked === true;
+      items = pair.rows.map(r => ({
+        nytsz: r.nytsz,
+        name: r.name,
+        qty: r.qty,
+        spec: includeNote ? r.note : ""
+      }));
+      if (items.length === 0) items = [emptyItem()];
+
+      renderItemsEditor();
+      renderDocument();
+      if (notify) showToast(`${pair.label} betöltve (${pair.rows.length} tétel).`, "info");
+    }
+
+    function clearImportedData() {
+      importedRows = [];
+      hasStatusCols = false;
+      activePairKey = null;
+      const pasteEl = document.getElementById("ekPasteInput");
+      if (pasteEl) pasteEl.value = "";
+      const searchEl = document.getElementById("ekPairSearch");
+      if (searchEl) searchEl.value = "";
+      document.getElementById("ekImportFilterWrap")?.classList.add("hidden");
+      showToast("Import adatok törölve.", "info");
+    }
+
+    // ===== TÉTELEK SZERKESZTŐ =====
+    function renderItemsEditor() {
+      const tbody = document.getElementById("ekEditItemsBody");
+      if (!tbody) return;
+      const badge = document.getElementById("ekItemCountBadge");
+      if (badge) badge.textContent = items.length;
+
+      tbody.innerHTML = items.map((it, idx) => `
+        <tr>
+          <td><input placeholder="NYTSZ" value="${escapeHtml(it.nytsz)}" oninput="EgysegekKozottiMod.updateItem(${idx},'nytsz',this.value)" /></td>
+          <td><input placeholder="Megnevezés" value="${escapeHtml(it.name)}" oninput="EgysegekKozottiMod.updateItem(${idx},'name',this.value)" /></td>
+          <td><input type="number" min="1" value="${escapeHtml(it.qty)}" style="text-align:center;" oninput="EgysegekKozottiMod.updateItem(${idx},'qty',this.value)" /></td>
+          <td><input placeholder="Spec./megj." value="${escapeHtml(it.spec)}" oninput="EgysegekKozottiMod.updateItem(${idx},'spec',this.value)" /></td>
+          <td style="text-align:center;">
+            <button type="button" class="btn btn-danger btn-sm" style="padding:1px 6px;" onclick="EgysegekKozottiMod.removeItem(${idx})">×</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function updateItem(idx, field, val) {
+      if (!items[idx]) return;
+      items[idx][field] = field === "qty" ? (parseInt(val, 10) || 1) : val;
+      renderDocument();
+    }
+
+    function addEmptyItem() {
+      items.push(emptyItem());
+      renderItemsEditor();
+      renderDocument();
+    }
+
+    function removeItem(idx) {
+      items.splice(idx, 1);
+      if (items.length === 0) items.push(emptyItem());
+      renderItemsEditor();
+      renderDocument();
+    }
+
+    function clearItems() {
+      items = [emptyItem()];
+      renderItemsEditor();
+      renderDocument();
+    }
+
+    // ===== A4 DOKUMENTUM RENDERELÉS =====
+    function renderDocument() {
+      const container = document.getElementById("ekPagesContainer");
+      if (!container) return;
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const sndCode = sndUnitValid ? (document.getElementById("ekSndCode")?.value || "").trim() : "";
+      const sndName = (document.getElementById("ekSndName")?.value || "").trim();
+      const sndLeader = (document.getElementById("ekSndLeader")?.value || "").trim();
+      const recCode = (document.getElementById("ekRecCode")?.value || "").trim();
+      const recName = (document.getElementById("ekRecName")?.value || "").trim();
+      const recLeader = (document.getElementById("ekRecLeader")?.value || "").trim();
+      const dateVal = document.getElementById("ekDate")?.value || todayIso();
+      const city = (document.getElementById("ekCity")?.value || "Debrecen").trim();
+      const note = (document.getElementById("ekNote")?.value || "").trim();
+
+      const filledItems = items.filter(it => it.nytsz.trim() || it.name.trim() || it.spec.trim());
+      const totalRowsCount = filledItems.length;
+      const totalQtyCount = filledItems.reduce((sum, it) => sum + (parseInt(it.qty, 10) || 0), 0);
+
+      const dateSuffixed = formatHungarianDateWithSuffix(dateVal);
+      const dateSpaced = formatSpacedDate(dateVal);
+
+      // Oldaltördelés (első oldal: max 14 sor lezárással, 22 sor nélküle; további oldalak: max 20 / 28)
+      const pages = [];
+      let idx = 0;
+      let pageNo = 0;
+
+      while (idx < items.length) {
+        const isFirst = (pageNo === 0);
+        const remaining = items.length - idx;
+        const maxWithClosing = isFirst ? 14 : 20;
+        const maxWithoutClosing = isFirst ? 22 : 28;
+
+        if (remaining <= maxWithClosing) {
+          pages.push({ startIdx: idx, slice: items.slice(idx), isFirst, isLast: true });
+          idx = items.length;
+        } else {
+          const take = Math.min(remaining, maxWithoutClosing);
+          pages.push({ startIdx: idx, slice: items.slice(idx, idx + take), isFirst, isLast: false });
+          idx += take;
+          if (idx === items.length) {
+            pages.push({ startIdx: idx, slice: [], isFirst: false, isLast: true });
+          }
+        }
+        pageNo++;
+      }
+
+      if (pages.length === 0) {
+        pages.push({ startIdx: 0, slice: [emptyItem()], isFirst: true, isLast: true });
+      }
+
+      const totalPages = pages.length;
+      const infoBadge = document.getElementById("ekPageCountInfo");
+      if (infoBadge) {
+        infoBadge.textContent = `(${totalPages} oldal • ${totalRowsCount} tétel • ${totalQtyCount} db)`;
+      }
+
+      container.innerHTML = pages.map((pg, pIdx) => {
+        const minRows = pg.isFirst && pg.isLast ? 8 : 0;
+        const padCount = Math.max(0, minRows - pg.slice.length);
+        const displayRows = [...pg.slice, ...Array.from({ length: padCount }, () => null)];
+
+        return `
+          <div class="a4-page">
+            <div class="doc-top-bar">
+              <img src="${comp.logo}" alt="${comp.code}" onerror="this.src='${comp.fallbackLogo}'" />
+              <div class="doc-top-title">EGYSÉGEK KÖZÖTTI ÁTADÓ LAP</div>
+            </div>
+
+            ${pg.isFirst ? `
+              <div class="doc-main-title">EGYSÉGEK KÖZÖTTI ÁTADÓ LAP</div>
+              <div class="parties-grid">
+                <table class="party-table">
+                  <tr><th colspan="2">ÁTADÓ</th></tr>
+                  <tr><td>Egység kódja</td><td>${escapeHtml(sndCode)}</td></tr>
+                  <tr><td>Egység neve</td><td>${escapeHtml(sndName)}</td></tr>
+                </table>
+                <table class="party-table">
+                  <tr><th colspan="2">ÁTVEVŐ</th></tr>
+                  <tr><td>Egység kódja</td><td>${escapeHtml(recCode)}</td></tr>
+                  <tr><td>Egység neve</td><td>${escapeHtml(recName)}</td></tr>
+                </table>
+              </div>
+            ` : ""}
+
+            ${displayRows.length > 0 ? `
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th style="width:7%;">TÉTEL</th>
+                    <th style="width:16%;">NYILVÁNTARTÁSI SZÁM</th>
+                    <th style="width:36%;">MEGNEVEZÉS</th>
+                    <th style="width:7%;">DB</th>
+                    <th style="width:34%;">TÍPUS, GYÁRI SZÁM, SPECIFIKÁCIÓ, MEGJEGYZÉS</th>
                   </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          `;
-        }
+                </thead>
+                <tbody>
+                  ${displayRows.map((it, i) => it ? `
+                    <tr style="height:6.5mm;">
+                      <td class="c-center">${pg.startIdx + i + 1}</td>
+                      <td class="c-center">${escapeHtml(it.nytsz)}</td>
+                      <td>${escapeHtml(it.name)}</td>
+                      <td class="c-center">${(it.nytsz.trim() || it.name.trim()) ? escapeHtml(it.qty) : ""}</td>
+                      <td>${escapeHtml(it.spec)}</td>
+                    </tr>
+                  ` : `
+                    <tr style="height:6.5mm;">
+                      <td class="c-center">&nbsp;</td><td></td><td></td><td></td><td></td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            ` : ""}
 
-        if (p.isLast) {
-          html += `
-            <table class="note-box">
-              <tr><th>MEGJEGYZÉS</th></tr>
-              <tr><td>${escapeHtml(note)}</td></tr>
-            </table>
-
-            <div class="doc-legal" style="margin-bottom:5mm;">
-              <div style="margin-bottom:4px;">Átvevő az átadó lap aláírásával felelősséget vállal az átvett eszközök használata közben előforduló sérülésekért, meghibásodásért, vagy az eszközök esetleges eltűnéséért.</div>
-              <div>A nem rendeltetésszerű használatból adódó kár, vagy meghibásodás költsége - a garanciális javítások kivételével -, továbbá az eszköz eltűnéséből eredő kár az Átvevő egységet terheli.</div>
-            </div>
-
-            <div class="doc-date-line">Kelt.: ${escapeHtml(city)}, ${escapeHtml(dateStr)}</div>
-
-            <div class="sign-zone">
-              <div class="sign-row">
-                <div class="sign-col">
-                  <div style="font-weight:700; margin-bottom:7mm; font-size:10.5pt;">ÁTADÓ</div>
-                  <div style="min-height:5mm; font-size:10pt;">${escapeHtml(sndSign)}</div>
-                  <div class="sign-line" style="font-size:9pt; margin-bottom:10mm;">neve</div>
-                  <div class="sign-line" style="font-size:9pt;">aláírása</div>
+            ${pg.isLast ? `
+              <div class="doc-legal">
+                <div class="sum-line">
+                  Összesen <strong>${totalRowsCount}</strong> tétel (<strong>${totalQtyCount} db</strong> eszköz) került átadásra ${escapeHtml(dateSuffixed)}.
                 </div>
-                <div class="sign-col">
-                  <div style="font-weight:700; margin-bottom:7mm; font-size:10.5pt;">ÁTVEVŐ</div>
-                  <div style="min-height:5mm; font-size:10pt;">${escapeHtml(recSign)}</div>
-                  <div class="sign-line" style="font-size:9pt; margin-bottom:10mm;">neve</div>
-                  <div class="sign-line" style="font-size:9pt;">aláírása</div>
+                <div>
+                  Alulírott átadó és átvevő igazoljuk, hogy a fenti jegyzékben szereplő tárgyi eszközök a mai napon hiánytalanul, rendeltetésszerű használatra alkalmas állapotban átadásra, illetve átvételre kerültek. Az átvételtől kezdve az eszközök megőrzéséért és nyilvántartás szerinti meglétéért az átvevő egység felel.
                 </div>
               </div>
-            </div>
-          `;
-        }
 
-        html += `
-          <div class="doc-footer">
-            ${p.pageNum}. oldal — ${escapeHtml(comp.fullName)} — Egységek közötti átadó lap
+              <table class="note-box">
+                <tr><th>MEGJEGYZÉS</th></tr>
+                <tr><td>${escapeHtml(note)}</td></tr>
+              </table>
+
+              <div class="doc-date-line">${escapeHtml(city)}, ${escapeHtml(dateSpaced)}</div>
+
+              <div class="sign-zone">
+                <div class="sign-row">
+                  <div class="sign-col">
+                    <div class="sign-label">Átadó:</div>
+                    <div class="sign-line">${escapeHtml(sndLeader || "aláírás")}</div>
+                  </div>
+                  <div class="sign-col">
+                    <div class="sign-label">Átvevő:</div>
+                    <div class="sign-line">${escapeHtml(recLeader || "aláírás")}</div>
+                  </div>
+                </div>
+              </div>
+            ` : ""}
+
+            <div class="doc-footer">
+              ${pIdx + 1} / ${totalPages}. oldal • ${escapeHtml(comp.code)} Egységek közötti átadó lap
+            </div>
           </div>
         `;
-
-        pageEl.innerHTML = html;
-        container.appendChild(pageEl);
-      });
+      }).join("");
     }
 
     async function printAndLog() {
-      if (!unitValidationState.rec || !unitValidationState.snd) {
-        showToast("Hibás vagy nem engedélyezett egységkód szerepel a nyomtatványon!", "error");
+      if (!sndUnitValid) {
+        showToast("Hibás vagy nem engedélyezett átadó egységkód!", "error");
         return;
       }
       window.print();
       if (!currentUser) return;
+
       const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
-      const snd = `${document.getElementById("ekSndCode").value} ${document.getElementById("ekSndName").value}`;
-      const rec = `${document.getElementById("ekRecCode").value} ${document.getElementById("ekRecName").value}`;
-      const filledCount = activeItems.filter(i => i.name.trim() || i.type.trim() || i.serial.trim()).length;
-      const details = `${compTag}Átadó: ${snd} → Átvevő: ${rec} | Dátum: ${document.getElementById("ekDate").value} | ${filledCount} tétel`;
+      const sndCode = (document.getElementById("ekSndCode")?.value || "").trim();
+      const recCode = (document.getElementById("ekRecCode")?.value || "").trim();
+      const dateVal = document.getElementById("ekDate")?.value || "";
+      const filledCount = items.filter(i => i.name.trim() || i.nytsz.trim()).length;
+      const details = `${compTag}${sndCode || "?"} → ${recCode || "?"} | Dátum: ${dateVal} | ${filledCount} tétel`;
 
       try {
         await apiCall({
@@ -412,10 +976,23 @@
     }
 
     return {
-      init, openUnitDropdown, pickUnitFromDropdown, handleUnitInput,
-      updateItem, addEmptyItem, removeItem, clearItems, renderDocument, printAndLog
+      init,
+      openUnitDropdown,
+      pickUnitFromDropdown,
+      handleUnitInput,
+      parsePastedData,
+      clearImportedData,
+      onImportFilterChange,
+      renderPairChips,
+      selectImportPair,
+      addEmptyItem,
+      removeItem,
+      clearItems,
+      updateItem,
+      renderDocument,
+      printAndLog
     };
   })();
 
-  window.TemplateModules["egysegek_kozotti"] = window.EgysegekMod;
+  window.TemplateModules["egysegek_kozotti"] = window.EgysegekKozottiMod;
 </script>
