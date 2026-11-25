@@ -3093,6 +3093,175 @@
     });
   })();
 
+  // ===== BÖNGÉSZŐ VISSZA / ELŐRE NAVIGÁCIÓ (HISTORY API) =====
+  let historyInitialized = false;
+  let isHandlingPopState = false;
+
+  function buildHistoryState(viewKey) {
+    const companyCode = selectedCompany ? selectedCompany.code : null;
+    let docId = null;
+    if (viewKey === "docActive") {
+      docId = activeDocId || null;
+    } else if (viewKey === "comingSoon") {
+      docId = document.getElementById("docTypeDropdown")?.value || null;
+    }
+    return {
+      view: viewKey,
+      companyCode,
+      docId,
+      draftId: viewKey === "docActive" ? (activeDraftId || null) : null
+    };
+  }
+
+  function buildHistoryHash(state) {
+    if (!state || state.view === "companySelect") return "#cegvalasztas";
+    if (state.view === "docSelect") return `#${state.companyCode || "nyomtatvanyok"}`;
+    if (state.view === "docActive" || state.view === "comingSoon") {
+      return `#${state.companyCode || "doc"}/${state.docId || ""}`;
+    }
+    return `#${state.view}`;
+  }
+
+  function isSameHistoryState(a, b) {
+    return !!a && !!b &&
+      a.view === b.view &&
+      (a.companyCode || null) === (b.companyCode || null) &&
+      (a.docId || null) === (b.docId || null);
+  }
+
+  const _origShowOnlySection = showOnlySection;
+  showOnlySection = function (sectionId, viewKey) {
+    _origShowOnlySection(sectionId, viewKey);
+    if (!currentUser || isHandlingPopState) return;
+
+    const nextState = buildHistoryState(viewKey);
+    const nextHash = buildHistoryHash(nextState);
+
+    if (!historyInitialized) {
+      history.replaceState(nextState, "", nextHash);
+      historyInitialized = true;
+      return;
+    }
+
+    if (!isSameHistoryState(history.state, nextState)) {
+      history.pushState(nextState, "", nextHash);
+    }
+  };
+
+  const _origSaveCurrentDraft = saveCurrentDraft;
+  saveCurrentDraft = function (immediate = false) {
+    _origSaveCurrentDraft(immediate);
+    if (
+      immediate &&
+      currentView === "docActive" &&
+      activeDraftId &&
+      history.state &&
+      history.state.view === "docActive" &&
+      history.state.draftId !== activeDraftId
+    ) {
+      history.replaceState(
+        { ...history.state, draftId: activeDraftId },
+        "",
+        location.hash || buildHistoryHash(history.state)
+      );
+    }
+  };
+
+  const _origLogout = logout;
+  logout = function () {
+    _origLogout();
+    historyInitialized = false;
+    history.replaceState(null, "", location.pathname + location.search);
+  };
+
+  window.addEventListener("popstate", async (e) => {
+    if (!currentUser) return;
+
+    closeGlobalDropdown();
+    closeUnitModal();
+    closePermModal();
+
+    const state = e.state;
+    isHandlingPopState = true;
+
+    try {
+      if (!state || state.view === "companySelect") {
+        goHomeToCompanySelect(true);
+        return;
+      }
+
+      if (state.view === "docSelect") {
+        if (state.companyCode && hasCompanyAccess(state.companyCode)) {
+          if (selectedCompany && selectedCompany.code === state.companyCode) {
+            backToDocSelector(true);
+          } else {
+            selectCompany(state.companyCode);
+          }
+        } else {
+          goHomeToCompanySelect(true);
+        }
+        return;
+      }
+
+      if (state.view === "docActive") {
+        if (state.companyCode && hasCompanyAccess(state.companyCode)) {
+          selectedCompany = COMPANIES[state.companyCode];
+          document.body.className = selectedCompany.themeClass;
+          document.getElementById("selectorCompanyName").textContent = `${selectedCompany.code} — ${selectedCompany.fullName}`;
+          populateDocDropdown();
+
+          const dt = DOC_TYPES.find(x => x.id === state.docId);
+          if (dt && dt.file) {
+            const draft = state.draftId ? loadAllDrafts().find(d => d.id === state.draftId) : null;
+            await loadAndOpenTemplate(dt, draft || null);
+            return;
+          }
+          selectCompany(state.companyCode);
+        } else {
+          goHomeToCompanySelect(true);
+        }
+        return;
+      }
+
+      if (state.view === "comingSoon") {
+        if (state.companyCode && hasCompanyAccess(state.companyCode)) {
+          selectedCompany = COMPANIES[state.companyCode];
+          document.body.className = selectedCompany.themeClass;
+          const dt = DOC_TYPES.find(x => x.id === state.docId);
+          document.getElementById("comingSoonTitle").textContent = (dt ? dt.label : "Nyomtatvány") + " — Fejlesztés alatt";
+          showOnlySection("comingSoonView", "comingSoon");
+        } else {
+          goHomeToCompanySelect(true);
+        }
+        return;
+      }
+
+      if (state.view === "settings") {
+        closeActiveDocumentEditor();
+        selectedCompany = (state.companyCode && hasCompanyAccess(state.companyCode)) ? COMPANIES[state.companyCode] : null;
+        document.body.className = selectedCompany ? selectedCompany.themeClass : "";
+        showOnlySection("settingsView", "settings");
+        loadUserReports();
+        return;
+      }
+
+      if (state.view === "admin" && currentUser.role === "admin") {
+        closeActiveDocumentEditor();
+        selectedCompany = (state.companyCode && hasCompanyAccess(state.companyCode)) ? COMPANIES[state.companyCode] : null;
+        document.body.className = selectedCompany ? selectedCompany.themeClass : "";
+        showOnlySection("adminView", "admin");
+        loadUsers();
+        loadAdminReports();
+        loadLogs();
+        return;
+      }
+
+      goHomeToCompanySelect(true);
+    } finally {
+      isHandlingPopState = false;
+    }
+  });
+
   // ===== INIT =====
   (function init() {
     const saved = sessionStorage.getItem("campus_session");
