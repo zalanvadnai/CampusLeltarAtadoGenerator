@@ -274,6 +274,68 @@
     .styled-select-wrap::after { content: "▼"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--primary); pointer-events: none; }
     .preview-stage { background: #e2e8f0; border-radius: 14px; padding: 24px; display: flex; flex-direction: column; align-items: center; min-height: 480px; }
 
+    /* NAGYÍTÓ KAPCSOLÓ (SWITCH) */
+    .preview-stage-head {
+      width: 416px;
+      max-width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .zoom-switch-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .zoom-switch {
+      position: relative;
+      display: inline-block;
+      width: 38px;
+      height: 22px;
+    }
+    .zoom-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      position: absolute;
+    }
+    .zoom-slider {
+      position: absolute;
+      inset: 0;
+      background: #cbd5e1;
+      border-radius: 999px;
+      transition: background 0.2s;
+    }
+    .zoom-slider::before {
+      content: "";
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      transition: transform 0.2s;
+    }
+    .zoom-switch input:checked + .zoom-slider {
+      background: var(--primary);
+    }
+    .zoom-switch input:checked + .zoom-slider::before {
+      transform: translateX(16px);
+    }
+    .mini-doc-paper.zoom-disabled {
+      cursor: default;
+    }
+
     /* PISZKOZATOK BLOKK */
     .drafts-header {
       display: flex;
@@ -403,7 +465,7 @@
       box-shadow: none !important;
       margin: 0 !important;
     }
-      .zoom-lens {
+    .zoom-lens {
       position: absolute;
       width: 315px;
       height: 315px;
@@ -452,8 +514,35 @@
     .pages-wrapper { display: flex; flex-direction: column; align-items: center; gap: 20px; }
     .a4-page { width: 210mm; height: 297mm; background: #fff; padding: 14mm 15mm 14mm 15mm; box-shadow: 0 8px 28px rgba(15,23,42,0.14); display: flex; flex-direction: column; position: relative; color: #000; font-family: "Times New Roman", Times, serif; }
     .doc-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8mm; }
-    .doc-top-bar img { height: 11mm; display: block; }
-    .doc-top-title { font-family: Arial, sans-serif; font-weight: 700; font-size: 9pt; letter-spacing: 0.3px; text-align: right; max-width: 115mm; }
+    .doc-top-bar img,
+    .doc-header-logo {
+      height: 11mm;
+      max-height: 11mm;
+      width: auto;
+      display: block;
+      object-fit: contain;
+    }
+    body:not(.theme-udc) .doc-top-bar img,
+    body:not(.theme-udc) .doc-header-logo {
+      height: 8mm !important;
+      max-height: 8mm !important;
+    }
+    .doc-top-title {
+      font-family: Arial, sans-serif;
+      font-weight: 700;
+      font-size: 8.8pt;
+      letter-spacing: 0.25px;
+      text-align: right;
+      max-width: 115mm;
+      line-height: 1.25;
+    }
+    .doc-top-tax {
+      font-family: Arial, sans-serif;
+      font-size: 7.5pt;
+      font-weight: 400;
+      color: #444;
+      margin-top: 1px;
+    }
     .doc-main-title { text-align: center; font-family: "Times New Roman", Times, serif; font-size: 18pt; font-weight: 700; margin: 2mm 0 7mm; letter-spacing: 0.5px; }
     .parties-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14mm; margin-bottom: 7mm; }
     .party-table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 9.5pt; }
@@ -563,7 +652,6 @@
       font-weight: 700;
     }
 
-    
     /* ===== PRINT RULES ===== */
     @page { size: A4 portrait; margin: 0; }
     @media print {
@@ -741,11 +829,22 @@
         </div>
 
         <div class="preview-stage">
-          <div style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:4px;">
-            Nyomtatvány előnézet (Preview)
-          </div>
-          <div style="font-size:11.5px; color:#64748b; margin-bottom:12px;">
-            Vidd az egeret a lapra a nagyításhoz • Görgővel állítható zoom
+          <div class="preview-stage-head">
+            <div>
+              <div style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:2px;">
+                Nyomtatvány előnézet (Preview)
+              </div>
+              <div id="previewZoomHint" style="font-size:11.5px; color:#64748b;">
+                Vidd az egeret a lapra a nagyításhoz • Görgővel állítható zoom
+              </div>
+            </div>
+            <label class="zoom-switch-label" title="Nagyító ki- és bekapcsolása">
+              <span>Nagyító</span>
+              <span class="zoom-switch">
+                <input type="checkbox" id="previewZoomToggle" checked onchange="togglePreviewZoom(this.checked)" />
+                <span class="zoom-slider"></span>
+              </span>
+            </label>
           </div>
           <div id="miniPreviewContainer" class="mini-doc-paper"></div>
         </div>
@@ -1011,7 +1110,6 @@
 
   // ===== SABLONOK REGISZTRÁCIÓJA =====
   const DOC_TYPES = [
-
     {
       id: "selejtezesi_jegyzokonyv",
       label: "Selejtezési jegyzőkönyv (teljes)",
@@ -1262,6 +1360,7 @@
       code: "DCNK",
       shortName: "Debreceni Campus NP KH Kft.",
       fullName: "Debreceni Campus Nonprofit Közhasznú Kft.",
+      taxId: "21454167-2-09",
       logo: "campuslog.png",
       fallbackLogo: FALLBACK_DCNK_LOGO,
       themeClass: ""
@@ -1270,6 +1369,7 @@
       code: "UDC",
       shortName: "UD Campus NP KH Kft.",
       fullName: "UD Campus Nonprofit Közhasznú Kft.",
+      taxId: "28826192-2-04",
       logo: "UD_campus_logo_hosszu.png",
       fallbackLogo: FALLBACK_UDC_LOGO,
       themeClass: "theme-udc"
@@ -1288,6 +1388,7 @@
   let modalEditingPermUserIdx = null;
   let previewZoomBound = false;
   let previewZoomLevel = 1.15;
+  let previewZoomEnabled = localStorage.getItem("campus_preview_zoom") !== "off";
 
   // Piszkozat állapot
   let activeDraftId = null;
@@ -1369,6 +1470,24 @@
     } else {
       input.type = "password";
       btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    }
+  }
+
+  function togglePreviewZoom(enabled) {
+    previewZoomEnabled = !!enabled;
+    localStorage.setItem("campus_preview_zoom", previewZoomEnabled ? "on" : "off");
+    const box = document.getElementById("miniPreviewContainer");
+    const hint = document.getElementById("previewZoomHint");
+    const cb = document.getElementById("previewZoomToggle");
+    if (cb) cb.checked = previewZoomEnabled;
+    if (box) {
+      box.classList.toggle("zoom-disabled", !previewZoomEnabled);
+      if (!previewZoomEnabled) box.querySelector(".zoom-lens")?.classList.add("hidden");
+    }
+    if (hint) {
+      hint.textContent = previewZoomEnabled
+        ? "Vidd az egeret a lapra a nagyításhoz • Görgővel állítható zoom"
+        : "Nagyító kikapcsolva";
     }
   }
 
@@ -1596,7 +1715,6 @@
 
     const listConfigs = DRAFT_LIST_CONFIG[docId] || [];
 
-    // 1. Dinamikus táblázatok / listák visszaállítása
     listConfigs.forEach(cfg => {
       const savedRows = (draft.lists && Array.isArray(draft.lists[cfg.id])) ? draft.lists[cfg.id] : null;
       if (!savedRows) return;
@@ -1637,7 +1755,6 @@
       });
     });
 
-    // 2. Egyszerű ID-val rendelkező mezők visszaállítása
     const fields = draft.fields || {};
     const fieldIds = Object.keys(fields);
     fieldIds.forEach(id => applyFieldValue(host.querySelector("#" + id), fields[id]));
@@ -1659,17 +1776,20 @@
     syncDocHeaderCompanyName(host, docId);
   }
 
-  // ===== KÖZPONTI FEJLÉC CÉGNÉV SZINKRON =====
+  // ===== KÖZPONTI FEJLÉC CÉGNÉV + ADÓSZÁM SZINKRON =====
   const KEEP_DOC_TITLE_IDS = ["selejtezesi_jegyzokonyv"];
 
   function syncDocHeaderCompanyName(rootEl, docId) {
     if (!rootEl || !docId || KEEP_DOC_TITLE_IDS.includes(docId)) return;
     const comp = selectedCompany || COMPANIES.DCNK;
-    const companyTitle = comp.fullName;
+    const syncKey = `${comp.code}|${comp.taxId || ""}`;
     rootEl.querySelectorAll(".doc-top-title").forEach(el => {
-      if (el.textContent !== companyTitle) {
-        el.textContent = companyTitle;
-      }
+      if (el.dataset.compSynced === syncKey) return;
+      el.dataset.compSynced = syncKey;
+      el.innerHTML = `
+        <div>${escapeHtml(comp.fullName)}</div>
+        ${comp.taxId ? `<div class="doc-top-tax">Adószám: ${escapeHtml(comp.taxId)}</div>` : ""}
+      `;
     });
   }
 
@@ -1939,6 +2059,7 @@
     document.getElementById("selectorCompanyName").textContent = `${selectedCompany.code} — ${selectedCompany.fullName}`;
     populateDocDropdown();
     showOnlySection("docSelectView", "docSelect");
+    togglePreviewZoom(previewZoomEnabled);
     renderDraftsList();
     renderMiniPreview();
   }
@@ -2094,6 +2215,7 @@
           </div>
         `;
         bindPreviewMagnifier();
+        togglePreviewZoom(previewZoomEnabled);
       } else {
         box.innerHTML = `<div style="padding:20px; color:#64748b; font-size:13px;">Előnézet nem elérhető.</div>`;
       }
@@ -2116,6 +2238,10 @@
       const lens = box.querySelector(".zoom-lens");
       const content = box.querySelector(".zoom-lens-content");
       if (!lens || !content) return;
+      if (!previewZoomEnabled) {
+        lens.classList.add("hidden");
+        return;
+      }
 
       const rect = box.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -2159,6 +2285,7 @@
     });
 
     box.addEventListener("wheel", e => {
+      if (!previewZoomEnabled) return;
       const lens = box.querySelector(".zoom-lens");
       if (!lens) return;
       e.preventDefault();
@@ -2808,6 +2935,153 @@
       if (e.target && e.target.id === "globalCustomDropdown") return;
       closeGlobalDropdown();
     }, true);
+  })();
+
+  // ===== AUTOMATIKUS PDF FÁJLNÉV NYOMTATÁSKOR =====
+  const ORIGINAL_PAGE_TITLE = document.title;
+
+  const PRINT_DOC_SLUGS = {
+    raktari_atadolap: "raktariatado",
+    egysegek_kozotti: "egysegekkozotti",
+    selejtezesi_jegyzokonyv: "selejtezesijegyzokonyv",
+    hasznositasi_jegyzek: "hasznositasijegyzek",
+    felesleges_eszk_jegyzek: "feleslegeseszkozok",
+    hasznositando_eszk_jegyzek: "hasznositandoeszkozok",
+    hulladek_tetelek: "hulladektetelek",
+    eszkoz_megvasarlas: "eszkozmegvasarlas",
+    megsemmisitesi_jegyzokonyv: "megsemmisitesijegyzokonyv",
+    visszanyert_anyagok: "visszanyertanyagok",
+    megbizolevel: "megbizolevel",
+    selejtezesre_javasolt: "selejtezesrejavasolt",
+    selejtezett_javak: "selejtezettjavak",
+    selejtezett_targyi_eszkozok: "selejtezetttargyieszkozok",
+    allomanyba_vetel: "allomanybavetel",
+    atveteli_lap: "atvetelilap",
+    atveteli_lap_dolgozoi: "atvetelilapdolgozoi"
+  };
+
+  function normalizeSlug(str) {
+    return String(str || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function parseDateToPrintFormat(raw) {
+    if (!raw) return "";
+    const text = String(raw).trim();
+
+    const numMatch = text.match(/\b(20\d{2})[.\-\/]\s*(\d{1,2})[.\-\/]\s*(\d{1,2})\b/);
+    if (numMatch) {
+      return `${numMatch[1]}.${String(numMatch[2]).padStart(2, "0")}.${String(numMatch[3]).padStart(2, "0")}`;
+    }
+
+    const months = [
+      "januar", "februar", "marcius", "aprilis", "majus", "junius",
+      "julius", "augusztus", "szeptember", "oktober", "november", "december"
+    ];
+    const norm = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const wordMatch = norm.match(/\b(20\d{2})\.?\s+([a-z]+)\s+(\d{1,2})\b/);
+    if (wordMatch) {
+      const mIdx = months.findIndex(m => wordMatch[2].startsWith(m));
+      if (mIdx >= 0) {
+        return `${wordMatch[1]}.${String(mIdx + 1).padStart(2, "0")}.${String(wordMatch[3]).padStart(2, "0")}`;
+      }
+    }
+    return "";
+  }
+
+  function extractDocUnitCodeForFilename(host, docId) {
+    const preferReceiver = ["raktari_atadolap", "egysegek_kozotti", "atveteli_lap"].includes(docId);
+    const idPriority = preferReceiver
+      ? ["recCode", "ekRecCode", "alRecCode", "sndCode", "ekSndCode"]
+      : ["sjFull_sndCode", "sndCode", "feSndCode", "heSndCode", "sjSndCode", "sijSndCode", "steSndCode", "aldSndCode", "mbUnitCode", "avBeszCode", "recCode", "alRecCode"];
+
+    for (const id of idPriority) {
+      const el = host.querySelector("#" + id);
+      if (el && el.value && el.value.trim()) {
+        return el.value.trim().replace(/[^a-zA-Z0-9._-]+/g, "");
+      }
+    }
+
+    for (const inp of host.querySelectorAll(".unit-combo input")) {
+      if (inp.value && inp.value.trim()) {
+        return inp.value.trim().replace(/[^a-zA-Z0-9._-]+/g, "");
+      }
+    }
+
+    for (const row of host.querySelectorAll(".a4-page .party-table tr")) {
+      const cells = row.querySelectorAll("td");
+      if (cells.length >= 2 && /egység\s*kód/i.test(cells[0].textContent || "")) {
+        const val = (cells[1].textContent || "").trim();
+        if (val) return val.replace(/[^a-zA-Z0-9._-]+/g, "");
+      }
+    }
+
+    return "";
+  }
+
+  function extractDocDateForFilename(host) {
+    const activeChip = host.querySelector(".date-chip.active");
+    if (activeChip) {
+      const parsed = parseDateToPrintFormat(activeChip.textContent);
+      if (parsed) return parsed;
+    }
+
+    const dateInputs = [...host.querySelectorAll('input[type="date"], input[id*="Date"], input[id*="date"], input[id*="Datum"], input[id*="datum"]')];
+    const primaryInput = dateInputs.find(el => el.value && !/dest|close/i.test(el.id || "")) || dateInputs.find(el => el.value);
+    if (primaryInput) {
+      const parsed = parseDateToPrintFormat(primaryInput.value);
+      if (parsed) return parsed;
+    }
+
+    const dateLine = host.querySelector(".a4-page .doc-date-line");
+    if (dateLine) {
+      const parsed = parseDateToPrintFormat(dateLine.textContent);
+      if (parsed) return parsed;
+    }
+
+    const firstPage = host.querySelector(".a4-page");
+    if (firstPage) {
+      const parsed = parseDateToPrintFormat(firstPage.textContent);
+      if (parsed) return parsed;
+    }
+
+    const now = new Date();
+    return `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
+  }
+
+  function buildPrintFileName() {
+    if (currentView !== "docActive" || !activeDocId) return "";
+    const host = document.getElementById("docHostView");
+    if (!host) return "";
+
+    const dt = DOC_TYPES.find(x => x.id === activeDocId);
+    const docSlug = PRINT_DOC_SLUGS[activeDocId] || normalizeSlug(dt ? dt.label : activeDocId);
+    const unitCode = extractDocUnitCodeForFilename(host, activeDocId);
+    const docDate = extractDocDateForFilename(host);
+
+    return [docSlug, unitCode, docDate].filter(Boolean).join("_");
+  }
+
+  (function hookPrintFilename() {
+    const nativePrint = window.print.bind(window);
+    window.print = function () {
+      const customName = buildPrintFileName();
+      if (customName) document.title = customName;
+      nativePrint();
+      setTimeout(() => { document.title = ORIGINAL_PAGE_TITLE; }, 1000);
+    };
+
+    window.addEventListener("beforeprint", () => {
+      const customName = buildPrintFileName();
+      if (customName) document.title = customName;
+    });
+
+    window.addEventListener("afterprint", () => {
+      document.title = ORIGINAL_PAGE_TITLE;
+    });
   })();
 
   // ===== INIT =====
