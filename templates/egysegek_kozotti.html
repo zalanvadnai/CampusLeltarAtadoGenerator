@@ -854,9 +854,7 @@
       }
 
       container.innerHTML = pages.map((pg, pIdx) => {
-        const minRows = pg.isFirst && pg.isLast ? 8 : 0;
-        const padCount = Math.max(0, minRows - pg.slice.length);
-        const displayRows = [...pg.slice, ...Array.from({ length: padCount }, () => null)];
+        const displayRows = pg.slice;;
 
         return `
           <div class="a4-page">
