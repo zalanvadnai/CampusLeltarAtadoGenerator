@@ -2993,43 +2993,63 @@
   }
 
   function extractDocUnitCodeForFilename(host, docId) {
-    const preferReceiver = ["egysegek_kozotti", "atveteli_lap"].includes(docId);
-    const idPriority = preferReceiver
-      ? ["recCode", "ekRecCode", "alRecCode", "sndCode", "ekSndCode"]
-      : ["sndCode", "sjFull_sndCode", "ekSndCode", "feSndCode", "heSndCode", "sjSndCode", "sijSndCode", "steSndCode", "aldSndCode", "mbUnitCode", "avBeszCode", "recCode", "alRecCode"];
+    const cleanCode = val => String(val || "").trim().replace(/[^a-zA-Z0-9._]+/g, "");
 
-    for (const id of idPriority) {
-      const el = host.querySelector("#" + id);
-      if (el && el.value && el.value.trim()) {
-        return el.value.trim().replace(/[^a-zA-Z0-9._-]+/g, "");
-      }
-    }
-
-    const partyTables = [...host.querySelectorAll(".a4-page .party-table")];
-    const targetHeaderRe = preferReceiver ? /átvevő/i : /átadó/i;
-    const orderedTables = [
-      ...partyTables.filter(t => targetHeaderRe.test(t.querySelector("th")?.textContent || "")),
-      ...partyTables.filter(t => !targetHeaderRe.test(t.querySelector("th")?.textContent || ""))
-    ];
-
-    for (const tbl of orderedTables) {
-      for (const row of tbl.querySelectorAll("tr")) {
-        const cells = row.querySelectorAll("td");
-        if (cells.length >= 2 && /egység\s*kód/i.test(cells[0].textContent || "")) {
-          const val = (cells[1].textContent || "").trim();
-          if (val) return val.replace(/[^a-zA-Z0-9._-]+/g, "");
+    const getFirstInputVal = ids => {
+      for (const id of ids) {
+        const el = host.querySelector("#" + id);
+        if (el && el.value && el.value.trim()) {
+          const cleaned = cleanCode(el.value);
+          if (cleaned) return cleaned;
         }
       }
+      return "";
+    };
+
+    const getPartyTableCode = headerRe => {
+      for (const tbl of host.querySelectorAll(".a4-page .party-table")) {
+        const thText = tbl.querySelector("th")?.textContent || "";
+        if (!headerRe.test(thText)) continue;
+        for (const row of tbl.querySelectorAll("tr")) {
+          const cells = row.querySelectorAll("td");
+          if (cells.length >= 2 && /egység\s*kód/i.test(cells[0].textContent || "")) {
+            const cleaned = cleanCode(cells[1].textContent);
+            if (cleaned) return cleaned;
+          }
+        }
+      }
+      return "";
+    };
+
+    // Kétoldalú átadási dokumentumok: honnan-hova (Átadó-Átvevő)
+    const TWO_PARTY_DOCS = ["raktari_atadolap", "egysegek_kozotti"];
+    if (TWO_PARTY_DOCS.includes(docId)) {
+      const fromCode = getFirstInputVal(["ekSndCode", "sndCode"]) || getPartyTableCode(/átadó/i);
+      const toCode = getFirstInputVal(["ekRecCode", "recCode"]) || getPartyTableCode(/átvevő/i);
+
+      if (fromCode && toCode) return `${fromCode}-${toCode}`;
+      return fromCode || toCode || "";
     }
 
+    // Egyoldalú dokumentumok
+    const singleCode = getFirstInputVal([
+      "sjFull_sndCode", "sndCode", "ekSndCode", "feSndCode", "heSndCode",
+      "sjSndCode", "sijSndCode", "steSndCode", "aldSndCode", "mbUnitCode",
+      "avBeszCode", "alRecCode", "recCode"
+    ]);
+    if (singleCode) return singleCode;
+
+    const tableCode = getPartyTableCode(/átadó/i) || getPartyTableCode(/átvevő/i) || getPartyTableCode(/.*/);
+    if (tableCode) return tableCode;
+
     for (const inp of host.querySelectorAll(".unit-combo input")) {
-      if (inp.value && inp.value.trim()) {
-        return inp.value.trim().replace(/[^a-zA-Z0-9._-]+/g, "");
-      }
+      const cleaned = cleanCode(inp.value);
+      if (cleaned) return cleaned;
     }
 
     return "";
   }
+  
 
   function extractDocDateForFilename(host) {
     const activeChip = host.querySelector(".date-chip.active");
