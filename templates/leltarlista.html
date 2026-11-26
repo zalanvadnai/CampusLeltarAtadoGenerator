@@ -14,7 +14,6 @@
     padding-bottom: 12px;
   }
   .a4-page.a4-landscape {
-    page: a4-landscape;
     width: 297mm;
     height: 210mm;
     padding: 9mm 11mm 9mm 11mm;
@@ -147,18 +146,24 @@
     user-select: none;
   }
 
-  @page a4-landscape {
-    size: A4 landscape;
-    margin: 0;
-  }
   @media print {
-    .ll-gen-grid { display: block; }
-    .ll-pages-scroll { overflow: visible; padding: 0; }
+    .ll-gen-grid { display: block !important; }
+    .ll-pages-scroll { overflow: visible !important; padding: 0 !important; width: auto !important; }
+    #ll_pagesContainer { display: block !important; }
     .a4-page.a4-landscape {
       width: 297mm !important;
-      height: 210mm !important;
+      height: 209.5mm !important;
+      overflow: hidden !important;
       box-shadow: none !important;
       margin: 0 !important;
+      page-break-after: always;
+      break-after: page;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .a4-page.a4-landscape:last-child {
+      page-break-after: auto;
+      break-after: auto;
     }
   }
 </style>
@@ -281,6 +286,7 @@
   window.LeltarlistaMod = (function () {
     let items = [];
     let rawImportedItems = [];
+    let printHooksBound = false;
 
     function emptyItem(defaultUnit = "") {
       return {
@@ -807,9 +813,7 @@
     }
 
     // ===== FEKVŐ NYOMTATÁS ÉS NAPLÓZÁS =====
-    async function printAndLog() {
-      notifyDraftSave(true);
-
+    function ensureLandscapePrintStyle() {
       let landscapeRule = document.getElementById("ll_forceLandscapePrint");
       if (!landscapeRule) {
         landscapeRule = document.createElement("style");
@@ -817,15 +821,36 @@
         landscapeRule.textContent = "@media print { @page { size: A4 landscape; margin: 0; } }";
         document.head.appendChild(landscapeRule);
       }
+    }
 
-      const cleanup = () => {
-        document.getElementById("ll_forceLandscapePrint")?.remove();
-        window.removeEventListener("afterprint", cleanup);
-      };
-      window.addEventListener("afterprint", cleanup);
+    function removeLandscapePrintStyle() {
+      document.getElementById("ll_forceLandscapePrint")?.remove();
+    }
+
+    function bindPrintOrientationHooks() {
+      if (printHooksBound) return;
+      printHooksBound = true;
+
+      window.addEventListener("beforeprint", () => {
+        const host = document.getElementById("docHostView");
+        const llBox = document.getElementById("ll_pagesContainer");
+        if (host && llBox && !host.classList.contains("hidden") && host.contains(llBox)) {
+          ensureLandscapePrintStyle();
+        } else {
+          removeLandscapePrintStyle();
+        }
+      });
+
+      window.addEventListener("afterprint", removeLandscapePrintStyle);
+    }
+
+    // ===== FEKVŐ NYOMTATÁS ÉS NAPLÓZÁS =====
+    async function printAndLog() {
+      notifyDraftSave(true);
+      bindPrintOrientationHooks();
+      ensureLandscapePrintStyle();
 
       window.print();
-      setTimeout(cleanup, 1500);
 
       if (!currentUser) return;
       const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
