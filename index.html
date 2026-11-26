@@ -4209,6 +4209,30 @@
     }
   }
 
+  function formatCompletedDocDate(raw) {
+    if (!raw) return "";
+    const str = String(raw).trim();
+
+    // 1) Normál / pontozott / kötőjeles dátum (pl. 2026.02.12, 2026-02-12)
+    const parsed = parseDateToPrintFormat(str);
+    if (parsed) return parsed;
+
+    // 2) Google Sheets / JS Date string (pl. "Thu Feb 12 2026 00:00:00 GMT+0100 (...)")
+    const engMonths = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const engMatch = str.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(20\d{2})\b/i);
+    if (engMatch) {
+      const mIdx = engMonths.indexOf(engMatch[1].toLowerCase()) + 1;
+      return `${engMatch[3]}.${String(mIdx).padStart(2, "0")}.${String(engMatch[2]).padStart(2, "0")}`;
+    }
+
+    // 3) Tartalék: általános Date konverzió
+    const d = new Date(str.replace(/\s*\([^)]*\)\s*$/, ""));
+    if (!isNaN(d.getTime())) {
+      return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+    }
+    return str;
+  }
+
   function renderCompletedDocsList() {
     const listEl = document.getElementById("compDocsListContainer");
     const badgeEl = document.getElementById("compResultsHeaderBadge");
@@ -4239,7 +4263,8 @@
       const routeTitle = (d.fromUnit && d.toUnit)
         ? `${d.fromUnit} → ${d.toUnit}`
         : (d.fromUnit || d.toUnit || d.docLabel);
-      const displayLine = d.docDate ? `${routeTitle} (${d.docDate})` : routeTitle;
+      const formattedDate = formatCompletedDocDate(d.docDate);
+      const displayLine = formattedDate ? `${routeTitle} (${formattedDate})` : routeTitle;
 
       const subParts = [];
       if (d.fromUnit && d.toUnit) {
@@ -4256,7 +4281,6 @@
             <div class="completed-item-meta">${escapeHtml(subParts.join(" • "))}</div>
           </div>
           <div class="completed-item-actions">
-            <span class="draft-time">${escapeHtml(formatDraftTimestamp(d.savedAt))}</span>
             <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openCompletedDocument('${escapeHtml(d.id)}')">Megnyitás</button>
             ${isAdmin ? `<button type="button" class="draft-del-btn" title="Törlés az archívumból" onclick="deleteCompletedDocument(event, '${escapeHtml(d.id)}')">×</button>` : ""}
           </div>
