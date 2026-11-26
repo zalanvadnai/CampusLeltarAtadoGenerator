@@ -972,6 +972,7 @@
 
             <div style="display:flex; flex-direction:column; gap:10px;">
               <button class="btn btn-primary btn-lg btn-block" onclick="openSelectedInventory()">✓ Leltárzáró megnyitása →</button>
+              <button type="button" class="btn btn-secondary btn-block" onclick="openInventoryVerificationProtocol(false)">🛡️ Hitelesítési jegyzőkönyv készítése (SHA-256)</button>
               <button class="btn btn-outline btn-block" onclick="goHomeToCompanySelect(true)">← Másik cég választása</button>
             </div>
           </div>
@@ -2573,6 +2574,42 @@
     const draft = loadAllInventoryDrafts().find(d => d.id === draftId);
     if (!draft) { showToast("A leltár piszkozat nem található!", "error"); renderInventoryDraftsList(); return; }
     loadAndOpenInventoryTemplate(null, draft, false);
+  }
+  async function openInventoryVerificationProtocol(autoImportFromEditor = false) {
+    if (!selectedCompany) { showToast("Előbb válassz céget!", "error"); return; }
+
+    const dt = DOC_TYPES.find(x => x.id === "zaro_leltar_hitelesitesi_jk");
+    if (!dt || !dt.file) {
+      showToast("A Hitelesítési jegyzőkönyv sablon még nincs regisztrálva a DOC_TYPES listában!", "error");
+      return;
+    }
+
+    const perms = currentUser.permissions || [];
+    if (currentUser.role !== "admin" && !perms.includes(dt.id)) {
+      showToast("Nincs jogosultságod a Hitelesítési jegyzőkönyv megnyitásához!", "error");
+      return;
+    }
+
+    const selectedYear = document.getElementById("invYearDropdown")?.value || "";
+
+    if (currentView === "inventoryEditor") {
+      saveCurrentInventoryDraft(true);
+    }
+
+    await loadAndOpenTemplate(dt, null, false);
+
+    if (autoImportFromEditor) {
+      window.ZaroLeltarHitMod?.importLastInventorySummary();
+    } else if (selectedYear) {
+      const protoEl = document.getElementById("zlh_protoNo");
+      const cutoffEl = document.getElementById("zlh_cutoffDate");
+      const pdfNameEl = document.getElementById("zlh_pdfName");
+      if (protoEl) protoEl.value = `LELT-${selectedYear}-01`;
+      if (cutoffEl) cutoffEl.value = `${selectedYear}-12-31`;
+      if (pdfNameEl) pdfNameEl.value = `zaro_leltar_${selectedYear}.pdf`;
+      window.ZaroLeltarHitMod?.renderDocument();
+      saveCurrentDraft(true);
+    }
   }
 
   // ===== AUTH =====
