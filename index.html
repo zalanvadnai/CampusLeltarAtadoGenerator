@@ -4414,13 +4414,13 @@
       if (d.userName) subParts.push(`Készítette: ${d.userName}`);
 
       return `
-        <div class="completed-item" onclick="openCompletedDocument('${escapeHtml(d.id)}')" title="Kattints a dokumentum megtekintéséhez">
+        <div class="completed-item" onclick="openCompletedDocument('${escapeHtml(d.id)}')" title="Kattints a dokumentum megnyitásához">
           <div class="completed-item-main">
             <div class="completed-item-title">${escapeHtml(displayLine)}</div>
             <div class="completed-item-meta">${escapeHtml(subParts.join(" • "))}</div>
           </div>
           <div class="completed-item-actions">
-            <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openCompletedDocument('${escapeHtml(d.id)}')">Megnyitás</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openCompletedDocument('${escapeHtml(d.id)}')">Megtekintés</button>
             ${isAdmin ? `<button type="button" class="draft-del-btn" title="Törlés az archívumból" onclick="deleteCompletedDocument(event, '${escapeHtml(d.id)}')">×</button>` : ""}
           </div>
         </div>
