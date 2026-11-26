@@ -1362,6 +1362,14 @@
 
   // ===== SABLONOK REGISZTRÁCIÓJA =====
   const DOC_TYPES = [
+
+    {
+      id: "zaro_leltar_hitelesitesi_jk",
+      label: "Záró leltárlista hitelesítési jegyzőkönyve",
+      title: "ZÁRÓ LELTÁRLISTA HITELESÍTÉSI JEGYZŐKÖNYVE",
+      file: "templates/zaro_leltar_hitelesitesi_jk.html",
+      desc: "Záró leltár PDF állomány SHA-256 hash alapú hitelesítési jegyzőkönyve beépített hash-generátorral és PDF-ellenőrzővel."
+    },
     {
       id: "selejtezesi_jegyzokonyv",
       label: "Selejtezési jegyzőkönyv (teljes)",
@@ -3769,6 +3777,7 @@
   const ORIGINAL_PAGE_TITLE = document.title;
 
   const PRINT_DOC_SLUGS = {
+    zaro_leltar_hitelesitesi_jk: "zaroleltarhitelesites",
     raktari_atadolap: "raktariatado",
     egysegek_kozotti: "egysegekkozotti",
     selejtezesi_jegyzokonyv: "selejtezesijegyzokonyv",
