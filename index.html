@@ -2497,22 +2497,23 @@
     }, { passive: false });
   }
 
-  async function renderInventoryMiniPreview() {
-    const box = document.getElementById("invMiniPreviewContainer");
-    if (!box || !selectedCompany) return;
-
-    box.innerHTML = `<div style="height:100%; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:13px;">Előnézet betöltése...</div>`;
+async function loadAndOpenInventoryTemplate(context = null, draftToRestore = null, fromArchive = false, archiveMeta = null) {
+    const host = document.getElementById("docHostView");
+    document.getElementById("previewRenderHost").innerHTML = "";
+    document.getElementById("loadingOverlay").classList.remove("hidden");
 
     try {
       const rawHtml = await ensureInventoryTemplateRaw();
-      document.getElementById("docHostView").innerHTML = "";
-      const previewHost = document.getElementById("previewRenderHost");
       const temp = document.createElement("div");
       temp.innerHTML = rawHtml;
       extractAndInjectTemplateStyles(INVENTORY_TPL_ID, temp);
       const scripts = [...temp.querySelectorAll("script")];
       scripts.forEach(s => s.remove());
-      previewHost.innerHTML = temp.innerHTML;
+
+      isReadOnlyArchiveMode = !!fromArchive;
+      activeArchivedMeta = fromArchive ? archiveMeta : null;
+      host.classList.toggle("archive-readonly", !!fromArchive);
+      host.innerHTML = temp.innerHTML;
 
       if (!window.TemplateModules[INVENTORY_TPL_ID]) {
         scripts.forEach(oldScript => {
@@ -2522,45 +2523,82 @@
         });
       }
 
-      const unitCode = document.getElementById("invUnitDropdown")?.value || "";
-      const year = document.getElementById("invYearDropdown")?.value || String(new Date().getFullYear());
-      const isCompanyWide = (unitCode === "ALL");
-      const unitObj = UNITS_LIST.find(u => u.code === unitCode) || { code: unitCode, name: "", leader: "" };
+      bindHostDraftListeners();
+      activeDocId = INVENTORY_TPL_ID;
+      activeDraftId = null;
+      activeInvDraftId = null;
+      showOnlySection("docHostView", "inventoryEditor");
 
-      window.TemplateModules[INVENTORY_TPL_ID]?.init({
-        unitCode: isCompanyWide ? "ALL" : unitObj.code,
-        unitName: isCompanyWide ? "" : unitObj.name,
-        isCompanyWide,
-        year,
-        leader: isCompanyWide ? "" : (unitObj.leader || "")
-      });
-
-      const firstPage = previewHost.querySelector(".a4-page");
-      if (firstPage) {
-        const pageHtml = firstPage.outerHTML;
-        box.innerHTML = `
-          <div class="mini-doc-clip">
-            <div class="mini-a4-scale landscape-scale">${pageHtml}</div>
-          </div>
-          <div class="zoom-lens hidden">
-            <div class="zoom-lens-content landscape-lens">${pageHtml}</div>
-          </div>
-        `;
-        bindInventoryPreviewMagnifier();
-        togglePreviewZoom(previewZoomEnabled);
+      const mod = window.TemplateModules[INVENTORY_TPL_ID];
+      if (mod && typeof mod.init === "function") {
+        mod.init(context || {});
       }
-      previewHost.innerHTML = "";
+
+      if (draftToRestore) {
+        activeInvDraftId = fromArchive ? null : draftToRestore.id;
+        mod?.restoreDraftData(draftToRestore);
+        if (fromArchive) {
+          applyArchiveReadOnlyMode(archiveMeta);
+        } else {
+          saveCurrentInventoryDraft(true);
+        }
+        showToast(fromArchive ? "Kész leltárlista megnyitva (csak megtekintés)." : "Leltár piszkozat betöltve!", "success");
+      } else {
+        activeInvDraftId = "inv_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+        saveCurrentInventoryDraft(true);
+      }
     } catch (err) {
-      box.innerHTML = `<div style="padding:20px; color:#dc2626; font-size:13px;">Hiba az előnézet betöltésekor.</div>`;
+      showToast("Hiba a leltár sablon betöltésekor: " + err.message, "error");
+    } finally {
+      document.getElementById("loadingOverlay").classList.add("hidden");
     }
   }
 
+  function saveCurrentInventoryDraft(immediate = false) {
+    if (isReadOnlyArchiveMode) return;
+    if (currentView !== "inventoryEditor" || !activeInvDraftId || !selectedCompany || !currentUser) return;
+    if (!immediate) {
+      clearTimeout(invDraftSaveTimer);
+      invDraftSaveTimer = setTimeout(() => saveCurrentInventoryDraft(true), 350);
+      return;
+    }
+
+    const mod = window.TemplateModules[INVENTORY_TPL_ID];
+    if (!mod || typeof mod.getDraftData !== "function") return;
+    const snap = mod.getDraftData();
+    const filledCount = snap.items.filter(it => it.nytsz.trim() || it.name.trim()).length;
+
+    const draftObj = {
+      id: activeInvDraftId,
+      companyCode: selectedCompany.code,
+      updatedAt: new Date().toISOString(),
+      subtitle: filledCount > 0 ? `${filledCount} tétel • ${snap.year}. év` : `Elkezdett ${snap.year}. évi leltárlista`,
+      ...snap
+    };
+
+    const drafts = loadAllInventoryDrafts().filter(d => d.id !== activeInvDraftId);
+    drafts.unshift(draftObj);
+    persistAllInventoryDrafts(drafts);
+
+    if (history.state && history.state.view === "inventoryEditor" && history.state.draftId !== activeInvDraftId) {
+      history.replaceState({ ...history.state, draftId: activeInvDraftId }, "", location.hash || buildHistoryHash(history.state));
+    }
+  }
+
+  function openSelectedInventory() {
+    if (!selectedCompany) { showToast("Előbb válassz céget!", "error"); return; }
+    const unitCode = document.getElementById("invUnitDropdown")?.value || "";
+    const year = document.getElementById("invYearDropdown")?.value || String(new Date().getFullYear());
+    if (!unitCode) { showToast("Nincs kiválasztott egység!", "error"); return; }
+
+    const isCompanyWide = (unitCode === "ALL");
     const unitObj = UNITS_LIST.find(u => u.code === unitCode) || { code: unitCode, name: "", leader: "" };
     loadAndOpenInventoryTemplate({
-      unitCode: unitCode === "ALL" ? "" : unitObj.code,
-      unitName: unitObj.name,
+      unitCode: isCompanyWide ? "ALL" : unitObj.code,
+      unitName: isCompanyWide ? "" : unitObj.name,
+      isCompanyWide,
       year,
-      leader: unitObj.leader || ""
+      leader: isCompanyWide ? "" : (unitObj.leader || "")
     }, null, false);
   }
 
@@ -2952,7 +2990,7 @@
     });
   }
 
-  function buildNavTabs() {
+ function buildNavTabs() {
     renderNavCompanyLogos();
     const nav = document.getElementById("mainNavTabs");
     nav.innerHTML = "";
@@ -2983,23 +3021,6 @@
 
       const bComp = document.createElement("button");
       bComp.className = "nav-tab" + ((currentView === "completedDocs" || isReadOnlyArchiveMode) ? " active" : "");
-      bComp.textContent = "Kész dokumentumok";
-      bComp.onclick = () => openCompletedDocsView();
-      nav.appendChild(bComp);
-    }
-      nav.appendChild(bDocs);
-
-      const bInv = document.createElement("button");
-      bInv.className = "nav-tab" + (["inventorySelect", "inventoryEditor"].includes(currentView) ? " active" : "");
-      bInv.textContent = "Leltárlisták";
-      bInv.onclick = () => {
-        if (currentView === "inventoryEditor") backToInventorySelector(true);
-        else openInventorySelector();
-      };
-      nav.appendChild(bInv);
-
-      const bComp = document.createElement("button");
-      bComp.className = "nav-tab" + (currentView === "completedDocs" ? " active" : "");
       bComp.textContent = "Kész dokumentumok";
       bComp.onclick = () => openCompletedDocsView();
       nav.appendChild(bComp);
