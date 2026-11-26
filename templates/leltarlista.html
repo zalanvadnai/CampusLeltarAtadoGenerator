@@ -654,6 +654,18 @@
       }
 
       const totalPages = pages.length;
+      try {
+        const distinctUnits = new Set(filledItems.map(it => String(it.unitCode || "").trim()).filter(Boolean));
+        sessionStorage.setItem("campus_last_inventory_summary", JSON.stringify({
+          year,
+          date: dateVal,
+          totalPages,
+          itemCount: filledItems.length,
+          unitCount: distinctUnits.size,
+          sumGross,
+          sumNet
+        }));
+      } catch (e) {}
       const badge = document.getElementById("ll_pageCountInfo");
       if (badge) {
         badge.textContent = `(${totalPages} oldal • ${filledItems.length} tétel • Bruttó: ${sumGross.toLocaleString("hu-HU")} Ft)`;
