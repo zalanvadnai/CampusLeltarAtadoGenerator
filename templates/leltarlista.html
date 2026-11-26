@@ -267,9 +267,10 @@
       <div>
         <strong>Élő A4 (fekvő) nyomtatási kép</strong>
         <span id="ll_pageCountInfo" style="color:var(--muted); font-size:12.5px; margin-left:6px;"></span>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="openInventoryVerificationProtocol(true)">🛡️ Hitelesítési jegyzőkönyv</button>
+        <button class="btn btn-primary btn-sm" onclick="LeltarlistaMod.printAndLog()">🖨️ Nyomtatás / PDF</button>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="LeltarlistaMod.printAndLog()">🖨️ Nyomtatás / PDF</button>
-    </div>
     <div class="ll-pages-scroll">
       <div class="pages-wrapper" id="ll_pagesContainer" style="align-items:flex-start;"></div>
     </div>
