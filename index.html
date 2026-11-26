@@ -670,11 +670,84 @@
       font-weight: 700;
     }
 
+    /* ===== KÉSZ DOKUMENTUMOK ARCHÍVUM ===== */
+    .completed-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+      max-width: 1220px;
+      margin: 16px auto;
+    }
+    @media (max-width: 920px) { .completed-grid { grid-template-columns: 1fr; } }
+
+    .completed-filter-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+      padding-bottom: 14px;
+      margin-bottom: 14px;
+      border-bottom: 1.5px solid #e2e8f0;
+    }
+    @media (max-width: 700px) { .completed-filter-bar { grid-template-columns: 1fr; } }
+
+    .completed-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 540px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .completed-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .completed-item:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      transform: translateY(-1px);
+    }
+    .completed-item-main {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .completed-item-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .completed-item-meta {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .completed-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
     /* ===== PRINT RULES ===== */
     @page { size: A4 portrait; margin: 0; }
     @media print {
       body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #companySelectView, #docSelectView, #inventorySelectView, #adminView, #settingsView, #comingSoonView, #toast, .modal-backdrop, #loadingOverlay, #previewRenderHost {
+      .no-print, .navbar, .preview-toolbar, .left-controls, #loginView, #companySelectView, #docSelectView, #inventorySelectView, #completedDocsView, #adminView, #settingsView, #comingSoonView, #toast, .modal-backdrop, #loadingOverlay, #previewRenderHost {
         display: none !important;
       }
       .app-container { padding: 0; max-width: none; }
@@ -932,6 +1005,100 @@
             </label>
           </div>
           <div id="invMiniPreviewContainer" class="mini-doc-paper mini-doc-landscape"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 2/C. KÉSZ DOKUMENTUMOK ARCHÍVUM ===== -->
+    <section id="completedDocsView" class="hidden">
+      <div class="completed-grid">
+        <!-- BAL PANEL: 1. ALAPSZŰRÉS (TÍPUS + ÉV) -->
+        <div class="panel" style="margin-bottom:0;">
+          <h3>1. Alapszűrés</h3>
+          <p style="font-size:13px; color:var(--muted); margin-top:0;">
+            Kiválasztott cég: <strong id="compSelectorCompanyName"></strong>
+          </p>
+
+          <div class="form-group">
+            <label for="compDocTypeDropdown">Dokumentum típusa</label>
+            <div class="styled-select-wrap">
+              <select id="compDocTypeDropdown" class="form-control"></select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="compYearDropdown">Év (a dokumentumon szereplő dátum éve)</label>
+            <div class="styled-select-wrap">
+              <select id="compYearDropdown" class="form-control"></select>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:18px;">
+            <button type="button" id="compLoadBtn" class="btn btn-primary btn-lg btn-block" onclick="loadCompletedDocsList()">
+              ✓ Tovább a dokumentumokhoz →
+            </button>
+            <button type="button" class="btn btn-outline btn-block" onclick="goHomeToCompanySelect(true)">
+              ← Másik cég választása
+            </button>
+          </div>
+        </div>
+
+        <!-- JOBB PANEL: 2. SZŰRT LISTA + HONNAN/HOVÁ SZŰRŐ -->
+        <div class="panel" style="margin-bottom:0; min-height:460px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+            <h3 style="margin:0;">
+              Kész dokumentumok
+              <span id="compResultsHeaderBadge" style="font-size:12.5px; color:var(--muted); font-weight:600;"></span>
+            </h3>
+            <button type="button" id="compRefreshBtn" class="btn btn-outline btn-sm hidden" onclick="loadCompletedDocsList()">Frissítés</button>
+          </div>
+
+          <!-- Kezdő állapot a szűrés elindítása előtt -->
+          <div id="compInitialPrompt" class="draft-empty" style="padding:46px 20px;">
+            Válaszd ki bal oldalon a <strong>dokumentum típusát</strong> és az <strong>évet</strong>, majd kattints a <strong>„Tovább a dokumentumokhoz”</strong> gombra.<br><br>
+            Ezután a listában tovább szűrhetsz <strong>Honnan</strong> és <strong>Hová</strong> egység szerint is.
+          </div>
+
+          <!-- Szűrt nézet -->
+          <div id="compResultsWrap" class="hidden">
+            <div class="completed-filter-bar">
+              <div>
+                <label style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:4px;">Honnan (opcionális)</label>
+                <div class="unit-combo">
+                  <input
+                    id="compFromFilter"
+                    class="form-control"
+                    style="padding:8px 26px 8px 10px; font-size:13px;"
+                    autocomplete="off"
+                    placeholder="Kód vagy egységnév..."
+                    onfocus="openCompletedUnitFilterMenu(this)"
+                    oninput="openCompletedUnitFilterMenu(this); renderCompletedDocsList()"
+                  />
+                  <span class="unit-combo-arrow">▼</span>
+                </div>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:12px; font-weight:600; color:#334155; margin-bottom:4px;">Hová (opcionális)</label>
+                <div class="unit-combo">
+                  <input
+                    id="compToFilter"
+                    class="form-control"
+                    style="padding:8px 26px 8px 10px; font-size:13px;"
+                    autocomplete="off"
+                    placeholder="Kód vagy egységnév..."
+                    onfocus="openCompletedUnitFilterMenu(this)"
+                    oninput="openCompletedUnitFilterMenu(this); renderCompletedDocsList()"
+                  />
+                  <span class="unit-combo-arrow">▼</span>
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-outline btn-sm" style="height:36px;" onclick="clearCompletedUnitFilters()">Szűrők törlése</button>
+            </div>
+
+            <div id="compDocsListContainer" class="completed-list"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -1487,6 +1654,12 @@
   let activeInvDraftId = null;
   let invDraftSaveTimer = null;
 
+  // Kész dokumentumok archívum állapot
+  let cachedCompletedDocs = [];
+  let completedFilterApplied = false;
+  let lastArchivedFp = "";
+  let lastArchivedAt = 0;
+
   // Böngésző History API állapot
   let historyInitialized = false;
   let isHandlingPopState = false;
@@ -1959,7 +2132,7 @@
     if (!draft) { showToast("A piszkozat nem található!", "error"); renderDraftsList(); return; }
     const dt = DOC_TYPES.find(x => x.id === draft.docId);
     if (!dt || !dt.file) { showToast("Ez a nyomtatvány már nem elérhető.", "error"); return; }
-    loadAndOpenTemplate(dt, draft);
+    loadAndOpenTemplate(dt, draft, false);
   }
 
   function deleteDraft(ev, draftId) {
@@ -1995,7 +2168,7 @@
   }
 
   // ===== DINAMIKUS SABLONBETÖLTŐ (templates/*.html) =====
-  async function loadAndOpenTemplate(dt, draftToRestore = null) {
+  async function loadAndOpenTemplate(dt, draftToRestore = null, fromArchive = false) {
     const host = document.getElementById("docHostView");
     document.getElementById("previewRenderHost").innerHTML = "";
     document.getElementById("loadingOverlay").classList.remove("hidden");
@@ -2037,11 +2210,11 @@
       syncDocHeaderCompanyName(host, dt.id);
 
       if (draftToRestore) {
-        activeDraftId = draftToRestore.id;
+        activeDraftId = fromArchive ? null : draftToRestore.id;
         activeDocId = dt.id;
         restoreDraftIntoHost(dt.id, draftToRestore);
-        saveCurrentDraft(true);
-        showToast("Piszkozat betöltve!", "success");
+        if (!fromArchive) saveCurrentDraft(true);
+        showToast(fromArchive ? "Kész dokumentum betöltve!" : "Piszkozat betöltve!", "success");
       } else {
         resetModuleDynamicLists(dt.id);
         syncDocHeaderCompanyName(host, dt.id);
@@ -2294,7 +2467,7 @@
     }, { passive: false });
   }
 
-  async function loadAndOpenInventoryTemplate(context = null, draftToRestore = null) {
+  async function loadAndOpenInventoryTemplate(context = null, draftToRestore = null, fromArchive = false) {
     const host = document.getElementById("docHostView");
     document.getElementById("previewRenderHost").innerHTML = "";
     document.getElementById("loadingOverlay").classList.remove("hidden");
@@ -2328,10 +2501,10 @@
       }
 
       if (draftToRestore) {
-        activeInvDraftId = draftToRestore.id;
+        activeInvDraftId = fromArchive ? null : draftToRestore.id;
         mod?.restoreDraftData(draftToRestore);
-        saveCurrentInventoryDraft(true);
-        showToast("Leltár piszkozat betöltve!", "success");
+        if (!fromArchive) saveCurrentInventoryDraft(true);
+        showToast(fromArchive ? "Kész leltárlista betöltve!" : "Leltár piszkozat betöltve!", "success");
       } else {
         activeInvDraftId = "inv_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
         saveCurrentInventoryDraft(true);
@@ -2385,13 +2558,13 @@
       unitName: unitObj.name,
       year,
       leader: unitObj.leader || ""
-    }, null);
+    }, null, false);
   }
 
   function openInventoryDraft(draftId) {
     const draft = loadAllInventoryDrafts().find(d => d.id === draftId);
     if (!draft) { showToast("A leltár piszkozat nem található!", "error"); renderInventoryDraftsList(); return; }
-    loadAndOpenInventoryTemplate(null, draft);
+    loadAndOpenInventoryTemplate(null, draft, false);
   }
 
   // ===== AUTH =====
@@ -2430,6 +2603,8 @@
     activeDraftId = null;
     activeDocId = null;
     activeInvDraftId = null;
+    cachedCompletedDocs = [];
+    completedFilterApplied = false;
     currentUser = null;
     selectedCompany = null;
     historyInitialized = false;
@@ -2489,6 +2664,7 @@
     if (state.view === "docSelect") return `#${state.companyCode || "nyomtatvanyok"}`;
     if (state.view === "inventorySelect") return `#${state.companyCode || "leltar"}/leltarlistak`;
     if (state.view === "inventoryEditor") return `#${state.companyCode || "leltar"}/leltarlistak/szerkesztes`;
+    if (state.view === "completedDocs") return `#${state.companyCode || "archivum"}/kesz-dokumentumok`;
     if (state.view === "docActive" || state.view === "comingSoon") {
       return `#${state.companyCode || "doc"}/${state.docId || ""}`;
     }
@@ -2503,7 +2679,7 @@
   }
 
   function showOnlySection(sectionId, viewKey) {
-    ["companySelectView", "docSelectView", "inventorySelectView", "docHostView", "comingSoonView", "settingsView", "adminView"].forEach(id => {
+    ["companySelectView", "docSelectView", "inventorySelectView", "completedDocsView", "docHostView", "comingSoonView", "settingsView", "adminView"].forEach(id => {
       document.getElementById(id).classList.toggle("hidden", id !== sectionId);
     });
     currentView = viewKey;
@@ -2563,7 +2739,7 @@
           const dt = DOC_TYPES.find(x => x.id === state.docId);
           if (dt && dt.file) {
             const draft = state.draftId ? loadAllDrafts().find(d => d.id === state.draftId) : null;
-            await loadAndOpenTemplate(dt, draft || null);
+            await loadAndOpenTemplate(dt, draft || null, false);
             return;
           }
           selectCompany(state.companyCode);
@@ -2590,10 +2766,21 @@
           document.body.className = selectedCompany.themeClass;
           const draft = state.draftId ? loadAllInventoryDrafts().find(d => d.id === state.draftId) : null;
           if (draft) {
-            await loadAndOpenInventoryTemplate(null, draft);
+            await loadAndOpenInventoryTemplate(null, draft, false);
           } else {
             openInventorySelector();
           }
+        } else {
+          goHomeToCompanySelect(true);
+        }
+        return;
+      }
+
+      if (state.view === "completedDocs") {
+        if (state.companyCode && hasCompanyAccess(state.companyCode)) {
+          selectedCompany = COMPANIES[state.companyCode];
+          document.body.className = selectedCompany.themeClass;
+          openCompletedDocsView();
         } else {
           goHomeToCompanySelect(true);
         }
@@ -2661,6 +2848,8 @@
     closeActiveDocumentEditor();
     document.getElementById("previewRenderHost").innerHTML = "";
     selectedCompany = null;
+    cachedCompletedDocs = [];
+    completedFilterApplied = false;
     document.body.className = "";
     updateCompanyCardsUI();
     showOnlySection("companySelectView", "companySelect");
@@ -2673,6 +2862,8 @@
     }
     closeActiveDocumentEditor();
     selectedCompany = COMPANIES[code];
+    cachedCompletedDocs = [];
+    completedFilterApplied = false;
     document.body.className = selectedCompany.themeClass;
 
     document.getElementById("selectorCompanyName").textContent = `${selectedCompany.code} — ${selectedCompany.fullName}`;
@@ -2728,6 +2919,12 @@
         else openInventorySelector();
       };
       nav.appendChild(bInv);
+
+      const bComp = document.createElement("button");
+      bComp.className = "nav-tab" + (currentView === "completedDocs" ? " active" : "");
+      bComp.textContent = "Kész dokumentumok";
+      bComp.onclick = () => openCompletedDocsView();
+      nav.appendChild(bComp);
     }
 
     const bSettings = document.createElement("button");
@@ -2932,7 +3129,7 @@
     if (!dt) { showToast("Nincs kiválasztott nyomtatvány!", "error"); return; }
 
     if (dt.file) {
-      loadAndOpenTemplate(dt, null);
+      loadAndOpenTemplate(dt, null, false);
     } else {
       document.getElementById("comingSoonTitle").textContent = dt.label + " — Fejlesztés alatt";
       showOnlySection("comingSoonView", "comingSoon");
@@ -2941,11 +3138,12 @@
 
   function backToDocSelector(skipToast = false) {
     const wasActive = (currentView === "docActive");
+    const hadDraft = !!activeDraftId;
     closeActiveDocumentEditor();
     showOnlySection("docSelectView", "docSelect");
     renderDraftsList();
     renderMiniPreview();
-    if (wasActive && !skipToast) showToast("Piszkozat automatikusan elmentve!", "info");
+    if (wasActive && hadDraft && !skipToast) showToast("Piszkozat automatikusan elmentve!", "info");
   }
 
   // ===== PICKER HELPERS (UNITS & PERMISSIONS MODALS) =====
@@ -3734,7 +3932,9 @@
     window.print = function () {
       const customName = buildPrintFileName();
       if (customName) document.title = customName;
+      const snapshot = collectCompletedDocSnapshot(customName);
       nativePrint();
+      if (snapshot) archiveCompletedDocSnapshot(snapshot);
       setTimeout(() => { document.title = ORIGINAL_PAGE_TITLE; }, 1000);
     };
 
@@ -3747,6 +3947,369 @@
       document.title = ORIGINAL_PAGE_TITLE;
     });
   })();
+
+  // ===== KÉSZ DOKUMENTUMOK ARCHIVÁLÁSA ÉS BÖNGÉSZÉSE =====
+  function simpleHashStr(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0).toString(36);
+  }
+
+  function extractCompletedDocParties(host, docId) {
+    const cleanCode = val => String(val || "").trim().replace(/[^a-zA-Z0-9._]+/g, "");
+    const getFirstVal = ids => {
+      for (const id of ids) {
+        const el = host.querySelector("#" + id);
+        if (el && el.value && el.value.trim()) {
+          const c = cleanCode(el.value);
+          if (c) return c;
+        }
+      }
+      return "";
+    };
+    const getTableCode = headerRe => {
+      for (const tbl of host.querySelectorAll(".a4-page .party-table")) {
+        const thText = tbl.querySelector("th")?.textContent || "";
+        if (!headerRe.test(thText)) continue;
+        for (const row of tbl.querySelectorAll("tr")) {
+          const cells = row.querySelectorAll("td");
+          if (cells.length >= 2 && /egység\s*kód/i.test(cells[0].textContent || "")) {
+            const c = cleanCode(cells[1].textContent);
+            if (c) return c;
+          }
+        }
+      }
+      return "";
+    };
+
+    const TWO_PARTY_DOCS = ["raktari_atadolap", "egysegek_kozotti"];
+    if (TWO_PARTY_DOCS.includes(docId)) {
+      return {
+        fromUnit: getFirstVal(["ekSndCode", "sndCode"]) || getTableCode(/átadó/i),
+        toUnit: getFirstVal(["ekRecCode", "recCode"]) || getTableCode(/átvevő/i)
+      };
+    }
+
+    const fromSingle = getFirstVal([
+      "sjFull_sndCode", "sndCode", "ekSndCode", "feSndCode", "heSndCode",
+      "sjSndCode", "sijSndCode", "steSndCode", "aldSndCode", "mbUnitCode",
+      "avBeszCode", "alRecCode", "recCode"
+    ]) || getTableCode(/átadó/i) || getTableCode(/átvevő/i) || getTableCode(/.*/);
+
+    return { fromUnit: fromSingle, toUnit: "" };
+  }
+
+  function collectCompletedDocSnapshot(fileName) {
+    if (!currentUser || !selectedCompany) return null;
+
+    if (currentView === "inventoryEditor") {
+      const mod = window.TemplateModules[INVENTORY_TPL_ID];
+      if (!mod || typeof mod.getDraftData !== "function") return null;
+      const snap = mod.getDraftData();
+      const docDate = parseDateToPrintFormat(snap.date) || (snap.year ? `${snap.year}.12.31` : "");
+      const docYear = (docDate.slice(0, 4)) || snap.year || String(new Date().getFullYear());
+      const fromUnit = (!snap.unitCode || snap.unitCode === "ALL") ? "Összes" : snap.unitCode;
+      const payloadStr = JSON.stringify(snap);
+
+      return {
+        companyCode: selectedCompany.code,
+        docId: INVENTORY_TPL_ID,
+        docLabel: "Leltár lista",
+        docYear,
+        docDate,
+        fromUnit,
+        toUnit: "",
+        fileName: fileName || "",
+        username: currentUser.username,
+        userName: currentUser.fullName || currentUser.name || currentUser.username,
+        fingerprint: simpleHashStr(`${selectedCompany.code}|${INVENTORY_TPL_ID}|${docDate}|${fromUnit}|${payloadStr}`),
+        payload: snap
+      };
+    }
+
+    if (currentView === "docActive" && activeDocId) {
+      const host = document.getElementById("docHostView");
+      if (!host) return null;
+      const dt = DOC_TYPES.find(x => x.id === activeDocId);
+      const captured = captureCurrentDraftData();
+      if (!captured) return null;
+
+      const { fromUnit, toUnit } = extractCompletedDocParties(host, activeDocId);
+      const docDate = extractDocDateForFilename(host);
+      const docYear = (docDate.match(/^(20\d{2})/) || [])[1] || String(new Date().getFullYear());
+      const payloadStr = JSON.stringify(captured);
+
+      return {
+        companyCode: selectedCompany.code,
+        docId: activeDocId,
+        docLabel: dt ? dt.label : activeDocId,
+        docYear,
+        docDate,
+        fromUnit,
+        toUnit,
+        fileName: fileName || "",
+        username: currentUser.username,
+        userName: currentUser.fullName || currentUser.name || currentUser.username,
+        fingerprint: simpleHashStr(`${selectedCompany.code}|${activeDocId}|${docDate}|${fromUnit}|${toUnit}|${payloadStr}`),
+        payload: captured
+      };
+    }
+
+    return null;
+  }
+
+  async function archiveCompletedDocSnapshot(snapshot) {
+    if (!snapshot) return;
+    const now = Date.now();
+    if (snapshot.fingerprint === lastArchivedFp && (now - lastArchivedAt) < 4000) return;
+    lastArchivedFp = snapshot.fingerprint;
+    lastArchivedAt = now;
+
+    try {
+      const res = await apiCall({ action: "saveCompletedDoc", ...snapshot });
+      if (res && (res.ok || res.success)) {
+        showToast("Dokumentum mentve a Kész dokumentumok közé!", "success");
+      }
+    } catch (e) {}
+  }
+
+  function populateCompletedFilters() {
+    const typeSel = document.getElementById("compDocTypeDropdown");
+    const yearSel = document.getElementById("compYearDropdown");
+    if (!typeSel || !yearSel) return;
+
+    const prevType = typeSel.value;
+    const prevYear = yearSel.value;
+    const perms = currentUser.permissions || [];
+    const allowedDocs = DOC_TYPES.filter(dt => dt.file && (currentUser.role === "admin" || perms.includes(dt.id)));
+
+    const typeOpts = [
+      ...allowedDocs.map(dt => `<option value="${escapeHtml(dt.id)}">${escapeHtml(dt.label)}</option>`),
+      `<option value="${INVENTORY_TPL_ID}">Leltár lista</option>`
+    ];
+    typeSel.innerHTML = typeOpts.join("");
+    if (prevType && [...typeSel.options].some(o => o.value === prevType)) {
+      typeSel.value = prevType;
+    }
+
+    const curYear = new Date().getFullYear();
+    const years = [];
+    for (let y = curYear + 1; y >= 2020; y--) years.push(y);
+    yearSel.innerHTML = years.map(y => `<option value="${y}">${y}. év</option>`).join("");
+    yearSel.value = prevYear && years.includes(Number(prevYear)) ? prevYear : String(curYear);
+
+    if (typeof syncCustomSelectTrigger === "function") {
+      syncCustomSelectTrigger(typeSel);
+      syncCustomSelectTrigger(yearSel);
+    }
+  }
+
+  function openCompletedDocsView() {
+    if (!selectedCompany) { showToast("Előbb válassz céget!", "error"); return; }
+    closeActiveDocumentEditor();
+    document.getElementById("compSelectorCompanyName").textContent = `${selectedCompany.code} — ${selectedCompany.fullName}`;
+    populateCompletedFilters();
+    showOnlySection("completedDocsView", "completedDocs");
+
+    if (!completedFilterApplied) {
+      document.getElementById("compInitialPrompt")?.classList.remove("hidden");
+      document.getElementById("compResultsWrap")?.classList.add("hidden");
+      document.getElementById("compRefreshBtn")?.classList.add("hidden");
+      document.getElementById("compResultsHeaderBadge").textContent = "";
+    }
+  }
+
+  function openCompletedUnitFilterMenu(inputEl) {
+    if (typeof window.openFloatingUnitMenu !== "function") return;
+    window.openFloatingUnitMenu(inputEl, inputEl.value, code => {
+      inputEl.value = code;
+      renderCompletedDocsList();
+    });
+  }
+
+  function clearCompletedUnitFilters() {
+    const fEl = document.getElementById("compFromFilter");
+    const tEl = document.getElementById("compToFilter");
+    if (fEl) fEl.value = "";
+    if (tEl) tEl.value = "";
+    renderCompletedDocsList();
+  }
+
+  function getUnitDisplayLabel(code) {
+    if (!code) return "";
+    const u = UNITS_LIST.find(x => x.code.toLowerCase() === String(code).toLowerCase());
+    return u ? `${u.code} (${u.name})` : String(code);
+  }
+
+  function unitMatchesFilter(unitCode, query) {
+    const q = (query || "").trim().toLowerCase();
+    if (!q) return true;
+    if (!unitCode) return false;
+    const codeLower = String(unitCode).toLowerCase();
+    if (codeLower.includes(q)) return true;
+    const u = UNITS_LIST.find(x => x.code.toLowerCase() === codeLower);
+    return !!(u && u.name.toLowerCase().includes(q));
+  }
+
+  async function loadCompletedDocsList() {
+    if (!selectedCompany || !currentUser) return;
+    const docId = document.getElementById("compDocTypeDropdown")?.value || "";
+    const docYear = document.getElementById("compYearDropdown")?.value || "";
+    if (!docId || !docYear) {
+      showToast("Válassz dokumentumtípust és évet!", "error");
+      return;
+    }
+
+    const btn = document.getElementById("compLoadBtn");
+    const listEl = document.getElementById("compDocsListContainer");
+    if (btn) { btn.disabled = true; btn.textContent = "Betöltés..."; }
+
+    document.getElementById("compInitialPrompt")?.classList.add("hidden");
+    document.getElementById("compResultsWrap")?.classList.remove("hidden");
+    document.getElementById("compRefreshBtn")?.classList.remove("hidden");
+    if (listEl) {
+      listEl.innerHTML = `<div class="draft-empty">Kész dokumentumok betöltése a táblázatból...</div>`;
+    }
+
+    try {
+      const res = await apiCall({
+        action: "getCompletedDocs",
+        companyCode: selectedCompany.code,
+        docId,
+        docYear
+      });
+
+      if (res && (res.ok || res.success)) {
+        const rawDocs = res.docs || [];
+        if (currentUser.role === "admin") {
+          cachedCompletedDocs = rawDocs;
+        } else {
+          const allowedSet = new Set(getAllowedUnitsForCurrentUser().map(u => u.code.toLowerCase()));
+          cachedCompletedDocs = rawDocs.filter(d => {
+            const f = String(d.fromUnit || "").toLowerCase();
+            const t = String(d.toUnit || "").toLowerCase();
+            if (!f && !t) return true;
+            return allowedSet.has(f) || allowedSet.has(t);
+          });
+        }
+        completedFilterApplied = true;
+        renderCompletedDocsList();
+      } else {
+        showToast((res && res.error) || "Hiba a kész dokumentumok lekérésekor!", "error");
+        if (listEl) listEl.innerHTML = `<div class="draft-empty">Nem sikerült betölteni a dokumentumokat.</div>`;
+      }
+    } catch (e) {
+      showToast("Hálózati hiba a betöltéskor!", "error");
+      if (listEl) listEl.innerHTML = `<div class="draft-empty">Hálózati hiba a szerver elérésekor.</div>`;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "✓ Tovább a dokumentumokhoz →"; }
+    }
+  }
+
+  function renderCompletedDocsList() {
+    const listEl = document.getElementById("compDocsListContainer");
+    const badgeEl = document.getElementById("compResultsHeaderBadge");
+    if (!listEl) return;
+
+    const fromQ = (document.getElementById("compFromFilter")?.value || "").trim();
+    const toQ = (document.getElementById("compToFilter")?.value || "").trim();
+
+    const filtered = cachedCompletedDocs.filter(d =>
+      unitMatchesFilter(d.fromUnit, fromQ) && unitMatchesFilter(d.toUnit, toQ)
+    );
+
+    const typeSel = document.getElementById("compDocTypeDropdown");
+    const typeLabel = typeSel?.options[typeSel.selectedIndex]?.textContent || "";
+    const yearVal = document.getElementById("compYearDropdown")?.value || "";
+    if (badgeEl) {
+      badgeEl.textContent = `(${typeLabel} • ${yearVal} • ${filtered.length} db)`;
+    }
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = `<div class="draft-empty">Nincs a szűrési feltételeknek megfelelő mentett dokumentum.</div>`;
+      return;
+    }
+
+    const isAdmin = currentUser && currentUser.role === "admin";
+
+    listEl.innerHTML = filtered.map(d => {
+      const routeTitle = (d.fromUnit && d.toUnit)
+        ? `${d.fromUnit} → ${d.toUnit}`
+        : (d.fromUnit || d.toUnit || d.docLabel);
+      const displayLine = d.docDate ? `${routeTitle} (${d.docDate})` : routeTitle;
+
+      const subParts = [];
+      if (d.fromUnit && d.toUnit) {
+        subParts.push(`${getUnitDisplayLabel(d.fromUnit)} → ${getUnitDisplayLabel(d.toUnit)}`);
+      } else if (d.fromUnit) {
+        subParts.push(getUnitDisplayLabel(d.fromUnit));
+      }
+      if (d.userName) subParts.push(`Készítette: ${d.userName}`);
+
+      return `
+        <div class="completed-item" onclick="openCompletedDocument('${escapeHtml(d.id)}')" title="Kattints a dokumentum megnyitásához">
+          <div class="completed-item-main">
+            <div class="completed-item-title">${escapeHtml(displayLine)}</div>
+            <div class="completed-item-meta">${escapeHtml(subParts.join(" • "))}</div>
+          </div>
+          <div class="completed-item-actions">
+            <span class="draft-time">${escapeHtml(formatDraftTimestamp(d.savedAt))}</span>
+            <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openCompletedDocument('${escapeHtml(d.id)}')">Megnyitás</button>
+            ${isAdmin ? `<button type="button" class="draft-del-btn" title="Törlés az archívumból" onclick="deleteCompletedDocument(event, '${escapeHtml(d.id)}')">×</button>` : ""}
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function openCompletedDocument(docRecordId) {
+    document.getElementById("loadingOverlay").classList.remove("hidden");
+    try {
+      const res = await apiCall({ action: "getCompletedDocById", id: docRecordId });
+      if (!res || !(res.ok || res.success) || !res.doc) {
+        showToast((res && res.error) || "Nem sikerült betölteni a dokumentumot!", "error");
+        return;
+      }
+
+      const rec = res.doc;
+      if (rec.docId === INVENTORY_TPL_ID) {
+        await loadAndOpenInventoryTemplate(null, rec.payload, true);
+        return;
+      }
+
+      const dt = DOC_TYPES.find(x => x.id === rec.docId);
+      if (!dt || !dt.file) {
+        showToast("Ehhez a dokumentumtípushoz nem található sablon.", "error");
+        return;
+      }
+
+      await loadAndOpenTemplate(dt, rec.payload, true);
+    } catch (e) {
+      showToast("Hálózati hiba a dokumentum betöltésekor!", "error");
+    } finally {
+      document.getElementById("loadingOverlay").classList.add("hidden");
+    }
+  }
+
+  async function deleteCompletedDocument(ev, docRecordId) {
+    ev.stopPropagation();
+    if (!confirm("Biztosan törlöd ezt a kész dokumentumot a Google Táblázatból?")) return;
+    try {
+      const res = await apiCall({ action: "deleteCompletedDoc", id: docRecordId });
+      if (res && (res.ok || res.success)) {
+        cachedCompletedDocs = cachedCompletedDocs.filter(d => d.id !== docRecordId);
+        renderCompletedDocsList();
+        showToast("Dokumentum törölve az archívumból.", "info");
+      } else {
+        showToast((res && res.error) || "Hiba törléskor!", "error");
+      }
+    } catch (e) {
+      showToast("Hálózati hiba!", "error");
+    }
+  }
 
   // ===== INIT =====
   (function init() {
