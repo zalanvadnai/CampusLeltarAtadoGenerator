@@ -58,7 +58,7 @@
     color: #222;
   }
 
-  /* TÁBLÁZAT (FOTÓ SZERINTI TISZTA, ZEBRA-CSÍKOZOTT STÍLUS) */
+  /* TÁBLÁZAT (CSÍKOZOTT, FÜGGŐLEGES RÁCS NÉLKÜL) */
   .ll-table {
     width: 100%;
     border-collapse: collapse;
@@ -178,10 +178,26 @@
     <!-- 1. ALAPADATOK -->
     <div class="panel">
       <h3>1. Leltárlista alapadatok</h3>
-      <div class="row-2">
-        <div class="form-group">
+
+      <!-- Teljes céges (ALL) tájékoztató sáv -->
+      <div id="ll_companyWideNotice" class="hidden" style="background:var(--primary-light); border:1.5px solid var(--table-head); border-radius:8px; padding:8px 10px; font-size:12px; color:var(--primary-dark); font-weight:600; margin-bottom:12px;">
+        Teljes céges leltárlista (összes egység) — az egységkódokat az egyes tételeknél tudod megadni.
+      </div>
+
+      <div class="row-2" id="ll_topMetaRow">
+        <div class="form-group" id="ll_unitCodeGroup">
           <label>Egységkód</label>
-          <input id="ll_unitCode" class="form-control" placeholder="pl. 3163 vagy ALL" oninput="LeltarlistaMod.onMetaChange()" />
+          <div class="unit-combo">
+            <input
+              id="ll_unitCode"
+              class="form-control"
+              autocomplete="off"
+              placeholder="Válassz vagy írj kódot..."
+              onfocus="LeltarlistaMod.openHeaderUnitMenu()"
+              oninput="LeltarlistaMod.handleHeaderUnitInput()"
+            />
+            <span class="unit-combo-arrow">▼</span>
+          </div>
         </div>
         <div class="form-group">
           <label>Leltári év</label>
@@ -189,9 +205,9 @@
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" id="ll_unitNameGroup">
         <label>Egység neve (információ / aláíráshoz)</label>
-        <input id="ll_unitName" class="form-control" placeholder="pl. Gróf Tisza István Campus konyha" oninput="LeltarlistaMod.onMetaChange()" />
+        <input id="ll_unitName" class="form-control" placeholder="Automatikusan kitöltődik..." oninput="LeltarlistaMod.onMetaChange()" />
       </div>
 
       <div class="form-group">
@@ -245,7 +261,7 @@
         class="paste-box"
         placeholder="Másold ki a sorokat (Nyilvántartási szám | Megnevezés | Rögzített mennyiség | Beszerzés dátuma | Bruttó érték | Nettó érték | Egységkód | Megjegyzés) és illeszd be ide..."
       ></textarea>
-      <label class="ll-opt-check" style="margin-top:8px;">
+      <label id="ll_filterByUnitWrap" class="ll-opt-check" style="margin-top:8px;">
         <input type="checkbox" id="ll_filterByUnit" onchange="LeltarlistaMod.reapplyUnitFilter()" />
         Csak a kiválasztott egységkód sorainak megtartása importáláskor
       </label>
@@ -272,10 +288,12 @@
       <div>
         <strong>Élő A4 (fekvő) nyomtatási kép</strong>
         <span id="ll_pageCountInfo" style="color:var(--muted); font-size:12.5px; margin-left:6px;"></span>
+      </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-secondary btn-sm" onclick="openInventoryVerificationProtocol(true)">🛡️ Hitelesítési jegyzőkönyv</button>
         <button class="btn btn-primary btn-sm" onclick="LeltarlistaMod.printAndLog()">🖨️ Nyomtatás / PDF</button>
       </div>
+    </div>
     <div class="ll-pages-scroll">
       <div class="pages-wrapper" id="ll_pagesContainer" style="align-items:flex-start;"></div>
     </div>
@@ -286,6 +304,7 @@
   window.LeltarlistaMod = (function () {
     let items = [];
     let rawImportedItems = [];
+    let isCompanyWideMode = false;
     let printHooksBound = false;
 
     function emptyItem(defaultUnit = "") {
@@ -302,13 +321,121 @@
     }
 
     function getDefaultUnitCode() {
+      if (isCompanyWideMode) return "";
       const val = (document.getElementById("ll_unitCode")?.value || "").trim();
       return (!val || val.toUpperCase() === "ALL") ? "" : val;
     }
 
+    function applyUnitHeaderMode(companyWide) {
+      isCompanyWideMode = !!companyWide;
+      document.getElementById("ll_companyWideNotice")?.classList.toggle("hidden", !isCompanyWideMode);
+      document.getElementById("ll_unitCodeGroup")?.classList.toggle("hidden", isCompanyWideMode);
+      document.getElementById("ll_unitNameGroup")?.classList.toggle("hidden", isCompanyWideMode);
+      document.getElementById("ll_filterByUnitWrap")?.classList.toggle("hidden", isCompanyWideMode);
+
+      const topRow = document.getElementById("ll_topMetaRow");
+      if (topRow) {
+        topRow.style.gridTemplateColumns = isCompanyWideMode ? "1fr" : "";
+      }
+
+      const unitCodeEl = document.getElementById("ll_unitCode");
+      const unitNameEl = document.getElementById("ll_unitName");
+      const filterCb = document.getElementById("ll_filterByUnit");
+
+      if (isCompanyWideMode) {
+        if (unitCodeEl) unitCodeEl.value = "ALL";
+        if (unitNameEl) unitNameEl.value = "";
+        if (filterCb) filterCb.checked = false;
+      }
+    }
+
+    function openHeaderUnitMenu() {
+      if (isCompanyWideMode || typeof window.openFloatingUnitMenu !== "function") return;
+      const inputEl = document.getElementById("ll_unitCode");
+      if (!inputEl) return;
+      window.openFloatingUnitMenu(inputEl, inputEl.value, code => {
+        inputEl.value = code;
+        handleHeaderUnitInput(false);
+      }, true);
+    }
+
+    function handleHeaderUnitInput(keepMenuOpen = true) {
+      if (isCompanyWideMode) return;
+      const codeEl = document.getElementById("ll_unitCode");
+      const nameEl = document.getElementById("ll_unitName");
+      const leaderEl = document.getElementById("ll_leader");
+      if (!codeEl) return;
+
+      const typed = codeEl.value.trim();
+      if (keepMenuOpen && typeof window.openFloatingUnitMenu === "function") {
+        window.openFloatingUnitMenu(codeEl, typed, code => {
+          codeEl.value = code;
+          handleHeaderUnitInput(false);
+        }, true);
+      }
+
+      const pool = typeof getAllowedUnitsForCurrentUser === "function"
+        ? getAllowedUnitsForCurrentUser()
+        : (typeof UNITS_LIST !== "undefined" ? UNITS_LIST : []);
+      const match = pool.find(u => u.code.toLowerCase() === typed.toLowerCase());
+
+      if (match) {
+        if (nameEl) nameEl.value = match.name;
+        if (leaderEl && match.leader) leaderEl.value = match.leader;
+      } else if (!typed && nameEl) {
+        nameEl.value = "";
+      }
+      onMetaChange();
+    }
+
+    function openItemUnitMenu(inputEl, idx) {
+      if (typeof window.openFloatingUnitMenu !== "function") return;
+      window.openFloatingUnitMenu(inputEl, inputEl.value, code => {
+        inputEl.value = code;
+        updateItem(idx, "unitCode", code);
+      }, false);
+    }
+
+    function isActiveInHost() {
+      const host = document.getElementById("docHostView");
+      const llBox = document.getElementById("ll_pagesContainer");
+      return !!(host && llBox && !host.classList.contains("hidden") && host.contains(llBox));
+    }
+
+    function ensureLandscapePrintStyle() {
+      let landscapeRule = document.getElementById("ll_forceLandscapePrint");
+      if (!landscapeRule) {
+        landscapeRule = document.createElement("style");
+        landscapeRule.id = "ll_forceLandscapePrint";
+        landscapeRule.textContent = "@media print { @page { size: A4 landscape; margin: 0; } }";
+        document.head.appendChild(landscapeRule);
+      }
+    }
+
+    function removeLandscapePrintStyle() {
+      document.getElementById("ll_forceLandscapePrint")?.remove();
+    }
+
+    function bindPrintOrientationHooks() {
+      if (printHooksBound) return;
+      printHooksBound = true;
+
+      window.addEventListener("beforeprint", () => {
+        if (isActiveInHost()) ensureLandscapePrintStyle();
+        else removeLandscapePrintStyle();
+      });
+
+      window.addEventListener("afterprint", () => {
+        if (!isActiveInHost()) removeLandscapePrintStyle();
+      });
+    }
+
     function init(context = null) {
+      bindPrintOrientationHooks();
+
       const ctx = context || {};
       const curYear = String(ctx.year || new Date().getFullYear());
+      const companyWide = ctx.isCompanyWide === true || String(ctx.unitCode || "").toUpperCase() === "ALL";
 
       const unitCodeEl = document.getElementById("ll_unitCode");
       const unitNameEl = document.getElementById("ll_unitName");
@@ -316,16 +443,21 @@
       const dateEl = document.getElementById("ll_date");
       const leaderEl = document.getElementById("ll_leader");
 
-      if (unitCodeEl) unitCodeEl.value = ctx.unitCode || "";
-      if (unitNameEl) unitNameEl.value = ctx.unitName || "";
+      applyUnitHeaderMode(companyWide);
+
+      if (!companyWide) {
+        if (unitCodeEl) unitCodeEl.value = ctx.unitCode || "";
+        if (unitNameEl) unitNameEl.value = ctx.unitName || "";
+        const filterCb = document.getElementById("ll_filterByUnit");
+        if (filterCb) filterCb.checked = !!ctx.unitCode;
+      }
+
       if (yearEl) yearEl.value = curYear;
       if (dateEl) dateEl.value = ctx.date || `${curYear}-12-31`;
       if (leaderEl) leaderEl.value = ctx.leader || "";
 
-      const filterCb = document.getElementById("ll_filterByUnit");
-      if (filterCb) {
-        filterCb.checked = !!(ctx.unitCode && ctx.unitCode !== "ALL");
-      }
+      if (isActiveInHost()) ensureLandscapePrintStyle();
+      else removeLandscapePrintStyle();
 
       const dz = document.getElementById("ll_dropzone");
       if (dz) {
@@ -493,7 +625,7 @@
 
     function reapplyUnitFilter(showMsg = false) {
       if (rawImportedItems.length === 0) return;
-      const shouldFilter = document.getElementById("ll_filterByUnit")?.checked === true;
+      const shouldFilter = !isCompanyWideMode && (document.getElementById("ll_filterByUnit")?.checked === true);
       const targetCode = getDefaultUnitCode().toLowerCase();
 
       let result = rawImportedItems.map(r => ({ ...r }));
@@ -555,8 +687,19 @@
             <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Bruttó Ft" value="${escapeHtml(it.gross)}" oninput="LeltarlistaMod.updateItem(${idx},'gross',this.value)" />
             <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Nettó Ft" value="${escapeHtml(it.net)}" oninput="LeltarlistaMod.updateItem(${idx},'net',this.value)" />
           </div>
-          <div style="display:grid; grid-template-columns: 76px 1fr; gap:5px;">
-            <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Egység" value="${escapeHtml(it.unitCode)}" oninput="LeltarlistaMod.updateItem(${idx},'unitCode',this.value)" />
+          <div style="display:grid; grid-template-columns: 92px 1fr; gap:5px;">
+            <div class="unit-combo">
+              <input
+                class="form-control"
+                style="padding:4px 20px 4px 6px; font-size:11.5px;"
+                autocomplete="off"
+                placeholder="Egység"
+                value="${escapeHtml(it.unitCode)}"
+                onfocus="LeltarlistaMod.openItemUnitMenu(this, ${idx})"
+                oninput="LeltarlistaMod.updateItem(${idx},'unitCode',this.value); LeltarlistaMod.openItemUnitMenu(this, ${idx})"
+              />
+              <span class="unit-combo-arrow">▼</span>
+            </div>
             <input class="form-control" style="padding:4px 6px; font-size:11.5px;" placeholder="Megjegyzés" value="${escapeHtml(it.note)}" oninput="LeltarlistaMod.updateItem(${idx},'note',this.value)" />
           </div>
         </div>
@@ -629,7 +772,6 @@
       const sumGross = filledItems.reduce((s, it) => s + (parseNum(it.gross) || 0), 0);
       const sumNet = filledItems.reduce((s, it) => s + (parseNum(it.net) || 0), 0);
 
-      // Fekvő A4: ~32 egységnyi sortörés fér el egy oldalon kényelmesen
       const MAX_UNITS_PER_PAGE = 32;
       const CLOSING_UNITS = (showSummary ? 2 : 0) + (showSignatures ? 6 : 0);
 
@@ -661,6 +803,8 @@
       }
 
       const totalPages = pages.length;
+
+      // Összesítő adatok mentése a Hitelesítési jegyzőkönyv gyors átemeléséhez
       try {
         const distinctUnits = new Set(filledItems.map(it => String(it.unitCode || "").trim()).filter(Boolean));
         sessionStorage.setItem("campus_last_inventory_summary", JSON.stringify({
@@ -673,6 +817,7 @@
           sumNet
         }));
       } catch (e) {}
+
       const badge = document.getElementById("ll_pageCountInfo");
       if (badge) {
         badge.textContent = `(${totalPages} oldal • ${filledItems.length} tétel • Bruttó: ${sumGross.toLocaleString("hu-HU")} Ft)`;
@@ -773,8 +918,9 @@
     // ===== PISZKOZAT MENTÉS / VISSZAÁLLÍTÁS API =====
     function getDraftData() {
       return {
-        unitCode: (document.getElementById("ll_unitCode")?.value || "").trim(),
-        unitName: (document.getElementById("ll_unitName")?.value || "").trim(),
+        isCompanyWide: isCompanyWideMode,
+        unitCode: isCompanyWideMode ? "ALL" : (document.getElementById("ll_unitCode")?.value || "").trim(),
+        unitName: isCompanyWideMode ? "" : (document.getElementById("ll_unitName")?.value || "").trim(),
         year: (document.getElementById("ll_year")?.value || "").trim(),
         subtitle: (document.getElementById("ll_subtitle")?.value || "").trim(),
         date: (document.getElementById("ll_date")?.value || "").trim(),
@@ -790,8 +936,14 @@
     function restoreDraftData(draft) {
       if (!draft) return;
       const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
-      setVal("ll_unitCode", draft.unitCode || "");
-      setVal("ll_unitName", draft.unitName || "");
+
+      const companyWide = draft.isCompanyWide === true || !draft.unitCode || String(draft.unitCode).toUpperCase() === "ALL";
+      applyUnitHeaderMode(companyWide);
+      if (!companyWide) {
+        setVal("ll_unitCode", draft.unitCode || "");
+        setVal("ll_unitName", draft.unitName || "");
+      }
+
       setVal("ll_year", draft.year || String(new Date().getFullYear()));
       setVal("ll_subtitle", draft.subtitle || "Tárgyi eszközök, immateriális javak");
       setVal("ll_date", draft.date || `${draft.year || new Date().getFullYear()}-12-31`);
@@ -806,42 +958,10 @@
 
       items = Array.isArray(draft.items) && draft.items.length > 0
         ? draft.items.map(it => ({ ...it }))
-        : [emptyItem(draft.unitCode || "")];
+        : [emptyItem(getDefaultUnitCode())];
 
       renderItemsEditor();
       renderDocument();
-    }
-
-    // ===== FEKVŐ NYOMTATÁS ÉS NAPLÓZÁS =====
-    function ensureLandscapePrintStyle() {
-      let landscapeRule = document.getElementById("ll_forceLandscapePrint");
-      if (!landscapeRule) {
-        landscapeRule = document.createElement("style");
-        landscapeRule.id = "ll_forceLandscapePrint";
-        landscapeRule.textContent = "@media print { @page { size: A4 landscape; margin: 0; } }";
-        document.head.appendChild(landscapeRule);
-      }
-    }
-
-    function removeLandscapePrintStyle() {
-      document.getElementById("ll_forceLandscapePrint")?.remove();
-    }
-
-    function bindPrintOrientationHooks() {
-      if (printHooksBound) return;
-      printHooksBound = true;
-
-      window.addEventListener("beforeprint", () => {
-        const host = document.getElementById("docHostView");
-        const llBox = document.getElementById("ll_pagesContainer");
-        if (host && llBox && !host.classList.contains("hidden") && host.contains(llBox)) {
-          ensureLandscapePrintStyle();
-        } else {
-          removeLandscapePrintStyle();
-        }
-      });
-
-      window.addEventListener("afterprint", removeLandscapePrintStyle);
     }
 
     // ===== FEKVŐ NYOMTATÁS ÉS NAPLÓZÁS =====
@@ -854,7 +974,7 @@
 
       if (!currentUser) return;
       const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
-      const uCode = (document.getElementById("ll_unitCode")?.value || "").trim() || "Összes";
+      const uCode = isCompanyWideMode ? "Összes" : ((document.getElementById("ll_unitCode")?.value || "").trim() || "Összes");
       const year = (document.getElementById("ll_year")?.value || "").trim();
       const filledCount = items.filter(i => i.name.trim() || i.nytsz.trim()).length;
       const details = `${compTag}Egység: ${uCode} | Év: ${year} | ${filledCount} tétel`;
@@ -873,6 +993,9 @@
     return {
       init,
       onMetaChange,
+      openHeaderUnitMenu,
+      handleHeaderUnitInput,
+      openItemUnitMenu,
       parsePastedData,
       reapplyUnitFilter,
       loadSampleItems,
