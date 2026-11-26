@@ -3135,4 +3135,1012 @@
           </div>
         </td>
         <td><button type="button" id="u_units_btn_${i}" class="btn btn-outline btn-sm" onclick="openUnitModal(${i})">${formatUnitsBadge(u.units)}</button></td>
-        <td><button type="button
+        <td><button type="button" id="u_perms_btn_${i}" class="btn btn-outline btn-sm" onclick="openPermModal(${i})">${formatPermsBadge(perms)}</button></td>
+        <td>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <button class="btn btn-success btn-sm" onclick="saveUser(${i}, '${escapeHtml(u.username)}')">Mentés</button>
+            ${isSelf ? '<span style="font-size:12px; color:var(--muted); font-style:italic;">(Saját fiók)</span>' : `<button class="btn btn-danger btn-sm" onclick="deleteUser('${escapeHtml(u.username)}')">Törlés</button>`}
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function saveUser(idx, username) {
+    const role = document.getElementById("role_" + idx).value;
+    const permissions = cachedUsers[idx].permissions || [];
+    const companies = [...document.querySelectorAll(".u-comp-" + idx + ":checked")].map(c => c.value);
+    const units = cachedUsers[idx].units || ["ALL"];
+    try {
+      const res = await apiCall({ action: "updateUser", username, role, permissions, companies, units });
+      if (res && (res.ok || res.success)) {
+        showToast("Módosítások elmentve!", "success");
+        if (currentUser && currentUser.username.toLowerCase() === username.toLowerCase()) {
+          currentUser.role = role; currentUser.permissions = permissions; currentUser.companies = companies; currentUser.units = units;
+          sessionStorage.setItem("campus_session", JSON.stringify(currentUser));
+          renderNavCompanyLogos();
+        }
+      } else showToast((res && res.error) || "Hiba mentéskor!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  async function deleteUser(username) {
+    if (!confirm(`Biztosan törlöd a(z) "${username}" felhasználót?`)) return;
+    try {
+      const res = await apiCall({ action: "deleteUser", username });
+      if (res && (res.ok || res.success)) { showToast("Felhasználó törölve!", "success"); loadUsers(); }
+      else showToast((res && res.error) || "Hiba törléskor!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  function renderAdminUnitsTable() {
+    const q = (document.getElementById("adminUnitSearch").value || "").trim().toLowerCase();
+    const filtered = UNITS_LIST.filter(u =>
+      !q || u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || (u.leader || "").toLowerCase().includes(q)
+    );
+    document.getElementById("adminUnitsCount").textContent = filtered.length;
+    const tbody = document.getElementById("adminUnitsTableBody");
+    tbody.innerHTML = filtered.map((u, idx) => `
+      <tr>
+        <td><strong>${escapeHtml(u.code)}</strong></td>
+        <td><input id="edit_uname_${idx}" class="form-control" style="padding:6px 8px; font-size:13px;" value="${escapeHtml(u.name)}" /></td>
+        <td><input id="edit_uleader_${idx}" class="form-control" style="padding:6px 8px; font-size:13px;" value="${escapeHtml(u.leader)}" placeholder="Nincs megadva" /></td>
+        <td><button class="btn btn-success btn-sm" onclick="saveUnitRow('${escapeHtml(u.code)}', ${idx})">Mentés</button></td>
+      </tr>
+    `).join("");
+  }
+
+  async function saveUnitRow(code, idx) {
+    const name = document.getElementById("edit_uname_" + idx).value.trim();
+    const leader = document.getElementById("edit_uleader_" + idx).value.trim();
+    if (!name) { showToast("Az egység neve nem lehet üres!", "error"); return; }
+
+    try {
+      const res = await apiCall({ action: "saveUnit", code, name, leader });
+      if (res && (res.ok || res.success)) {
+        const target = UNITS_LIST.find(u => u.code === code);
+        if (target) { target.name = name; target.leader = leader; }
+        renderUnitCheckboxGrid("newUserUnitGrid", ["ALL"]);
+        showToast(`${code} egység elmentve!`, "success");
+      } else showToast((res && res.error) || "Hiba mentéskor!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  async function addNewUnit() {
+    const code = document.getElementById("addUnitCode").value.trim();
+    const name = document.getElementById("addUnitName").value.trim();
+    const leader = document.getElementById("addUnitLeader").value.trim();
+    if (!code || !name) { showToast("Az egységkód és a név megadása kötelező!", "error"); return; }
+
+    try {
+      const res = await apiCall({ action: "saveUnit", code, name, leader });
+      if (res && (res.ok || res.success)) {
+        await loadServerUnits();
+        document.getElementById("addUnitCode").value = "";
+        document.getElementById("addUnitName").value = "";
+        document.getElementById("addUnitLeader").value = "";
+        renderAdminUnitsTable();
+        renderUnitCheckboxGrid("newUserUnitGrid", ["ALL"]);
+        showToast("Új egység sikeresen hozzáadva!", "success");
+      } else showToast((res && res.error) || "Hiba hozzáadáskor!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  async function loadAdminReports(silent = false) {
+    try {
+      const res = await apiCall({ action: "getReports" });
+      if (res && (res.ok || res.success)) {
+        cachedAdminReports = res.reports || [];
+        pendingReportsCount = cachedAdminReports.filter(r => r.status === "pending").length;
+        const subBadge = document.getElementById("adminReportsSubBadge");
+        if (subBadge) {
+          subBadge.textContent = pendingReportsCount;
+          subBadge.classList.toggle("hidden", pendingReportsCount === 0);
+        }
+        buildNavTabs();
+        if (!silent) renderAdminReportsTable();
+      }
+    } catch (e) {}
+  }
+
+  function renderAdminReportsTable() {
+    const tbody = document.getElementById("adminReportsTableBody");
+    if (cachedAdminReports.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">Nincs beérkezett kérelem.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = cachedAdminReports.map(r => `
+      <tr>
+        <td style="white-space:nowrap;">${escapeHtml(formatLogTimestamp(r.timestamp))}</td>
+        <td><strong>${escapeHtml(r.fullName)}</strong><br><span style="color:var(--muted); font-size:12px;">(${escapeHtml(r.username)})</span></td>
+        <td>${escapeHtml(r.message)}${r.adminNote ? `<div style="font-size:12px; color:var(--muted); margin-top:4px;"><em>Válasz: ${escapeHtml(r.adminNote)}</em></div>` : ""}</td>
+        <td>${renderStatusBadge(r.status)}</td>
+        <td style="white-space:nowrap;">
+          ${r.status === "pending" ? `
+            <button class="btn btn-success btn-sm" onclick="handleReportDecision('${escapeHtml(r.id)}', 'approved')">✓ Elfogadás</button>
+            <button class="btn btn-danger btn-sm" onclick="handleReportDecision('${escapeHtml(r.id)}', 'rejected')">✕ Elutasítás</button>
+          ` : `<span style="font-size:12px; color:var(--muted);">Kezelve</span>`}
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  async function handleReportDecision(id, status) {
+    const label = status === "approved" ? "Elfogadás" : "Elutasítás";
+    const note = prompt(`${label} — Írj egy rövid visszajelzést a felhasználónak (opcionális):`, status === "approved" ? "Kérelem teljesítve." : "Kérelem elutasítva.");
+    if (note === null) return;
+
+    try {
+      const res = await apiCall({ action: "updateReportStatus", id, status, adminNote: note });
+      if (res && (res.ok || res.success)) {
+        showToast("Visszaigazolás elküldve a felhasználónak!", "success");
+        loadAdminReports();
+      } else showToast((res && res.error) || "Hiba történt!", "error");
+    } catch (e) { showToast("Hálózati hiba!", "error"); }
+  }
+
+  async function loadLogs() {
+    try {
+      const res = await apiCall({ action: "getLogs" });
+      if (res && (res.ok || res.success)) { cachedLogs = res.logs || []; renderLogsTable(); }
+    } catch (e) { showToast("Nem sikerült betölteni a naplót.", "error"); }
+  }
+
+  function renderLogsTable() {
+    const q = (document.getElementById("logSearch").value || "").toLowerCase();
+    const tbody = document.getElementById("logsTableBody");
+    const filtered = cachedLogs.filter(l => JSON.stringify(l).toLowerCase().includes(q));
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:20px;">Nincs megjeleníthető naplóbejegyzés.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = filtered.map(l => `
+      <tr>
+        <td style="white-space:nowrap;">${escapeHtml(formatLogTimestamp(l.timestamp || l.date || ""))}</td>
+        <td><strong>${escapeHtml(l.userName || l.fullName || "")}</strong> <span style="color:var(--muted);">(${escapeHtml(l.username || "")})</span></td>
+        <td>${escapeHtml(l.docType || l.type || "")}</td>
+        <td>${escapeHtml(l.details || "")}</td>
+      </tr>
+    `).join("");
+  }
+
+  // ===== UNIVERZÁLIS CUSTOM DROPDOWN MOTOR =====
+  let activeDropdownAnchor = null;
+
+  function ensureGlobalDropdownEl() {
+    let el = document.getElementById("globalCustomDropdown");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "globalCustomDropdown";
+      el.className = "hidden";
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+
+  function closeGlobalDropdown() {
+    const el = document.getElementById("globalCustomDropdown");
+    if (el) el.classList.add("hidden");
+    if (activeDropdownAnchor) {
+      activeDropdownAnchor.classList.remove("open");
+      activeDropdownAnchor = null;
+    }
+  }
+
+  function positionGlobalDropdown(anchorEl, minWidth = 180) {
+    const menu = ensureGlobalDropdownEl();
+    const rect = anchorEl.getBoundingClientRect();
+    const menuW = Math.min(Math.max(rect.width, minWidth), window.innerWidth - 20);
+    const left = Math.max(10, Math.min(rect.left, window.innerWidth - menuW - 10));
+
+    menu.style.width = `${menuW}px`;
+    menu.style.left = `${left}px`;
+    menu.classList.remove("hidden");
+
+    const spaceBelow = window.innerHeight - rect.bottom - 12;
+    const spaceAbove = rect.top - 12;
+    const openUp = spaceBelow < 160 && spaceAbove > spaceBelow;
+
+    if (openUp) {
+      const maxH = Math.min(250, Math.max(100, spaceAbove));
+      menu.style.maxHeight = `${maxH}px`;
+      menu.style.top = "auto";
+      menu.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+    } else {
+      const maxH = Math.min(250, Math.max(100, spaceBelow));
+      menu.style.maxHeight = `${maxH}px`;
+      menu.style.bottom = "auto";
+      menu.style.top = `${rect.bottom + 4}px`;
+    }
+  }
+
+  function syncCustomSelectTrigger(sel) {
+    if (!sel || !sel._csLabel) return;
+    const opt = sel.options[sel.selectedIndex] || sel.options[0];
+    sel._csLabel.textContent = opt ? opt.textContent : "";
+  }
+
+  function openCustomSelectMenu(sel, triggerBtn) {
+    const menu = ensureGlobalDropdownEl();
+    if (activeDropdownAnchor === triggerBtn && !menu.classList.contains("hidden")) {
+      closeGlobalDropdown();
+      return;
+    }
+    closeGlobalDropdown();
+    activeDropdownAnchor = triggerBtn;
+    triggerBtn.classList.add("open");
+
+    const opts = [...sel.options];
+    if (opts.length === 0) {
+      menu.innerHTML = `<div class="unit-dropdown-empty">Nincs választható elem.</div>`;
+    } else {
+      menu.innerHTML = opts.map((opt, idx) => `
+        <div class="unit-dropdown-item ${idx === sel.selectedIndex ? "selected" : ""}" data-opt-idx="${idx}">
+          ${escapeHtml(opt.textContent)}
+        </div>
+      `).join("");
+
+      menu.querySelectorAll(".unit-dropdown-item").forEach(itemEl => {
+        itemEl.addEventListener("mousedown", e => {
+          e.preventDefault();
+          const idx = Number(itemEl.dataset.optIdx);
+          if (sel.options[idx]) {
+            sel.selectedIndex = idx;
+            sel.value = sel.options[idx].value;
+            sel.dispatchEvent(new Event("change", { bubbles: true }));
+            setTimeout(() => syncCustomSelectTrigger(sel), 0);
+          }
+          closeGlobalDropdown();
+        });
+      });
+    }
+
+    positionGlobalDropdown(triggerBtn, 160);
+    const activeItem = menu.querySelector(".unit-dropdown-item.selected");
+    if (activeItem) activeItem.scrollIntoView({ block: "nearest" });
+  }
+
+  window.openFloatingUnitMenu = function (inputEl, query, onPick, allowedOnly = false) {
+    const menu = ensureGlobalDropdownEl();
+    closeGlobalDropdown();
+    activeDropdownAnchor = inputEl;
+
+    const pool = allowedOnly ? getAllowedUnitsForCurrentUser() : UNITS_LIST;
+    const q = (query || "").trim().toLowerCase();
+    const filtered = pool.filter(u =>
+      !q || u.code.toLowerCase().includes(q) || u.name.toLowerCase().includes(q) || (u.leader || "").toLowerCase().includes(q)
+    );
+
+    if (filtered.length === 0) {
+      menu.innerHTML = `<div class="unit-dropdown-empty">Nincs találat az egységek között.</div>`;
+    } else {
+      menu.innerHTML = filtered.map(u => `
+        <div class="unit-dropdown-item" data-code="${escapeHtml(u.code)}">
+          <div><span class="u-code">${escapeHtml(u.code)}</span> – ${escapeHtml(u.name)}</div>
+          ${u.leader ? `<div class="u-leader">Vezető: ${escapeHtml(u.leader)}</div>` : ""}
+        </div>
+      `).join("");
+
+      menu.querySelectorAll(".unit-dropdown-item").forEach(itemEl => {
+        itemEl.addEventListener("mousedown", e => {
+          e.preventDefault();
+          const code = itemEl.dataset.code;
+          if (typeof onPick === "function") onPick(code);
+          closeGlobalDropdown();
+        });
+      });
+    }
+
+    positionGlobalDropdown(inputEl, 240);
+  };
+
+  function enhanceSelectElement(sel) {
+    if (!sel || sel.dataset.csEnhanced === "1" || sel.closest("#previewRenderHost")) return;
+    sel.dataset.csEnhanced = "1";
+
+    const wrap = document.createElement("div");
+    wrap.className = "cs-wrap";
+    if (sel.style.width) wrap.style.width = sel.style.width;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "form-control cs-trigger";
+    if (sel.style.fontSize) btn.style.fontSize = sel.style.fontSize;
+    if (sel.style.padding) btn.style.padding = sel.style.padding;
+
+    const labelSpan = document.createElement("span");
+    labelSpan.className = "cs-label";
+    const arrowSpan = document.createElement("span");
+    arrowSpan.className = "cs-arrow";
+    arrowSpan.textContent = "▼";
+
+    btn.appendChild(labelSpan);
+    btn.appendChild(arrowSpan);
+
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    wrap.appendChild(btn);
+    sel.classList.add("cs-native-select");
+    sel._csLabel = labelSpan;
+    sel._csBtn = btn;
+
+    syncCustomSelectTrigger(sel);
+
+    btn.addEventListener("click", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      openCustomSelectMenu(sel, btn);
+    });
+
+    sel.addEventListener("change", () => setTimeout(() => syncCustomSelectTrigger(sel), 0));
+
+    const optObserver = new MutationObserver(() => syncCustomSelectTrigger(sel));
+    optObserver.observe(sel, { childList: true, subtree: true, characterData: true, attributes: true });
+  }
+
+  function enhanceAllSelects(root = document) {
+    root.querySelectorAll("select:not([data-cs-enhanced='1'])").forEach(enhanceSelectElement);
+  }
+
+  (function initCustomSelectEngine() {
+    enhanceAllSelects(document);
+    const bodyObserver = new MutationObserver(() => enhanceAllSelects(document));
+    bodyObserver.observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener("mousedown", e => {
+      const menu = document.getElementById("globalCustomDropdown");
+      if (!menu || menu.classList.contains("hidden")) return;
+      if (e.target.closest("#globalCustomDropdown")) return;
+      if (activeDropdownAnchor && (e.target === activeDropdownAnchor || activeDropdownAnchor.contains(e.target))) return;
+      closeGlobalDropdown();
+    });
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeGlobalDropdown();
+    });
+
+    window.addEventListener("resize", closeGlobalDropdown);
+    window.addEventListener("scroll", e => {
+      if (e.target && e.target.id === "globalCustomDropdown") return;
+      closeGlobalDropdown();
+    }, true);
+  })();
+
+  // ===== AUTOMATIKUS PDF FÁJLNÉV NYOMTATÁSKOR =====
+  const ORIGINAL_PAGE_TITLE = document.title;
+
+  const PRINT_DOC_SLUGS = {
+    zaro_leltar_hitelesitesi_jk: "zaroleltarhitelesites",
+    raktari_atadolap: "raktariatado",
+    egysegek_kozotti: "egysegekkozotti",
+    selejtezesi_jegyzokonyv: "selejtezesijegyzokonyv",
+    hasznositasi_jegyzek: "hasznositasijegyzek",
+    felesleges_eszk_jegyzek: "feleslegeseszkozok",
+    hasznositando_eszk_jegyzek: "hasznositandoeszkozok",
+    hulladek_tetelek: "hulladektetelek",
+    eszkoz_megvasarlas: "eszkozmegvasarlas",
+    megsemmisitesi_jegyzokonyv: "megsemmisitesijegyzokonyv",
+    visszanyert_anyagok: "visszanyertanyagok",
+    megbizolevel: "megbizolevel",
+    selejtezesre_javasolt: "selejtezesrejavasolt",
+    selejtezett_javak: "selejtezettjavak",
+    selejtezett_targyi_eszkozok: "selejtezetttargyieszkozok",
+    allomanyba_vetel: "allomanybavetel",
+    atveteli_lap: "atvetelilap",
+    atveteli_lap_dolgozoi: "atvetelilapdolgozoi"
+  };
+
+  function normalizeSlug(str) {
+    return String(str || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+  }
+
+  function parseDateToPrintFormat(raw) {
+    if (!raw) return "";
+    const text = String(raw).trim();
+
+    const numMatch = text.match(/\b(20\d{2})[.\-\/]\s*(\d{1,2})[.\-\/]\s*(\d{1,2})\b/);
+    if (numMatch) {
+      return `${numMatch[1]}.${String(numMatch[2]).padStart(2, "0")}.${String(numMatch[3]).padStart(2, "0")}`;
+    }
+
+    const months = [
+      "januar", "februar", "marcius", "aprilis", "majus", "junius",
+      "julius", "augusztus", "szeptember", "oktober", "november", "december"
+    ];
+    const norm = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const wordMatch = norm.match(/\b(20\d{2})\.?\s+([a-z]+)\s+(\d{1,2})\b/);
+    if (wordMatch) {
+      const mIdx = months.findIndex(m => wordMatch[2].startsWith(m));
+      if (mIdx >= 0) {
+        return `${wordMatch[1]}.${String(mIdx + 1).padStart(2, "0")}.${String(wordMatch[3]).padStart(2, "0")}`;
+      }
+    }
+    return "";
+  }
+
+  function extractDocUnitCodeForFilename(host, docId) {
+    const cleanCode = val => String(val || "").trim().replace(/[^a-zA-Z0-9._]+/g, "");
+
+    const getFirstInputVal = ids => {
+      for (const id of ids) {
+        const el = host.querySelector("#" + id);
+        if (el && el.value && el.value.trim()) {
+          const cleaned = cleanCode(el.value);
+          if (cleaned) return cleaned;
+        }
+      }
+      return "";
+    };
+
+    const getPartyTableCode = headerRe => {
+      for (const tbl of host.querySelectorAll(".a4-page .party-table")) {
+        const thText = tbl.querySelector("th")?.textContent || "";
+        if (!headerRe.test(thText)) continue;
+        for (const row of tbl.querySelectorAll("tr")) {
+          const cells = row.querySelectorAll("td");
+          if (cells.length >= 2 && /egység\s*kód/i.test(cells[0].textContent || "")) {
+            const cleaned = cleanCode(cells[1].textContent);
+            if (cleaned) return cleaned;
+          }
+        }
+      }
+      return "";
+    };
+
+    const TWO_PARTY_DOCS = ["raktari_atadolap", "egysegek_kozotti"];
+    if (TWO_PARTY_DOCS.includes(docId)) {
+      const fromCode = getFirstInputVal(["ekSndCode", "sndCode"]) || getPartyTableCode(/átadó/i);
+      const toCode = getFirstInputVal(["ekRecCode", "recCode"]) || getPartyTableCode(/átvevő/i);
+
+      if (fromCode && toCode) return `${fromCode}-${toCode}`;
+      return fromCode || toCode || "";
+    }
+
+    const singleCode = getFirstInputVal([
+      "sjFull_sndCode", "sndCode", "ekSndCode", "feSndCode", "heSndCode",
+      "sjSndCode", "sijSndCode", "steSndCode", "aldSndCode", "mbUnitCode",
+      "avBeszCode", "alRecCode", "recCode"
+    ]);
+    if (singleCode) return singleCode;
+
+    const tableCode = getPartyTableCode(/átadó/i) || getPartyTableCode(/átvevő/i) || getPartyTableCode(/.*/);
+    if (tableCode) return tableCode;
+
+    for (const inp of host.querySelectorAll(".unit-combo input")) {
+      const cleaned = cleanCode(inp.value);
+      if (cleaned) return cleaned;
+    }
+
+    return "";
+  }
+
+  function extractDocDateForFilename(host) {
+    const activeChip = host.querySelector(".date-chip.active");
+    if (activeChip) {
+      const parsed = parseDateToPrintFormat(activeChip.textContent);
+      if (parsed) return parsed;
+    }
+
+    const dateInputs = [...host.querySelectorAll('input[type="date"], input[id*="Date"], input[id*="date"], input[id*="Datum"], input[id*="datum"]')];
+    const primaryInput = dateInputs.find(el => el.value && !/dest|close/i.test(el.id || "")) || dateInputs.find(el => el.value);
+    if (primaryInput) {
+      const parsed = parseDateToPrintFormat(primaryInput.value);
+      if (parsed) return parsed;
+    }
+
+    const dateLine = host.querySelector(".a4-page .doc-date-line");
+    if (dateLine) {
+      const parsed = parseDateToPrintFormat(dateLine.textContent);
+      if (parsed) return parsed;
+    }
+
+    const firstPage = host.querySelector(".a4-page");
+    if (firstPage) {
+      const parsed = parseDateToPrintFormat(firstPage.textContent);
+      if (parsed) return parsed;
+    }
+
+    const now = new Date();
+    return `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
+  }
+
+  function buildPrintFileName() {
+    if (isReadOnlyArchiveMode && activeArchivedMeta && activeArchivedMeta.fileName) {
+      return activeArchivedMeta.fileName;
+    }
+
+    if (currentView === "inventoryEditor") {
+      const uCode = (document.getElementById("ll_unitCode")?.value || "").trim().replace(/[^a-zA-Z0-9._]+/g, "");
+      const year = (document.getElementById("ll_year")?.value || "").trim();
+      return ["leltarlista", (!uCode || uCode === "ALL") ? "osszes" : uCode, year].filter(Boolean).join("_");
+    }
+
+    if (currentView !== "docActive" || !activeDocId) return "";
+    const host = document.getElementById("docHostView");
+    if (!host) return "";
+
+    const dt = DOC_TYPES.find(x => x.id === activeDocId);
+    const docSlug = PRINT_DOC_SLUGS[activeDocId] || normalizeSlug(dt ? dt.label : activeDocId);
+    const unitCode = extractDocUnitCodeForFilename(host, activeDocId);
+    const docDate = extractDocDateForFilename(host);
+
+    return [docSlug, unitCode, docDate].filter(Boolean).join("_");
+  }
+
+  (function hookPrintFilename() {
+    const nativePrint = window.print.bind(window);
+    window.print = function () {
+      const customName = buildPrintFileName();
+      if (customName) document.title = customName;
+      const snapshot = isReadOnlyArchiveMode ? null : collectCompletedDocSnapshot(customName);
+      nativePrint();
+      if (snapshot) archiveCompletedDocSnapshot(snapshot);
+      setTimeout(() => { document.title = ORIGINAL_PAGE_TITLE; }, 1000);
+    };
+
+    window.addEventListener("beforeprint", () => {
+      const customName = buildPrintFileName();
+      if (customName) document.title = customName;
+    });
+
+    window.addEventListener("afterprint", () => {
+      document.title = ORIGINAL_PAGE_TITLE;
+    });
+  })();
+
+  // ===== KÉSZ DOKUMENTUMOK ARCHIVÁLÁSA ÉS BÖNGÉSZÉSE =====
+  function applyArchiveReadOnlyMode(archiveMeta) {
+    const host = document.getElementById("docHostView");
+    if (!host) return;
+
+    isReadOnlyArchiveMode = true;
+    activeArchivedMeta = archiveMeta || null;
+    host.classList.add("archive-readonly");
+
+    if (activeDocId === "selejtezesi_jegyzokonyv" && window.TemplateModules["selejtezesi_jegyzokonyv"]?.setViewMode) {
+      window.TemplateModules["selejtezesi_jegyzokonyv"].setViewMode("all");
+    }
+
+    host.querySelectorAll("input, select, textarea, button").forEach(el => {
+      if (el.id === "zlh_verifyInput") return;
+      el.disabled = true;
+      if ("readOnly" in el) el.readOnly = true;
+    });
+
+    const route = (archiveMeta?.fromUnit && archiveMeta?.toUnit)
+      ? `${archiveMeta.fromUnit} → ${archiveMeta.toUnit}`
+      : (archiveMeta?.fromUnit || archiveMeta?.toUnit || "");
+    const fDate = formatCompletedDocDate(archiveMeta?.docDate || "");
+    const metaParts = [
+      archiveMeta?.docLabel || "",
+      route,
+      fDate ? `Dátum: ${fDate}` : "",
+      archiveMeta?.userName ? `Készítette: ${archiveMeta.userName}` : ""
+    ].filter(Boolean);
+
+    const hasPdfVerify = !!host.querySelector("#zlh_verifyInput");
+
+    const bar = document.createElement("div");
+    bar.className = "archive-readonly-bar no-print";
+    bar.innerHTML = `
+      <div class="archive-readonly-row">
+        <div class="archive-readonly-info">
+          <div class="archive-readonly-badge">🔒 Archivált dokumentum — csak megtekintés</div>
+          <div class="archive-readonly-meta">${escapeHtml(metaParts.join(" • "))}</div>
+        </div>
+        <div class="archive-readonly-actions">
+          <button type="button" class="btn btn-outline btn-sm" onclick="openCompletedDocsView()">← Vissza a kész dokumentumokhoz</button>
+          ${hasPdfVerify ? `<button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('zlh_verifyInput').click()">🔍 PDF ellenőrzése</button>` : ""}
+          <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Nyomtatás / PDF</button>
+        </div>
+      </div>
+    `;
+
+    const verifyRes = host.querySelector("#zlh_verifyResult");
+    if (verifyRes) {
+      bar.appendChild(verifyRes);
+    }
+
+    host.prepend(bar);
+    buildNavTabs();
+  }
+
+  function simpleHashStr(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0).toString(36);
+  }
+
+  function extractCompletedDocParties(host, docId) {
+    const cleanCode = val => String(val || "").trim().replace(/[^a-zA-Z0-9._]+/g, "");
+    const getFirstVal = ids => {
+      for (const id of ids) {
+        const el = host.querySelector("#" + id);
+        if (el && el.value && el.value.trim()) {
+          const c = cleanCode(el.value);
+          if (c) return c;
+        }
+      }
+      return "";
+    };
+    const getTableCode = headerRe => {
+      for (const tbl of host.querySelectorAll(".a4-page .party-table")) {
+        const thText = tbl.querySelector("th")?.textContent || "";
+        if (!headerRe.test(thText)) continue;
+        for (const row of tbl.querySelectorAll("tr")) {
+          const cells = row.querySelectorAll("td");
+          if (cells.length >= 2 && /egység\s*kód/i.test(cells[0].textContent || "")) {
+            const c = cleanCode(cells[1].textContent);
+            if (c) return c;
+          }
+        }
+      }
+      return "";
+    };
+
+    const TWO_PARTY_DOCS = ["raktari_atadolap", "egysegek_kozotti"];
+    if (TWO_PARTY_DOCS.includes(docId)) {
+      return {
+        fromUnit: getFirstVal(["ekSndCode", "sndCode"]) || getTableCode(/átadó/i),
+        toUnit: getFirstVal(["ekRecCode", "recCode"]) || getTableCode(/átvevő/i)
+      };
+    }
+
+    const fromSingle = getFirstVal([
+      "sjFull_sndCode", "sndCode", "ekSndCode", "feSndCode", "heSndCode",
+      "sjSndCode", "sijSndCode", "steSndCode", "aldSndCode", "mbUnitCode",
+      "avBeszCode", "alRecCode", "recCode"
+    ]) || getTableCode(/átadó/i) || getTableCode(/átvevő/i) || getTableCode(/.*/);
+
+    return { fromUnit: fromSingle, toUnit: "" };
+  }
+
+  function collectCompletedDocSnapshot(fileName) {
+    if (!currentUser || !selectedCompany) return null;
+
+    if (currentView === "inventoryEditor") {
+      const mod = window.TemplateModules[INVENTORY_TPL_ID];
+      if (!mod || typeof mod.getDraftData !== "function") return null;
+      const snap = mod.getDraftData();
+      const docDate = parseDateToPrintFormat(snap.date) || (snap.year ? `${snap.year}.12.31` : "");
+      const docYear = (docDate.slice(0, 4)) || snap.year || String(new Date().getFullYear());
+      const fromUnit = (snap.isCompanyWide || !snap.unitCode || snap.unitCode === "ALL") ? "Összes" : snap.unitCode;
+      const payloadStr = JSON.stringify(snap);
+
+      return {
+        companyCode: selectedCompany.code,
+        docId: INVENTORY_TPL_ID,
+        docLabel: "Leltár lista",
+        docYear,
+        docDate,
+        fromUnit,
+        toUnit: "",
+        fileName: fileName || "",
+        username: currentUser.username,
+        userName: currentUser.fullName || currentUser.name || currentUser.username,
+        fingerprint: simpleHashStr(`${selectedCompany.code}|${INVENTORY_TPL_ID}|${docDate}|${fromUnit}|${payloadStr}`),
+        payload: snap
+      };
+    }
+
+    if (currentView === "docActive" && activeDocId) {
+      const host = document.getElementById("docHostView");
+      if (!host) return null;
+      const dt = DOC_TYPES.find(x => x.id === activeDocId);
+      const captured = captureCurrentDraftData();
+      if (!captured) return null;
+
+      const { fromUnit, toUnit } = extractCompletedDocParties(host, activeDocId);
+      const docDate = extractDocDateForFilename(host);
+      const docYear = (docDate.match(/^(20\d{2})/) || [])[1] || String(new Date().getFullYear());
+      const payloadStr = JSON.stringify(captured);
+
+      return {
+        companyCode: selectedCompany.code,
+        docId: activeDocId,
+        docLabel: dt ? dt.label : activeDocId,
+        docYear,
+        docDate,
+        fromUnit,
+        toUnit,
+        fileName: fileName || "",
+        username: currentUser.username,
+        userName: currentUser.fullName || currentUser.name || currentUser.username,
+        fingerprint: simpleHashStr(`${selectedCompany.code}|${activeDocId}|${docDate}|${fromUnit}|${toUnit}|${payloadStr}`),
+        payload: captured
+      };
+    }
+
+    return null;
+  }
+
+  async function archiveCompletedDocSnapshot(snapshot) {
+    if (!snapshot) return;
+    const now = Date.now();
+    if (snapshot.fingerprint === lastArchivedFp && (now - lastArchivedAt) < 4000) return;
+    lastArchivedFp = snapshot.fingerprint;
+    lastArchivedAt = now;
+
+    try {
+      const res = await apiCall({ action: "saveCompletedDoc", ...snapshot });
+      if (res && (res.ok || res.success)) {
+        showToast("Dokumentum mentve a Kész dokumentumok közé!", "success");
+      }
+    } catch (e) {}
+  }
+
+  function populateCompletedFilters() {
+    const typeSel = document.getElementById("compDocTypeDropdown");
+    const yearSel = document.getElementById("compYearDropdown");
+    if (!typeSel || !yearSel) return;
+
+    const prevType = typeSel.value;
+    const prevYear = yearSel.value;
+    const perms = currentUser.permissions || [];
+    const allowedDocs = DOC_TYPES.filter(dt => dt.file && (currentUser.role === "admin" || perms.includes(dt.id)));
+
+    const typeOpts = [
+      ...allowedDocs.map(dt => `<option value="${escapeHtml(dt.id)}">${escapeHtml(dt.label)}</option>`),
+      `<option value="${INVENTORY_TPL_ID}">Leltár lista</option>`
+    ];
+    typeSel.innerHTML = typeOpts.join("");
+    if (prevType && [...typeSel.options].some(o => o.value === prevType)) {
+      typeSel.value = prevType;
+    }
+
+    const curYear = new Date().getFullYear();
+    const years = [];
+    for (let y = curYear + 1; y >= 2020; y--) years.push(y);
+    yearSel.innerHTML = years.map(y => `<option value="${y}">${y}. év</option>`).join("");
+    yearSel.value = prevYear && years.includes(Number(prevYear)) ? prevYear : String(curYear);
+
+    if (typeof syncCustomSelectTrigger === "function") {
+      syncCustomSelectTrigger(typeSel);
+      syncCustomSelectTrigger(yearSel);
+    }
+  }
+
+  function openCompletedDocsView() {
+    if (!selectedCompany) { showToast("Előbb válassz céget!", "error"); return; }
+    closeActiveDocumentEditor();
+    document.getElementById("compSelectorCompanyName").textContent = `${selectedCompany.code} — ${selectedCompany.fullName}`;
+    populateCompletedFilters();
+    showOnlySection("completedDocsView", "completedDocs");
+
+    if (!completedFilterApplied) {
+      document.getElementById("compInitialPrompt")?.classList.remove("hidden");
+      document.getElementById("compResultsWrap")?.classList.add("hidden");
+      document.getElementById("compRefreshBtn")?.classList.add("hidden");
+      document.getElementById("compResultsHeaderBadge").textContent = "";
+    }
+  }
+
+  function openCompletedUnitFilterMenu(inputEl) {
+    if (typeof window.openFloatingUnitMenu !== "function") return;
+    window.openFloatingUnitMenu(inputEl, inputEl.value, code => {
+      inputEl.value = code;
+      renderCompletedDocsList();
+    });
+  }
+
+  function clearCompletedUnitFilters() {
+    const fEl = document.getElementById("compFromFilter");
+    const tEl = document.getElementById("compToFilter");
+    if (fEl) fEl.value = "";
+    if (tEl) tEl.value = "";
+    renderCompletedDocsList();
+  }
+
+  function getUnitDisplayLabel(code) {
+    if (!code) return "";
+    const u = UNITS_LIST.find(x => x.code.toLowerCase() === String(code).toLowerCase());
+    return u ? `${u.code} (${u.name})` : String(code);
+  }
+
+  function unitMatchesFilter(unitCode, query) {
+    const q = (query || "").trim().toLowerCase();
+    if (!q) return true;
+    if (!unitCode) return false;
+    const codeLower = String(unitCode).toLowerCase();
+    if (codeLower.includes(q)) return true;
+    const u = UNITS_LIST.find(x => x.code.toLowerCase() === codeLower);
+    return !!(u && u.name.toLowerCase().includes(q));
+  }
+
+  async function loadCompletedDocsList() {
+    if (!selectedCompany || !currentUser) return;
+    const docId = document.getElementById("compDocTypeDropdown")?.value || "";
+    const docYear = document.getElementById("compYearDropdown")?.value || "";
+    if (!docId || !docYear) {
+      showToast("Válassz dokumentumtípust és évet!", "error");
+      return;
+    }
+
+    const btn = document.getElementById("compLoadBtn");
+    const listEl = document.getElementById("compDocsListContainer");
+    if (btn) { btn.disabled = true; btn.textContent = "Betöltés..."; }
+
+    document.getElementById("compInitialPrompt")?.classList.add("hidden");
+    document.getElementById("compResultsWrap")?.classList.remove("hidden");
+    document.getElementById("compRefreshBtn")?.classList.remove("hidden");
+    if (listEl) {
+      listEl.innerHTML = `<div class="draft-empty">Kész dokumentumok betöltése a táblázatból...</div>`;
+    }
+
+    try {
+      const res = await apiCall({
+        action: "getCompletedDocs",
+        companyCode: selectedCompany.code,
+        docId,
+        docYear
+      });
+
+      if (res && (res.ok || res.success)) {
+        const rawDocs = res.docs || [];
+        if (currentUser.role === "admin") {
+          cachedCompletedDocs = rawDocs;
+        } else {
+          const allowedSet = new Set(getAllowedUnitsForCurrentUser().map(u => u.code.toLowerCase()));
+          cachedCompletedDocs = rawDocs.filter(d => {
+            const f = String(d.fromUnit || "").toLowerCase();
+            const t = String(d.toUnit || "").toLowerCase();
+            if (!f && !t) return true;
+            return allowedSet.has(f) || allowedSet.has(t);
+          });
+        }
+        completedFilterApplied = true;
+        renderCompletedDocsList();
+      } else {
+        showToast((res && res.error) || "Hiba a kész dokumentumok lekérésekor!", "error");
+        if (listEl) listEl.innerHTML = `<div class="draft-empty">Nem sikerült betölteni a dokumentumokat.</div>`;
+      }
+    } catch (e) {
+      showToast("Hálózati hiba a betöltéskor!", "error");
+      if (listEl) listEl.innerHTML = `<div class="draft-empty">Hálózati hiba a szerver elérésekor.</div>`;
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "✓ Tovább a dokumentumokhoz →"; }
+    }
+  }
+
+  function formatCompletedDocDate(raw) {
+    if (!raw) return "";
+    const str = String(raw).trim();
+
+    const parsed = parseDateToPrintFormat(str);
+    if (parsed) return parsed;
+
+    const engMonths = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+    const engMatch = str.match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})\s+(20\d{2})\b/i);
+    if (engMatch) {
+      const mIdx = engMonths.indexOf(engMatch[1].toLowerCase()) + 1;
+      return `${engMatch[3]}.${String(mIdx).padStart(2, "0")}.${String(engMatch[2]).padStart(2, "0")}`;
+    }
+
+    const d = new Date(str.replace(/\s*\([^)]*\)\s*$/, ""));
+    if (!isNaN(d.getTime())) {
+      return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+    }
+    return str;
+  }
+
+  function renderCompletedDocsList() {
+    const listEl = document.getElementById("compDocsListContainer");
+    const badgeEl = document.getElementById("compResultsHeaderBadge");
+    if (!listEl) return;
+
+    const fromQ = (document.getElementById("compFromFilter")?.value || "").trim();
+    const toQ = (document.getElementById("compToFilter")?.value || "").trim();
+
+    const filtered = cachedCompletedDocs.filter(d =>
+      unitMatchesFilter(d.fromUnit, fromQ) && unitMatchesFilter(d.toUnit, toQ)
+    );
+
+    const typeSel = document.getElementById("compDocTypeDropdown");
+    const typeLabel = typeSel?.options[typeSel.selectedIndex]?.textContent || "";
+    const yearVal = document.getElementById("compYearDropdown")?.value || "";
+    if (badgeEl) {
+      badgeEl.textContent = `(${typeLabel} • ${yearVal} • ${filtered.length} db)`;
+    }
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = `<div class="draft-empty">Nincs a szűrési feltételeknek megfelelő mentett dokumentum.</div>`;
+      return;
+    }
+
+    const isAdmin = currentUser && currentUser.role === "admin";
+
+    listEl.innerHTML = filtered.map(d => {
+      const routeTitle = (d.fromUnit && d.toUnit)
+        ? `${d.fromUnit} → ${d.toUnit}`
+        : (d.fromUnit || d.toUnit || d.docLabel);
+      const formattedDate = formatCompletedDocDate(d.docDate);
+      const displayLine = formattedDate ? `${routeTitle} (${formattedDate})` : routeTitle;
+
+      const subParts = [];
+      if (d.fromUnit && d.toUnit) {
+        subParts.push(`${getUnitDisplayLabel(d.fromUnit)} → ${getUnitDisplayLabel(d.toUnit)}`);
+      } else if (d.fromUnit) {
+        subParts.push(getUnitDisplayLabel(d.fromUnit));
+      }
+      if (d.userName) subParts.push(`Készítette: ${d.userName}`);
+
+      return `
+        <div class="completed-item" onclick="openCompletedDocument('${escapeHtml(d.id)}')" title="Kattints a dokumentum megtekintéséhez">
+          <div class="completed-item-main">
+            <div class="completed-item-title">${escapeHtml(displayLine)}</div>
+            <div class="completed-item-meta">${escapeHtml(subParts.join(" • "))}</div>
+          </div>
+          <div class="completed-item-actions">
+            <button type="button" class="btn btn-primary btn-sm" onclick="event.stopPropagation(); openCompletedDocument('${escapeHtml(d.id)}')">Megtekintés</button>
+            ${isAdmin ? `<button type="button" class="draft-del-btn" title="Törlés az archívumból" onclick="deleteCompletedDocument(event, '${escapeHtml(d.id)}')">×</button>` : ""}
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function openCompletedDocument(docRecordId) {
+    document.getElementById("loadingOverlay").classList.remove("hidden");
+    try {
+      const res = await apiCall({ action: "getCompletedDocById", id: docRecordId });
+      if (!res || !(res.ok || res.success) || !res.doc) {
+        showToast((res && res.error) || "Nem sikerült betölteni a dokumentumot!", "error");
+        return;
+      }
+
+      const rec = res.doc;
+      if (rec.docId === INVENTORY_TPL_ID) {
+        await loadAndOpenInventoryTemplate(null, rec.payload, true, rec);
+        return;
+      }
+
+      const dt = DOC_TYPES.find(x => x.id === rec.docId);
+      if (!dt || !dt.file) {
+        showToast("Ehhez a dokumentumtípushoz nem található sablon.", "error");
+        return;
+      }
+
+      await loadAndOpenTemplate(dt, rec.payload, true, rec);
+    } catch (e) {
+      showToast("Hálózati hiba a dokumentum betöltésekor!", "error");
+    } finally {
+      document.getElementById("loadingOverlay").classList.add("hidden");
+    }
+  }
+
+  async function deleteCompletedDocument(ev, docRecordId) {
+    ev.stopPropagation();
+    if (!confirm("Biztosan törlöd ezt a kész dokumentumot a Google Táblázatból?")) return;
+    try {
+      const res = await apiCall({ action: "deleteCompletedDoc", id: docRecordId });
+      if (res && (res.ok || res.success)) {
+        cachedCompletedDocs = cachedCompletedDocs.filter(d => d.id !== docRecordId);
+        renderCompletedDocsList();
+        showToast("Dokumentum törölve az archívumból.", "info");
+      } else {
+        showToast((res && res.error) || "Hiba törléskor!", "error");
+      }
+    } catch (e) {
+      showToast("Hálózati hiba!", "error");
+    }
+  }
+
+  // ===== INIT =====
+  (function init() {
+    const saved = sessionStorage.getItem("campus_session");
+    if (saved) {
+      try { currentUser = JSON.parse(saved); enterApp(); }
+      catch (e) { sessionStorage.removeItem("campus_session"); }
+    }
+  })();
+</script>
+</body>
+</html>
