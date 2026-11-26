@@ -1,0 +1,877 @@
+<style>
+  .zlh-dropzone {
+    border: 2px dashed var(--primary);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .zlh-dropzone:hover,
+  .zlh-dropzone.dragover {
+    background: #fff;
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+  .zlh-hash-box {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11px;
+    word-break: break-all;
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: #0f172a;
+    margin-top: 8px;
+  }
+  .zlh-verify-result {
+    margin-top: 8px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .zlh-verify-ok {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+  }
+  .zlh-verify-fail {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+  }
+  .zlh-verify-info {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+
+  /* ===== A4 NYOMTATÁSI STÍLUS ===== */
+  .zlh-page {
+    padding: 11mm 14mm 11mm 14mm !important;
+    font-family: Arial, "Segoe UI", sans-serif !important;
+    color: #111;
+  }
+  .zlh-doc-title {
+    font-size: 15.5pt;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 1.2mm;
+    line-height: 1.2;
+  }
+  .zlh-doc-subtitle {
+    font-size: 9.2pt;
+    color: #475569;
+    margin: 0 0 4.5mm;
+    padding-bottom: 2.5mm;
+    border-bottom: 1.8px solid var(--primary);
+  }
+  .zlh-sec-head {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: var(--primary-dark);
+    letter-spacing: 0.35px;
+    margin: 4mm 0 2mm;
+    padding-bottom: 1mm;
+    border-bottom: 1px solid #cbd5e1;
+  }
+  .zlh-sec-head span {
+    color: var(--primary);
+    margin-right: 4px;
+  }
+  .zlh-meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.4pt;
+    margin-bottom: 2.5mm;
+  }
+  .zlh-meta-table td {
+    border: 1px solid #94a3b8;
+    padding: 4.5px 7px;
+    vertical-align: middle;
+    line-height: 1.3;
+  }
+  .zlh-meta-table td:first-child {
+    width: 31%;
+    font-weight: 700;
+    background: #f1f5f9;
+    color: #1e293b;
+  }
+  .zlh-hash-print {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 7.7pt;
+    font-weight: 700;
+    letter-spacing: 0.25px;
+    word-break: break-all;
+    color: #000;
+  }
+  .zlh-muted-inline {
+    color: #475569;
+    font-size: 7.6pt;
+    font-style: italic;
+    margin-left: 6px;
+  }
+  .zlh-check-note {
+    font-size: 7.6pt;
+    line-height: 1.38;
+    color: #334155;
+    background: #f8fafc;
+    border-left: 3px solid var(--primary);
+    padding: 4.5px 8px;
+    margin-bottom: 3mm;
+  }
+  .zlh-check-note code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 7.3pt;
+    background: #e2e8f0;
+    padding: 0.5px 3px;
+    border-radius: 3px;
+  }
+  .zlh-body-p {
+    font-size: 8.6pt;
+    line-height: 1.42;
+    text-align: justify;
+    margin: 0 0 2.5mm;
+    color: #111;
+  }
+  .zlh-sign-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-bottom: 2.5mm;
+  }
+  .zlh-sign-table th {
+    background: var(--primary-dark);
+    color: #fff;
+    border: 1px solid #475569;
+    padding: 5px 6px;
+    text-align: center;
+    vertical-align: top;
+  }
+  .zlh-sign-role {
+    font-size: 8.2pt;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .zlh-sign-sub {
+    font-size: 7.3pt;
+    font-weight: 400;
+    opacity: 0.92;
+    margin-top: 1px;
+  }
+  .zlh-sign-table td {
+    border: 1px solid #94a3b8;
+    padding: 6px 7px;
+    vertical-align: top;
+    font-size: 8pt;
+    line-height: 1.35;
+  }
+  .zlh-sign-desc {
+    font-size: 7.4pt;
+    color: #334155;
+    min-height: 12mm;
+    margin-bottom: 4mm;
+  }
+  .zlh-sign-field {
+    margin-bottom: 2.2mm;
+    font-size: 8pt;
+  }
+  .zlh-sign-field strong {
+    display: inline-block;
+    min-width: 15mm;
+    color: #334155;
+  }
+  .zlh-sign-line-wrap {
+    margin-top: 11mm;
+    text-align: center;
+  }
+  .zlh-sign-line {
+    border-top: 1px solid #333;
+    padding-top: 2px;
+    font-size: 7.6pt;
+    color: #333;
+  }
+  .zlh-sign-footnote {
+    font-size: 7.6pt;
+    color: #334155;
+    font-style: italic;
+    margin: 0 0 2.5mm;
+    line-height: 1.35;
+  }
+</style>
+
+<div class="gen-grid">
+  <!-- BAL OLDAL: VEZÉRLŐPULT -->
+  <div class="left-controls no-print">
+    <div style="margin-bottom:12px;">
+      <button class="btn btn-outline btn-sm" onclick="backToDocSelector()">← Vissza a nyomtatványválasztóhoz</button>
+    </div>
+
+    <!-- 1. PDF SHA-256 HASH GENERÁTOR -->
+    <div class="panel">
+      <h3>1. PDF fájl és SHA-256 hash generálás</h3>
+      <div class="zlh-dropzone" id="zlh_pdfDropzone" onclick="document.getElementById('zlh_pdfInput').click()">
+        <strong>Húzd ide a végleges záró leltár PDF-et</strong><br>
+        <span style="font-size:11.5px;">vagy kattints a tallózáshoz (automatikus SHA-256, fájlnév és oldalszám)</span>
+        <input type="file" id="zlh_pdfInput" accept=".pdf,application/pdf" class="hidden" />
+      </div>
+
+      <div id="zlh_hashPreviewBox" class="zlh-hash-box hidden"></div>
+
+      <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="ZaroLeltarHitMod.importLastInventorySummary()">
+          ↻ Utolsó leltárlista adatainak átvétele
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="ZaroLeltarHitMod.copyHash()">
+          📋 Hash másolása
+        </button>
+      </div>
+
+      <!-- ELLENŐRZÉS (VERIFY) -->
+      <div style="margin-top:12px; padding-top:10px; border-top:1px solid #e2e8f0;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <span style="font-size:12px; font-weight:600; color:#334155;">PDF sértetlenség ellenőrzése:</span>
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('zlh_verifyInput').click()">
+            🔍 PDF összehasonlítása
+          </button>
+          <input type="file" id="zlh_verifyInput" accept=".pdf,application/pdf" class="hidden" />
+        </div>
+        <div id="zlh_verifyResult" class="zlh-verify-result hidden"></div>
+      </div>
+    </div>
+
+    <!-- 2. HITELESÍTETT ÁLLOMÁNY ADATAI -->
+    <div class="panel">
+      <h3>2. A hitelesített állomány adatai</h3>
+
+      <div class="form-group">
+        <label>Alcím (cég + leltár megnevezése)</label>
+        <input id="zlh_subtitle" class="form-control" oninput="ZaroLeltarHitMod.renderDocument()" />
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Jegyzőkönyv száma</label>
+          <input id="zlh_protoNo" class="form-control" placeholder="pl. LELT-2026-01" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Leltári fordulónap</label>
+          <input id="zlh_cutoffDate" type="date" class="form-control" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>PDF fájlneve</label>
+        <input id="zlh_pdfName" class="form-control" placeholder="pl. zaro_leltar_2026.pdf" oninput="ZaroLeltarHitMod.renderDocument()" />
+      </div>
+
+      <div class="form-group">
+        <label>PDF SHA-256 hash (64 karakter)</label>
+        <input id="zlh_pdfHash" class="form-control" style="font-family:monospace; font-size:11.5px;" placeholder="PDF feltöltésekor automatikusan kitöltődik..." oninput="ZaroLeltarHitMod.renderDocument()" />
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Oldalszám (oldal)</label>
+          <input id="zlh_pageCount" type="number" min="1" class="form-control" placeholder="pl. 14" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Tételszám (db)</label>
+          <input id="zlh_itemCount" type="number" min="0" class="form-control" placeholder="pl. 342" oninput="ZaroLeltarHitMod.syncSubunitTotal(); ZaroLeltarHitMod.renderDocument();" />
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+        <div class="form-group">
+          <label style="font-size:12px;">Bruttó érték (Ft)</label>
+          <input id="zlh_grossVal" type="number" min="0" class="form-control" placeholder="0" oninput="ZaroLeltarHitMod.recalcDepr(); ZaroLeltarHitMod.renderDocument();" />
+        </div>
+        <div class="form-group">
+          <label style="font-size:12px;">ÉCS (Ft)</label>
+          <input id="zlh_deprVal" type="number" min="0" class="form-control" placeholder="auto" oninput="ZaroLeltarHitMod.markDeprManual(); ZaroLeltarHitMod.renderDocument();" />
+        </div>
+        <div class="form-group">
+          <label style="font-size:12px;">Nettó érték (Ft)</label>
+          <input id="zlh_netVal" type="number" min="0" class="form-control" placeholder="0" oninput="ZaroLeltarHitMod.recalcDepr(); ZaroLeltarHitMod.renderDocument();" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Alegységek száma (db)</label>
+          <input id="zlh_unitCount" type="number" min="0" class="form-control" placeholder="pl. 18" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Alegységek tételszámainak összege</label>
+          <input id="zlh_unitItemSum" type="number" min="0" class="form-control" placeholder="egyezzen a tételszámmal" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Hiány (db)</label>
+          <input id="zlh_shortQty" type="number" min="0" class="form-control" value="0" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Hiány értéke (Ft)</label>
+          <input id="zlh_shortVal" type="number" min="0" class="form-control" value="0" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Többlet (db)</label>
+          <input id="zlh_surpQty" type="number" min="0" class="form-control" value="0" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Többlet értéke (Ft)</label>
+          <input id="zlh_surpVal" type="number" min="0" class="form-control" value="0" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label>Eltérési jegyzőkönyv száma</label>
+          <input id="zlh_diffProto" class="form-control" placeholder="pl. nincs / ELT-2026-01" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+        <div class="form-group">
+          <label>Tárolási hely (írásvédett)</label>
+          <input id="zlh_storageLoc" class="form-control" placeholder="pl. SharePoint / Irattár" oninput="ZaroLeltarHitMod.renderDocument()" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. ALÁÍRÓK (3 KÜLÖNBÖZŐ SZEMÉLY) -->
+    <div class="panel">
+      <h3>3. Aláírók (3 különböző személy)</h3>
+
+      <div style="font-size:12px; font-weight:700; color:var(--primary-dark); margin-bottom:6px;">1. Összeállította (központi leltárfelelős)</div>
+      <div class="row-2" style="margin-bottom:6px;">
+        <input id="zlh_s1Name" class="form-control" style="padding:7px 9px; font-size:13px;" placeholder="Név" oninput="ZaroLeltarHitMod.renderDocument()" />
+        <input id="zlh_s1Title" class="form-control" style="padding:7px 9px; font-size:13px;" value="Központi leltárfelelős" placeholder="Beosztás" oninput="ZaroLeltarHitMod.renderDocument()" />
+      </div>
+      <div class="form-group">
+        <input id="zlh_s1Date" type="date" class="form-control" style="padding:6px 9px; font-size:12.5px;" oninput="ZaroLeltarHitMod.renderDocument()" />
+      </div>
+
+      <div style="font-size:12px; font-weight:700; color:var(--primary-dark); margin-bottom:6px;">2. Számvitelileg egyeztette (gazdasági vezető / könyvelés)</div>
+      <div class="row-2" style="margin-bottom:6px;">
+        <input id="zlh_s2Name" class="form-control" style="padding:7px 9px; font-size:13px;" placeholder="Név" oninput="ZaroLeltarHitMod.renderDocument()" />
+        <input id="zlh_s2Title" class="form-control" style="padding:7px 9px; font-size:13px;" value="Gazdasági vezető" placeholder="Beosztás" oninput="ZaroLeltarHitMod.renderDocument()" />
+      </div>
+      <div class="form-group">
+        <input id="zlh_s2Date" type="date" class="form-control" style="padding:6px 9px; font-size:12.5px;" oninput="ZaroLeltarHitMod.renderDocument()" />
+      </div>
+
+      <div style="font-size:12px; font-weight:700; color:var(--primary-dark); margin-bottom:6px;">3. Jóváhagyta (ügyvezető)</div>
+      <div class="row-2" style="margin-bottom:6px;">
+        <input id="zlh_s3Name" class="form-control" style="padding:7px 9px; font-size:13px;" placeholder="Név" oninput="ZaroLeltarHitMod.renderDocument()" />
+        <input id="zlh_s3Title" class="form-control" style="padding:7px 9px; font-size:13px;" value="Ügyvezető" placeholder="Beosztás" oninput="ZaroLeltarHitMod.renderDocument()" />
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <input id="zlh_s3Date" type="date" class="form-control" style="padding:6px 9px; font-size:12.5px;" oninput="ZaroLeltarHitMod.renderDocument()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- JOBB OLDAL: ÉLŐ A4 ELŐNÉZET -->
+  <div>
+    <div class="preview-toolbar no-print">
+      <div>
+        <strong>Élő A4 nyomtatási kép</strong>
+        <span id="zlh_statusInfo" style="color:var(--muted); font-size:12.5px; margin-left:6px;"></span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="ZaroLeltarHitMod.printAndLog()">🖨️ Nyomtatás / PDF</button>
+    </div>
+    <div class="pages-wrapper" id="zlh_pagesContainer"></div>
+  </div>
+</div>
+
+<script>
+  window.ZaroLeltarHitMod = (function () {
+    let deprManual = false;
+
+    function init() {
+      deprManual = false;
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const year = new Date().getFullYear();
+
+      const subEl = document.getElementById("zlh_subtitle");
+      if (subEl && !subEl.value) {
+        subEl.value = `${comp.fullName} – valamennyi szervezeti alegység tárgyieszköz-leltára`;
+      }
+
+      const protoEl = document.getElementById("zlh_protoNo");
+      if (protoEl && !protoEl.value) protoEl.value = `LELT-${year}-01`;
+
+      const cutoffEl = document.getElementById("zlh_cutoffDate");
+      if (cutoffEl && !cutoffEl.value) cutoffEl.value = `${year}-12-31`;
+
+      const pdfNameEl = document.getElementById("zlh_pdfName");
+      if (pdfNameEl && !pdfNameEl.value) pdfNameEl.value = `zaro_leltar_${year}.pdf`;
+
+      const dz = document.getElementById("zlh_pdfDropzone");
+      if (dz) {
+        dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("dragover"); });
+        dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+        dz.addEventListener("drop", e => {
+          e.preventDefault();
+          dz.classList.remove("dragover");
+          if (e.dataTransfer.files[0]) handlePdfFile(e.dataTransfer.files[0], false);
+        });
+      }
+
+      const pdfIn = document.getElementById("zlh_pdfInput");
+      if (pdfIn) {
+        pdfIn.addEventListener("change", e => {
+          if (e.target.files[0]) handlePdfFile(e.target.files[0], false);
+          e.target.value = "";
+        });
+      }
+
+      const verifyIn = document.getElementById("zlh_verifyInput");
+      if (verifyIn) {
+        verifyIn.addEventListener("change", e => {
+          if (e.target.files[0]) handlePdfFile(e.target.files[0], true);
+          e.target.value = "";
+        });
+      }
+
+      renderDocument();
+    }
+
+    // ===== SHA-256 SZÁMÍTÁS (WEB CRYPTO + LOKÁLIS FALLBACK) =====
+    async function computeSha256Hex(arrayBuffer) {
+      if (window.crypto && window.crypto.subtle) {
+        const hashBuffer = await window.crypto.subtle.digest("SHA-256", arrayBuffer);
+        return Array.from(new Uint8Array(hashBuffer))
+          .map(b => b.toString(16).padStart(2, "0"))
+          .join("")
+          .toUpperCase();
+      }
+      return sha256FallbackHex(new Uint8Array(arrayBuffer)).toUpperCase();
+    }
+
+    function sha256FallbackHex(bytes) {
+      const K = [
+        0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+        0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+        0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+        0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+        0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+        0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+        0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+        0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+      ];
+      let H0 = 0x6a09e667, H1 = 0xbb67ae85, H2 = 0x3c6ef372, H3 = 0xa54ff53a;
+      let H4 = 0x510e527f, H5 = 0x9b05688c, H6 = 0x1f83d9ab, H7 = 0x5be0cd19;
+
+      const len = bytes.length;
+      const bitLen = len * 8;
+      const paddedLen = Math.ceil((len + 9) / 64) * 64;
+      const msg = new Uint8Array(paddedLen);
+      msg.set(bytes);
+      msg[len] = 0x80;
+      const dv = new DataView(msg.buffer);
+      dv.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000), false);
+      dv.setUint32(paddedLen - 4, bitLen >>> 0, false);
+
+      const W = new Uint32Array(64);
+      const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+
+      for (let off = 0; off < paddedLen; off += 64) {
+        for (let i = 0; i < 16; i++) W[i] = dv.getUint32(off + i * 4, false);
+        for (let i = 16; i < 64; i++) {
+          const s0 = rotr(W[i - 15], 7) ^ rotr(W[i - 15], 18) ^ (W[i - 15] >>> 3);
+          const s1 = rotr(W[i - 2], 17) ^ rotr(W[i - 2], 19) ^ (W[i - 2] >>> 10);
+          W[i] = (W[i - 16] + s0 + W[i - 7] + s1) >>> 0;
+        }
+        let a = H0, b = H1, c = H2, d = H3, e = H4, f = H5, g = H6, h = H7;
+        for (let i = 0; i < 64; i++) {
+          const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+          const ch = (e & f) ^ (~e & g);
+          const t1 = (h + S1 + ch + K[i] + W[i]) >>> 0;
+          const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+          const maj = (a & b) ^ (a & c) ^ (b & c);
+          const t2 = (S0 + maj) >>> 0;
+          h = g; g = f; f = e; e = (d + t1) >>> 0;
+          d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+        }
+        H0 = (H0 + a) >>> 0; H1 = (H1 + b) >>> 0; H2 = (H2 + c) >>> 0; H3 = (H3 + d) >>> 0;
+        H4 = (H4 + e) >>> 0; H5 = (H5 + f) >>> 0; H6 = (H6 + g) >>> 0; H7 = (H7 + h) >>> 0;
+      }
+      return [H0, H1, H2, H3, H4, H5, H6, H7].map(n => n.toString(16).padStart(8, "0")).join("");
+    }
+
+    function detectPdfPageCount(arrayBuffer) {
+      try {
+        const text = new TextDecoder("latin1").decode(new Uint8Array(arrayBuffer));
+        const pageMatches = text.match(/\/Type\s*\/Page\b(?!s)/g);
+        if (pageMatches && pageMatches.length > 0) return pageMatches.length;
+        const countMatches = [...text.matchAll(/\/Count\s+(\d+)/g)].map(m => parseInt(m[1], 10)).filter(n => n > 0);
+        if (countMatches.length > 0) return Math.max(...countMatches);
+      } catch (e) {}
+      return null;
+    }
+
+    async function handlePdfFile(file, isVerifyOnly = false) {
+      try {
+        const buf = await file.arrayBuffer();
+        const hashHex = await computeSha256Hex(buf);
+
+        if (isVerifyOnly) {
+          const expected = (document.getElementById("zlh_pdfHash")?.value || "").trim().toUpperCase();
+          const resBox = document.getElementById("zlh_verifyResult");
+          if (!resBox) return;
+          resBox.classList.remove("hidden", "zlh-verify-ok", "zlh-verify-fail", "zlh-verify-info");
+
+          if (!expected) {
+            resBox.classList.add("zlh-verify-info");
+            resBox.textContent = `A jegyzőkönyvben még nincs rögzített hash. A vizsgált fájl (${file.name}) SHA-256 kódja: ${hashHex}`;
+          } else if (expected === hashHex) {
+            resBox.classList.add("zlh-verify-ok");
+            resBox.textContent = `✓ EGYEZÉS! A(z) „${file.name}” PDF fájl 100%-ban azonos a hitelesített állománnyal.`;
+          } else {
+            resBox.classList.add("zlh-verify-fail");
+            resBox.textContent = `✕ ELTÉRÉS! A(z) „${file.name}” tartalma nem egyezik a jegyzőkönyvben szereplő SHA-256 értékkel!`;
+          }
+          return;
+        }
+
+        const pdfNameEl = document.getElementById("zlh_pdfName");
+        const hashEl = document.getElementById("zlh_pdfHash");
+        const pageEl = document.getElementById("zlh_pageCount");
+
+        if (pdfNameEl) pdfNameEl.value = file.name;
+        if (hashEl) hashEl.value = hashHex;
+
+        const detectedPages = detectPdfPageCount(buf);
+        if (detectedPages && pageEl) pageEl.value = detectedPages;
+
+        const sizeKb = (file.size / 1024).toFixed(1);
+        const box = document.getElementById("zlh_hashPreviewBox");
+        if (box) {
+          box.classList.remove("hidden");
+          box.innerHTML = `
+            <div style="font-family:inherit; font-size:11.5px; color:#15803d; font-weight:700; margin-bottom:4px;">
+              ✓ ${escapeHtml(file.name)} (${sizeKb} KB${detectedPages ? ` • ${detectedPages} oldal` : ""})
+            </div>
+            <div>${escapeHtml(hashHex)}</div>
+          `;
+        }
+
+        document.getElementById("zlh_verifyResult")?.classList.add("hidden");
+        renderDocument();
+        showToast("SHA-256 hash sikeresen legenerálva!", "success");
+      } catch (err) {
+        showToast("Hiba a PDF feldolgozása közben: " + err.message, "error");
+      }
+    }
+
+    function copyHash() {
+      const val = (document.getElementById("zlh_pdfHash")?.value || "").trim();
+      if (!val) { showToast("Még nincs generált hash kód!", "error"); return; }
+      navigator.clipboard.writeText(val);
+      showToast("SHA-256 hash a vágólapra másolva!", "success");
+    }
+
+    function importLastInventorySummary() {
+      try {
+        const raw = sessionStorage.getItem("campus_last_inventory_summary");
+        if (!raw) {
+          showToast("Nincs elmentett leltárlista összegzés ebben a munkamenetben. Előbb nyisd meg a Leltárlistát!", "info");
+          return;
+        }
+        const s = JSON.parse(raw);
+        if (s.year) {
+          document.getElementById("zlh_protoNo").value = `LELT-${s.year}-01`;
+          document.getElementById("zlh_cutoffDate").value = s.date || `${s.year}-12-31`;
+        }
+        if (s.totalPages && !document.getElementById("zlh_pageCount").value) {
+          document.getElementById("zlh_pageCount").value = s.totalPages;
+        }
+        if (s.itemCount !== undefined) {
+          document.getElementById("zlh_itemCount").value = s.itemCount;
+          document.getElementById("zlh_unitItemSum").value = s.itemCount;
+        }
+        if (s.unitCount !== undefined) document.getElementById("zlh_unitCount").value = s.unitCount;
+        if (s.sumGross !== undefined) document.getElementById("zlh_grossVal").value = s.sumGross;
+        if (s.sumNet !== undefined) document.getElementById("zlh_netVal").value = s.sumNet;
+        deprManual = false;
+        recalcDepr();
+        renderDocument();
+        showToast("Leltárlista adatai sikeresen átemelve!", "success");
+      } catch (e) {
+        showToast("Nem sikerült beolvasni a leltárlista adatait.", "error");
+      }
+    }
+
+    function markDeprManual() {
+      deprManual = true;
+    }
+
+    function recalcDepr() {
+      if (deprManual) return;
+      const gRaw = document.getElementById("zlh_grossVal")?.value;
+      const nRaw = document.getElementById("zlh_netVal")?.value;
+      const dEl = document.getElementById("zlh_deprVal");
+      if (!dEl) return;
+      if (gRaw === "" && nRaw === "") { dEl.value = ""; return; }
+      const g = parseInt(gRaw, 10) || 0;
+      const n = parseInt(nRaw, 10) || 0;
+      dEl.value = Math.max(0, g - n);
+    }
+
+    function syncSubunitTotal() {
+      const itemEl = document.getElementById("zlh_itemCount");
+      const sumEl = document.getElementById("zlh_unitItemSum");
+      if (itemEl && sumEl && !sumEl.dataset.touched) {
+        sumEl.value = itemEl.value;
+      }
+    }
+
+    function fmtFt(val, fallback = "[Ft]") {
+      if (val === "" || val === null || val === undefined) return fallback;
+      const n = parseInt(val, 10);
+      if (isNaN(n)) return fallback;
+      return n.toLocaleString("hu-HU") + " Ft";
+    }
+
+    function fmtDateDot(iso, fallback = "") {
+      if (!iso) return fallback;
+      const p = String(iso).split("-");
+      return p.length === 3 ? `${p[0]}. ${p[1]}. ${p[2]}.` : iso;
+    }
+
+    // ===== A4 DOKUMENTUM RENDERELÉS =====
+    function renderDocument() {
+      const container = document.getElementById("zlh_pagesContainer");
+      if (!container) return;
+
+      const comp = selectedCompany || COMPANIES.DCNK;
+      const v = id => (document.getElementById(id)?.value || "").trim();
+
+      const subtitle = v("zlh_subtitle") || `${comp.fullName} – valamennyi szervezeti alegység tárgyieszköz-leltára`;
+      const protoNo = v("zlh_protoNo") || "[LELT-ÉÉÉÉ-01]";
+      const cutoffDate = fmtDateDot(v("zlh_cutoffDate"), "[ÉÉÉÉ. HH. NN.]");
+      const pdfName = v("zlh_pdfName") || "[zaro_leltar_ÉÉÉÉ.pdf]";
+      const pdfHash = v("zlh_pdfHash").toUpperCase();
+
+      const pageCount = v("zlh_pageCount");
+      const itemCount = v("zlh_itemCount");
+      const pageItemDisplay = `${pageCount ? pageCount + " oldal" : "[oldal]"} / ${itemCount ? itemCount + " db" : "[db]"}`;
+
+      const grossStr = fmtFt(v("zlh_grossVal"));
+      const deprStr = fmtFt(v("zlh_deprVal"));
+      const netStr = fmtFt(v("zlh_netVal"));
+
+      const unitCount = v("zlh_unitCount");
+      const unitItemSum = v("zlh_unitItemSum");
+      const unitsMismatch = (itemCount !== "" && unitItemSum !== "" && itemCount !== unitItemSum);
+      const unitsDisplay = `${unitCount || "[db]"} alegység, tételszámaik összege: ${unitItemSum || "[db]"}`;
+
+      const shortQty = v("zlh_shortQty") || "0";
+      const shortVal = fmtFt(v("zlh_shortVal") || "0");
+      const surpQty = v("zlh_surpQty") || "0";
+      const surpVal = fmtFt(v("zlh_surpVal") || "0");
+      const diffProto = v("zlh_diffProto") || "nincs";
+      const diffDisplay = `hiány: ${shortQty} db / ${shortVal}; többlet: ${surpQty} db / ${surpVal}; eltérési jkv.: ${diffProto}`;
+
+      const storageLoc = v("zlh_storageLoc") || "[mappa / iktatási hely]";
+
+      const signers = [
+        {
+          role: "ÖSSZEÁLLÍTOTTA",
+          sub: "központi leltárfelelős",
+          desc: "Igazolja: a lista teljes, minden alegységi igazolás megvan, a tételszámok egyeznek.",
+          name: v("zlh_s1Name"),
+          title: v("zlh_s1Title"),
+          date: fmtDateDot(v("zlh_s1Date"), "")
+        },
+        {
+          role: "SZÁMVITELILEG EGYEZTETTE",
+          sub: "gazdasági vezető / könyvelés",
+          desc: "Igazolja: a lista a főkönyvvel és az analitikával egyeztetve, az eltérések jegyzőkönyvezve.",
+          name: v("zlh_s2Name"),
+          title: v("zlh_s2Title"),
+          date: fmtDateDot(v("zlh_s2Date"), "")
+        },
+        {
+          role: "JÓVÁHAGYTA",
+          sub: "ügyvezető",
+          desc: "Igazolja: a leltározás a szabályzat szerint folyt; a leltárt jóváhagyja.",
+          name: v("zlh_s3Name"),
+          title: v("zlh_s3Title"),
+          date: fmtDateDot(v("zlh_s3Date"), "")
+        }
+      ];
+
+      const statusBadge = document.getElementById("zlh_statusInfo");
+      if (statusBadge) {
+        if (pdfHash.length === 64) {
+          statusBadge.innerHTML = `<span style="color:var(--success); font-weight:700;">• SHA-256 hitelesítve (64 karakter)</span>`;
+        } else {
+          statusBadge.textContent = "• 1 oldal • Várakozás PDF fájlra a hash generáláshoz";
+        }
+      }
+
+      container.innerHTML = `
+        <div class="a4-page zlh-page">
+          <div class="doc-top-bar" style="margin-bottom:5mm;">
+            <img src="${comp.logo}" alt="${comp.code}" class="doc-header-logo" onerror="this.src='${comp.fallbackLogo}'" />
+            <div class="doc-top-title">
+              <div>${escapeHtml(comp.fullName)}</div>
+              ${comp.taxId ? `<div class="doc-top-tax">Adószám: ${escapeHtml(comp.taxId)}</div>` : ""}
+            </div>
+          </div>
+
+          <div class="zlh-doc-title">Záró leltárlista hitelesítési jegyzőkönyve</div>
+          <div class="zlh-doc-subtitle">${escapeHtml(subtitle)}</div>
+
+          <div class="zlh-sec-head"><span>1 |</span> A HITELESÍTETT ÁLLOMÁNY</div>
+          <table class="zlh-meta-table">
+            <tr>
+              <td>Jegyzőkönyv száma</td>
+              <td><strong>${escapeHtml(protoNo)}</strong></td>
+            </tr>
+            <tr>
+              <td>Leltári fordulónap</td>
+              <td>${escapeHtml(cutoffDate)}</td>
+            </tr>
+            <tr>
+              <td>PDF fájlneve</td>
+              <td><strong>${escapeHtml(pdfName)}</strong></td>
+            </tr>
+            <tr>
+              <td>PDF SHA-256 hash</td>
+              <td>
+                ${pdfHash
+                  ? `<span class="zlh-hash-print">${escapeHtml(pdfHash)}</span>`
+                  : `<span style="color:#64748b; font-style:italic;">[64 karakteres hash-érték]</span>`}
+              </td>
+            </tr>
+            <tr>
+              <td>Oldalszám / tételszám</td>
+              <td>
+                ${escapeHtml(pageItemDisplay)}
+                <span class="zlh-muted-inline">sorszámozás 1-től folyamatos</span>
+              </td>
+            </tr>
+            <tr>
+              <td>Bruttó / ÉCS / nettó érték</td>
+              <td>${escapeHtml(grossStr)} / ${escapeHtml(deprStr)} / ${escapeHtml(netStr)}</td>
+            </tr>
+            <tr>
+              <td>Alegységek</td>
+              <td ${unitsMismatch ? 'style="color:#b91c1c; font-weight:700;"' : ""}>
+                ${escapeHtml(unitsDisplay)}
+                <span class="zlh-muted-inline">egyeznie kell a tételszámmal</span>
+              </td>
+            </tr>
+            <tr>
+              <td>Eltérések</td>
+              <td>${escapeHtml(diffDisplay)}</td>
+            </tr>
+            <tr>
+              <td>Tárolási hely (írásvédett)</td>
+              <td>${escapeHtml(storageLoc)}</td>
+            </tr>
+          </table>
+
+          <div class="zlh-check-note">
+            <strong>Ellenőrzés:</strong> a hash bárki által újraszámolható (PowerShell: <code>Get-FileHash -Algorithm SHA256 ${escapeHtml(pdfName)}</code>). Eltérő érték esetén a fájl nem azonos a hitelesítettel. A PDF módosítása vagy újramentése új hash-t és új jegyzőkönyvet igényel; a korábbi jegyzőkönyvre ekkor rá kell vezetni: „Érvénytelen, helyette: [új szám]”.
+          </div>
+
+          <div class="zlh-sec-head"><span>2 |</span> HITELESÍTÉSI NYILATKOZAT</div>
+          <p class="zlh-body-p">
+            Alulírottak igazoljuk, hogy a fenti SHA-256 értékkel azonosított PDF a záró leltárlista egyetlen végleges változata. Jelen jegyzőkönyv a lista valamennyi tételére kiterjed, tételenkénti aláírás nem szükséges. Aláírásával mindegyikünk a saját rovatában megjelölt tényeket igazolja.
+          </p>
+
+          <div class="zlh-sec-head"><span>3 |</span> ALÁÍRÁSOK</div>
+          <table class="zlh-sign-table">
+            <thead>
+              <tr>
+                ${signers.map(s => `
+                  <th>
+                    <div class="zlh-sign-role">${escapeHtml(s.role)}</div>
+                    <div class="zlh-sign-sub">${escapeHtml(s.sub)}</div>
+                  </th>
+                `).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                ${signers.map(s => `
+                  <td>
+                    <div class="zlh-sign-desc">${escapeHtml(s.desc)}</div>
+                    <div class="zlh-sign-field"><strong>Név:</strong> ${escapeHtml(s.name)}</div>
+                    <div class="zlh-sign-field"><strong>Beosztás:</strong> ${escapeHtml(s.title)}</div>
+                    <div class="zlh-sign-field"><strong>Dátum:</strong> ${escapeHtml(s.date)}</div>
+                    <div class="zlh-sign-line-wrap">
+                      <div class="zlh-sign-line">Aláírás</div>
+                    </div>
+                  </td>
+                `).join("")}
+              </tr>
+            </tbody>
+          </table>
+          <p class="zlh-sign-footnote">
+            Három különböző személy írja alá, a fenti sorrendben. Aláírás: saját kezű, vagy minősített (illetve minősített tanúsítványon alapuló fokozott biztonságú) elektronikus aláírás.
+          </p>
+
+          <div class="zlh-sec-head"><span>4 |</span> MEGŐRZÉS</div>
+          <p class="zlh-body-p" style="margin-bottom:0;">
+            A hitelesített PDF, e jegyzőkönyv, az alegységi igazolások és az eltérési jegyzőkönyv együtt, legalább 8 évig megőrzendő.
+          </p>
+
+          <div class="doc-footer" style="display:flex; justify-content:space-between; font-size:7.8pt;">
+            <span>${escapeHtml(comp.code)} • ${escapeHtml(protoNo)}</span>
+            <span>1 / 1. oldal</span>
+          </div>
+        </div>
+      `;
+    }
+
+    async function printAndLog() {
+      const hashVal = (document.getElementById("zlh_pdfHash")?.value || "").trim();
+      if (!hashVal) {
+        if (!confirm("Még nincs megadva PDF SHA-256 hash kód. Biztosan így szeretnéd nyomtatni?")) return;
+      }
+      window.print();
+      if (!currentUser) return;
+
+      const compTag = selectedCompany ? `[${selectedCompany.code}] ` : "";
+      const protoNo = (document.getElementById("zlh_protoNo")?.value || "").trim();
+      const pdfName = (document.getElementById("zlh_pdfName")?.value || "").trim();
+      const shortHash = hashVal ? hashVal.slice(0, 12) + "..." : "nincs";
+      const details = `${compTag}${protoNo} | PDF: ${pdfName} | SHA-256: ${shortHash}`;
+
+      try {
+        await apiCall({
+          action: "logDocument",
+          username: currentUser.username,
+          userName: currentUser.fullName || currentUser.name || currentUser.username,
+          docType: "Záró leltárlista hitelesítési jegyzőkönyve",
+          details
+        });
+      } catch (e) {}
+    }
+
+    return {
+      init,
+      copyHash,
+      importLastInventorySummary,
+      markDeprManual,
+      recalcDepr,
+      syncSubunitTotal,
+      renderDocument,
+      printAndLog
+    };
+  })();
+
+  window.TemplateModules["zaro_leltar_hitelesitesi_jk"] = window.ZaroLeltarHitMod;
+</script>
